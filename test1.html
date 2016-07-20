@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta charset="UTF-8">
+	<title>大根のページ</title>
+  </head>
+  <body>
+	<h2>ようこそ</h2>
+	<noscript><p style="text-align:center">error</p><h4  style="text-align:center">スクリプトが有効ではありません<br>一見普通に表示されますが動作しません</h4></noscript>
+<input type="button" value="セット" onClick=noset(12);>
+<input type="button" value="リセット" onClick=onset(13);>
+<div id="text">0</div>
+<script>
+s ="0";
+function noset(a){
+s++;
+document.getElementById("text").innerHTML=s;
+}
+function onset(b){
+s=0;
+document.getElementById("text").innerHTML=s;
+}
+
+
+	document.bgColor = "#FFFFCC"; // bgcolor：背景色
+	//document.fgColor = "#ffffff"; // text：文字の基本色
+	//document.linkColor = "#ff0000"; // link：リンク文字の色
+	//document.vlinkColor = "#ff0000"; // vlink：リンク文字の色（アクセス済みのリンク）
+	//document.alinkColor = "#ff8000"; // alink：リンク文字の色（クリックした瞬間の色）
+//var
+
+</script>
+  </body>
+</html>
