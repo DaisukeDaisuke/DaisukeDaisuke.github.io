@@ -1,6 +1,7 @@
 <html>
 <head><title>accesslog.php</title></head>
 <body>
+<script>
 <?php
 print(date("Y/m/d H:i:s ") . "<br /> \n");
 print("<p> access log : </p> \n");
@@ -12,8 +13,9 @@ rewind($filepointer);
 while(!feof($filepointer)){
 $fileline = fgets($filepointer);
 print($fileline . "<br />");
-  }
-  fclose($filepointer);
+}
+fclose($filepointer);
 ?>
+</script>
 </body>
 </html>
