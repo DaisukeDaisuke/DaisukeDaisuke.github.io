@@ -1,21 +1,121 @@
+<!DOCTYPE html>
 <html>
-<head><title>accesslog.php</title></head>
-<body>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    </head>
+    <body>
+<input type="button" value="次" onClick=abc(12);>
+<p>
+<input type="button" value="前" onClick=abca(12);>
+<div id="text">0</div><p><div id="text1"> </div>
 <script>
-<?php
-print(date("Y/m/d H:i:s ") . "<br /> \n");
-print("<p> access log : </p> \n");
-$filepointer=fopen("./log/php-accesslog", "a+");
-flock($filepointer, LOCK_EX);
-fputs($filepointer,date("Y/m/d H:i:s ") . $_SERVER["REMOTE_ADDR"] . "\n");
-flock($filepointer, LOCK_UN);
-rewind($filepointer);
-while(!feof($filepointer)){
-$fileline = fgets($filepointer);
-print($fileline . "<br />");
+b=0;
+function abc(a){
+b++;
+klm(2);
 }
-fclose($filepointer);
-?>
-</script>
-</body>
+
+function abca(j12){
+if(!b==0){
+b--;
+klm(1);
+}
+}
+
+function klm(e){
+if(b==1){
+document.getElementById("text").innerHTML="くそぉ";
+}else if(b==2){
+document.getElementById("text").innerHTML="苦戦中";
+}else if(b==3){
+document.getElementById("text").innerHTML="やっぱりこのプロジェクト難しい";
+}else if(b==4){
+document.getElementById("text").innerHTML="はぁwebゲーム難しい…";
+}else if(b==5){
+document.getElementById("text").innerHTML="どうすればなぁ";
+}else if(b==6){
+document.getElementById("text").innerHTML="だが諦めてはいけない";
+}else if(b==7){
+document.getElementById("text").innerHTML="そこで諦めたら今後の収入が台無し…";
+}else if(b==8){
+document.getElementById("text").innerHTML="でもアイデアがなぁ";
+}else if(b==9){
+document.getElementById("text").innerHTML="どうすればいいのかなぁ";
+}else if(b==10){
+document.getElementById("text").innerHTML="うーん";
+}else if(b==11){
+document.getElementById("text").innerHTML="それより";
+}else if(b==12){
+document.getElementById("text").innerHTML="プログラミングを頑張らないと!!";
+}else if(b==13){
+document.getElementById("text").innerHTML="それよりカステラってホモなの？";
+}else if(b==14){
+document.getElementById("text").innerHTML="それより佑蒼の方がホモ？";
+}else if(b==15){
+document.getElementById("text").innerHTML="でもありすんもホ感漂ってる…";
+}else if(b==16){
+document.getElementById("text").innerHTML="もうここにGoogle+三大ホ集団作ればいいやん…";
+}else if(b==17){
+document.getElementById("text").innerHTML="でもさ作ったとしても誰が維持するんだろ";
+}else if(b==18){
+document.getElementById("text").innerHTML="……";
+document.getElementById("text1").innerHTML="";
+}else if(b==19){
+document.getElementById("text").innerHTML="こんにちはゆっくり霊夢です";
+document.getElementById("text1").innerHTML="こんにちはゆっくり魔理沙だぜ";
+}else if(b==20){
+document.getElementById("text").innerHTML="散歩逝ってくる(ちっちゃい声)";
+document.getElementById("text1").innerHTML="魔理沙:さっきのは冗談だぜ";
+}else if(b==21){
+document.getElementById("text").innerHTML="";
+document.getElementById("text1").innerHTML=":魔理沙:霊夢どっかいったげど大丈夫かぜ";
+}else if(b==22){
+document.getElementById("text").innerHTML="";
+document.getElementById("text1").innerHTML="魔理沙:コンビニ行くついでに霊夢を探しに行くぜ";
+}else if(b==23){
+document.getElementById("text").innerHTML="------330.4秒後------";
+document.getElementById("text1").innerHTML="";
+}else if(b==24){
+document.getElementById("text").innerHTML="霊夢:あれ魔理沙どこに行ったんだろう…";
+}else if(b==25){
+document.getElementById("text").innerHTML="その頃世界のどこがで";
+document.getElementById("text1").innerHTML="";
+}else if(b==26){
+document.getElementById("text").innerHTML="ああ…ここがわからないよぉ";
+}else if(b==27){
+document.getElementById("text").innerHTML="そうだGoogle+で聞こう";
+}else if(b==28){
+document.getElementById("text").innerHTML="………";
+}else if(b==29){
+document.getElementById("text").innerHTML="もう○○時だ";
+}else if(b==30){
+document.getElementById("text").innerHTML="そろそろ寝ないと…";
+}else if(b==31){
+document.getElementById("text").innerHTML="でも暇だし…";
+}else if(b==32){
+document.getElementById("text").innerHTML="i me perfect human だったらなぁ";
+}else if(b==33){
+document.getElementById("text").innerHTML="もしかして君perfect human？";
+}else if(b==34){
+document.getElementById("text").innerHTML="そもそもperfect humanってこの地球に存在するのかなぁ";
+}else if(b==36){
+document.getElementById("text").innerHTML="シュー……";
+}else if(b==37){
+document.getElementById("text").innerHTML="ﾄﾞｯｶﾝﾊﾞﾝﾊﾞﾘｶﾞｯｼｬﾝ---";
+}else if(b==38){
+document.getElementById("text").innerHTML="ゲームオーバー";
+}else if(b==39){
+document.getElementById("text").innerHTML="見たいにいくらperfect humanであろうがミスは存在する…";
+}else if(b==40){
+document.getElementById("text").innerHTML="けどね";
+}else if(b==41){
+alert("終了のお知らせ 最後まで見てくれてありがとう");
+}
+
+
+
+
+}
+        </script>
+    </body>
 </html>
