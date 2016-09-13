@@ -1,0 +1,53 @@
+@charset "UTF-8";
+.e{
+text-shadow:3px 3px 2.5px #000000;
+font-size:25px;
+}
+.in{
+/* keyframes に任意の名前を付ける */
+  -moz-animation-name: 'rotate1';
+  -webkit-animation-name: 'rotate1';
+  animation-name: 'rotate1';
+  -goog-ms-animation-name: 'rotate1'; 
+ 
+ /* 1動作(ここでは1回転)あたりの秒数 */
+  -moz-animation-duration: 4s;
+  -webkit-animation-duration: 4s;
+  animation-duration: 4s;
+  -goog-ms-animation-duration: 4s;
+ 
+/* 動作の向き、初期値はnormal 、逆再生は alternate */
+  -moz-animation-direction: normal;
+  -webkit-animation-direction: normal;
+  animation-direction: normal;
+  -goog-ms-animation-direction: normal;
+  
+/* 動き方 linear, ease, easein, ease-out, ease-in-out */
+  -moz-animation-timing-function: linear;
+  -webkit-animation-timing-function: linear;
+  animation-timing-function: linear;
+  -goog-ms-animation-timing-function: linear;
+  
+/* 動作 (ここでは回転) の回数を数値で指定、無限ループは infinite */
+  -moz-animation-iteration-count: infinite;
+  -webkit-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+  -goog-ms-animation-iteration-count: infinite;
+}
+ 
+@-webkit-keyframes 'rotate1' {
+  from {
+  /* 最初の回転角 */
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+    -goog-ms-transform: rotate(0deg);
+  }
+  /* 1動作の最後 ( 1duration 後) の回転角 */
+  to {
+    -moz-transform: rotate(-360deg);
+    -webkit-transform: rotate(-360deg);
+    transform: rotate(-360deg);
+    -goog-ms-transform: rotate(-360deg);
+  }
+}
