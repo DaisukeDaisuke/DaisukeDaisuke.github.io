@@ -182,7 +182,7 @@ font-size:25px;
   -goog-ms-animation-iteration-count: infinite;
 }
  
-@-webkit-keyframes 'rotate1' {
+@-webkit-keyframes 'rotate5' {
   from {
   /* 最初の回転角 */
     -moz-transform: rotate(0deg);
