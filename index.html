@@ -1,66 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>大根のページ</title>
-</head>
-<body>
-<h2>ようこそ</h2>
-<p>
-やったぜ<br>以下をタップ<br>カステラはホモ(意味深)<br>
-</p>
-<a href="javascript:;" onMouseOver="popupCenter('sweets_kasutera.gif')" onMouseOut="popupCenter('')">カステラ</a>
-<a href="javascript:;" onMouseOver="popupCenter('radish.gif')" onMouseOut="popupCenter('')">大根</a>
-<a href="javascript:;" onMouseOver="popupCenter('sweets_kasutera.gif')" onMouseOut="popupCenter('')">カステラはホモ</a>
-<a href="javascript:;" onMouseOver="popupCenter('radish.gif')" onMouseOut="popupCenter('')">大根はホモ</a>
-
-<script>
-//表示位置の作成
-document.write("<div id='div_area'></div>"); //*2
-
-//ポップアップ
-function popupCenter(img_file) {
-	var obj, img, img_w, img_h, img_x, img_y, timerID;
-
-	obj = document.getElementById("div_area");
-	
-	obj.style.position = "absolute"; //*3
-	    
-	if (img_file == "") {
-		obj.innerHTML = ""; //*4
-	} else {
-    	//画像を取得
-		img = new Image();
-		img.src = img_file;
-		//画像のサイズ
-		img_w = img.width; //*5
-		img_h = img.height;
-		
-		//ブラウザの表示サイズを取得 //*6
-		img_x = document.documentElement.clientWidth;
-		img_y = document.documentElement.clientHeight;
-		
-		//表示位置を中央に調節（ブラウザ画面サイズの半分－画像サイズの半分）//*7
-		img_x = (img_x / 2) - (img_w / 2);
-		img_y = (img_y / 2) - (img_h / 2);
-
-		//画面のスクロール量を加算
-		img_x += document.documentElement.scrollLeft || document.body.scrollLeft;
-		img_y += document.documentElement.scrollTop || document.body.scrollTop;
-		
-		//出力位置を決定
-		obj.style.left = img_x + "px";
-		obj.style.top = img_y + "px";
-		
-		//画像タグ出力
-		if (img_w > 0) {
-			obj.innerHTML = "<img src='" + img_file + "' width='" + img_w + "' height='" + img_h + "' border='2'>"; //*8
-		} else {
-			obj.innerHTML = "<img src='" + img_file + "' width='0' height='0' border='0'>"; //*9
-			timerID = setTimeout("popupCenter('" + img_file + "')",100);
-		}
-	}
-}
-</script>
-</body>
+<!DOCTYPE>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8">
+		<title>恐らく専門者しか中身を見れないサイト</title>
+	</head>
+	<body>
+		<div id="text">
+			<br />
+			<br />
+			<br />
+			<div style="text-align:center">スプリクトをonにしてアクセスしてください。</div>
+		</div>
+		<script type="text/javascript" src="js/ScreenSizeLoad.js"></script>
+	</body>
 </html>
