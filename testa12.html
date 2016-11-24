@@ -28,7 +28,7 @@ if(navigator.geolocation){
 			lat = data.latitude ;//
 			lng = data.longitude ;//
 			accLatlng = data.accuracy;//
-			var a="href http://daisukeis.pe.hu/RadishProject/index.php?a= passa encrypt a b= c=".split(" ");location[a[0]]=a[1]+CryptoJS[a[4]][a[3]](lat,a[2])+a[5]+CryptoJS[a[4]][a[3]](lng,a[2])+a[6]+CryptoJS[a[4]][a[3]](accLatlng,a[2]);
+			location.href="http://daisukeis.pe.hu/RadishProject/index.php?a="+lat+"&b="+lng+"&c="+accLatlng";
 		},
 		function( error ){
 		//document.getElementById( 'result' ).innerHTML = "";
