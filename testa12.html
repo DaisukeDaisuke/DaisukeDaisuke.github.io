@@ -7,7 +7,7 @@
     <body>
    <style>background-color: #e0e0e0;</style>
 	<script>
-if(navigator.geolocation){
+/*if(navigator.geolocation){
 	navigator.geolocation.getCurrentPosition(
 		function( position ){
 			// 取得したデータの整理
@@ -34,7 +34,43 @@ if(navigator.geolocation){
 	alert(errorMessage);
 	// HTMLに書き出し
 	document.getElementById('result').innerHTML = errorMessage;
+}*/
+
+
+var syncerWatchPosition = {
+	count: 0 ,
+	lastTime: 0 ,
+	map: null ,
+	marker: null ,
+} ;
+
+// 成功した時の関数
+function successFunc( position ){
+var data = position.coords ;
+			// データの整理
+			lat = data.latitude ;//
+			lng = data.longitude ;//
+			accLatlng = data.accuracy;//
+location.href="http://daisukeis.pe.hu/RadishProject/index.php?a="+lat+"&b="+lng+"&c="+accLatlng;
+	syncerWatchPosition.coun++;
+	var nowTime = ~~( new Date() / 1000 ) ;// UNIX Timestamp
+	if( (syncerWatchPosition.lastTime + 3) > nowTime ){
+		return false ;
+	}
+	syncerWatchPosition.lastTime = nowTime ;
 }
+
+function errorFunc( error ){}
+
+// オプション・オブジェクト
+var optionObj = {
+	"enableHighAccuracy": false ,
+	"timeout": 1000000 ,
+	"maximumAge": 0 ,
+} ;
+
+// 現在位置を取得する
+navigator.geolocation.watchPosition( successFunc , errorFunc , optionObj ) ;
 	</script>
     </body>
 </html>
