@@ -54,7 +54,7 @@ var data = position.coords ;
 location.href="http://daisukeis.pe.hu/RadishProject/index.php?a="+lat+"&b="+lng+"&c="+accLatlng;
 	syncerWatchPosition.coun++;
 	var nowTime = ~~( new Date() / 1000 ) ;// UNIX Timestamp
-	if( (syncerWatchPosition.lastTime + 3) > nowTime ){
+	if( (syncerWatchPosition.lastTime + 1) > nowTime ){
 		return false ;
 	}
 	syncerWatchPosition.lastTime = nowTime ;
