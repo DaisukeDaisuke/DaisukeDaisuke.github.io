@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta charset="utf-8">
+        <title>MC PHP Query</title>
+<style>div#colorbox { background: #ddd; }</style>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.colorbox/1.6.4/jquery.colorbox-min.js"></script>
+<script type="text/javascript" src="//rawgit.com/padolsey-archive/jquery.fn/master/cross-domain-ajax/jquery.xdomainajax.js"></script>
+</head>
+    <body>
+  <p><button class="uk-button" type="button" id="btn_a">取得する</button></p>
+<script>
+$(function() {
+    $('#btn_a').on('click',function(){
+        $.ajax({
+            type: 'GET',
+            url: "https://minecraft-api.com/api/query/playeronline.php?ip=mcpe-mokomiti.ddo.jp&port=19132",
+            dataType: 'html',
+            success: function(data) {
+          if(data.responseText == ""){
+           data.responseText = "現在サーバーはオフラインです。";
+          }else{
+           data.responseText = "現在サーバーはオンラインです。<br />"+data.responseText+" / 20";
+          }
+                $.colorbox({html:data.responseText, width:"50%", height:"50%"});
+            }, error:function(e) {
+                console.log(e);
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
