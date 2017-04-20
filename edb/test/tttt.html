@@ -41,22 +41,10 @@ var unixTimestamp = date.getTime();
 </script>
 <script>
 $(function() {
-var date = new Date() ;
-var unixTimestamp = date.getTime();
 $.colorbox({html:"しばらくお待ちください...", width:"50%", height:"50%"});
     $('#btn_a').on('click',function(){
     $.colorbox({html:"しばらくお待ちください...", width:"50%", height:"50%"});
-        $.ajax({
-            type: 'GET',
-            url: "https://minecraft-api.com/api/query/playeronline.php?ip=mcpe-mokomiti.ddo.jp&port=19132&time="+unixTimestamp,
-            dataType: 'html',
-            success: function(data) {
-           data.responseText = "現在のサーバー状況。<br />"+data.responseText+" / 20<br />";
-                $.colorbox({html:data.responseText, width:"50%", height:"50%"});
-            }, error:function(e) {
-                console.log(e);
-            }
-        });
+     location.reload(true);
     });
 });
 </script>
