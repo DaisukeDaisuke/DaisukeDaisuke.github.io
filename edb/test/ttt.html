@@ -25,7 +25,7 @@ $(function() {
     $('#btn_a').on('click',function(){
     var date = new Date() ;
 var unixTimestamp = date.getTime();
-$.colorbox({html:"しばらくお待ちください...", width:"50%", height:"50%"});
+$.colorbox({html:"しばらくお待ちください...", width:"50%", height:"50%",opacity:0.7});
         $.ajax({
             type: 'GET',
             url: "https://minecraft-api.com/api/query/playeronline.php?ip=mcpe-mokomiti.ddo.jp&port=19132&time="+unixTimestamp,
