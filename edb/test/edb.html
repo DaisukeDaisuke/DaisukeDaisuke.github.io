@@ -1,0 +1,23 @@
+<html>
+
+ <head>
+  <title>edbレベルup計算機</title>
+ </head>
+	<script type="text/javascript">
+		function price() {
+			var num0 = document.getElementById('num0').value;
+			var num1 = document.getElementById('num1').value;
+			var ans = 1000 * num1 ** num0;
+			document.getElementById('ans').innerHTML = "戦闘力 : " + ans;
+		}
+
+</script>
+レベル : <input type="text" value="0" name="num0" size="10" id="num0" onfocus="price()" onkeyup="price()" /><br />
+倍数 : <input type="text" value="1.1" name="num0" size="10" id="num1" onfocus="price()" onkeyup="price()" /><br />
+<span id="ans">戦闘力 : </span><br /><br />
+
+ <body>
+  1000 × 倍数 ^ レベル
+ </body>
+
+</html>
