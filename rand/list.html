@@ -58,50 +58,50 @@
     <label>消費数</label>
     <div class="container">
         <div class="input-container">
-            <input type="text" id="start" name="start" class="input1" value="0">
+            <input type="number" id="start" name="start" class="input1" value="0">
         </div>
         <div class="input-container">
             <span>~</span>
         </div>
         <div class="input-container">
-            <input type="text" id="end" name="end" class="input1" value="100">
+            <input type="number" id="end" name="end" class="input1" value="100">
         </div>
     </div>
-    <label>% 下限値～上限値</label><br>
+    <label>% 下限値～上限値(小数点対応)</label><br>
     <span>(以上～以下)</span><br>
     <div class="container">
         <div class="input-container">
-            <input type="text" id="min" name="start" class="input1">
+            <input type="number" id="min" name="start" class="input1">
         </div>
         <div class="input-container">
             <span>~</span>
         </div>
         <div class="input-container">
-            <input type="text" id="max" name="end" class="input1">
+            <input type="number" id="max" name="end" class="input1">
         </div>
     </div>
     <label>次の% 下限値～上限値</label>
     <div class="container">
         <div class="input-container">
-            <input type="text" id="nextmin" name="start" class="input1">
+            <input type="number" id="nextmin" name="start" class="input1">
         </div>
         <div class="input-container">
             <span>~</span>
         </div>
         <div class="input-container">
-            <input type="text" id="nextmax" name="end" class="input1">
+            <input type="number" id="nextmax" name="end" class="input1">
         </div>
     </div>
     <label>その次の% 下限値～上限値</label>
     <div class="container">
         <div class="input-container">
-            <input type="text" id="next2min" name="start" class="input1">
+            <input type="number" id="next2min" name="start" class="input1">
         </div>
         <div class="input-container">
             <span>~</span>
         </div>
         <div class="input-container">
-            <input type="text" id="next2max" name="end" class="input1">
+            <input type="number" id="next2max" name="end" class="input1">
         </div>
     </div>
     <label>フィルタ機能を有効化する</label>
@@ -113,6 +113,8 @@
     <input type="checkbox" id="hidep1" name="hidep1" checked><br>
     <label>「その次の%」を非表示にする</label>
     <input type="checkbox" id="hidep2" name="hidep2" checked><br>
+    <br>
+    <span>小数点以下には、計算上生じる誤差があります。</span>
 </div>
 <br>
 </div>
