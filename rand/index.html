@@ -62,6 +62,7 @@
 <body>
 <div class="container">
     <h1>乱数総当たりツール</h1>
+    <a href="list.html" target=”_blank”>簡易乱数表はこちら</a><br>
     <!--form action="#" method="post"-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <label for="seedStart">開始seed</label>
@@ -154,14 +155,12 @@
         let queryParams = new URLSearchParams("");
 
         list.forEach(inputElement => {
-            console.log(inputElement)
             if (inputElement.value !== "") {
                 const inputId = inputElement.id;
                 const inputValue = inputElement.value;
                 queryParams.set(inputId, inputValue);
             }
         });
-        console.log(queryParams.toString());
 
         let str = "";
         for (let i = 0; i <= TYPE_SELECT_COUNT; i++) {
@@ -187,8 +186,6 @@
         }else{
             newURL = `${window.location.origin}${window.location.pathname}`;
         }
-
-        console.log(newURL);
         //window.history.replaceState({}, '', newURL);
         document.getElementById('share').value = newURL;
         URL = newURL;
@@ -277,7 +274,6 @@
             if (select === "") {
                 break;
             }
-            console.log(select);
             need[i] = select;
         }
         // if (need.length === 0){
@@ -287,13 +283,6 @@
         document.getElementById('error').innerHTML = "";
         document.getElementById('info').innerHTML = "";
         document.getElementById('info1').innerHTML = "";
-        console.log(need);
-
-        //need = ['ようす', 'こうげき', 'こうげき', 'ようす', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす', 'こうげき', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす', 'こうげき'];
-        //0x3272f 18個
-        //need = ['ようす', 'こうげき', 'こうげき', 'ようす', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす', 'こうげき', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', "こうげき"];
-        //need = ['こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'こうげき'];
-        //need = ['ようす', 'こうげき', 'ようす', 'こうげき', 'こうげき', 'ようす', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす'];
         let search = "";
         for (let m = 0; m <= need.length - 1; m++) {
             if (need[m] === "ようす") {
@@ -331,7 +320,6 @@
                 } else {
                     str += "1";
                 }
-                //console.log(str);
                 if (str.endsWith(search)) {
                     let startF = currentF - need.length + 1;
                     if (nowCount1 !== null && currentF !== nowCount1) {
@@ -340,11 +328,8 @@
                         continue;
                     }
                     ++found;
-                    //console.log("!! 0x" + initial.toString(16) + " " + startF + " " + currentF + 1);
-                    let test = "a";
-                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed='+initial.toString(16)+'&start='+currentF+'&end='+(startF+500)+'" target=”_blank”>'+test+'</a>'];
+                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed='+initial.toString(16)+'&start='+(currentF + 1)+'&end='+(startF+500)+'" target=”_blank”>'+initial.toString(16)+'</a>'];
                     var row = table.insertRow(-1); // テーブルの末尾に行を追加
-                    console.log('<a href="list.html?seed='+initial.toString(16)+'&start='+currentF+'&end='+(startF+500)+' target=”_blank”>'+initial.toString(16)+'</a>');
                     for (var j = 0; j < 5; j++) {
                         var cell = row.insertCell(j);
                         cell.innerHTML = data[j];
