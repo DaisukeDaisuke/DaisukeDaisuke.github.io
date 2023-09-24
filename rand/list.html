@@ -133,6 +133,7 @@
 <script>
     let URL = "";
     let hasUpdate = false;
+    let hasTableUpdate = false;
 
     setInterval(function () {
         if (hasUpdate && URL !== "") {
@@ -143,9 +144,16 @@
             } else {
                 document.title = "簡易乱数表";
             }
-
+        }
+        if (hasTableUpdate === true){
+            hasTableUpdate = false;
+            updateTable();
         }
     }, 1000);
+
+    function update1(){
+
+    }
 
     function decode(input) {
         if (input === "") {
@@ -444,8 +452,10 @@
         } else {
             c2.visible(true);
         }
+    }
 
-
+    function preUpdateTable(){
+        hasTableUpdate = true;
     }
 
     window.addEventListener('load', () => {
@@ -467,7 +477,7 @@
             document.getElementById('hidep2'),
         ];
         list.forEach(inputElement => {
-            inputElement.addEventListener('input', updateTable);
+            inputElement.addEventListener('input', preUpdateTable);
         });
         updateTable();
     });
