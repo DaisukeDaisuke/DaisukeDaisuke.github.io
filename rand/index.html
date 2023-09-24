@@ -341,9 +341,11 @@
                     }
                     ++found;
                     //console.log("!! 0x" + initial.toString(16) + " " + startF + " " + currentF + 1);
-                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1];
+                    let test = "a";
+                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed='+initial.toString(16)+'&start='+currentF+'&end='+(startF+500)+'" target=”_blank”>'+test+'</a>'];
                     var row = table.insertRow(-1); // テーブルの末尾に行を追加
-                    for (var j = 0; j < 4; j++) {
+                    console.log('<a href="list.html?seed='+initial.toString(16)+'&start='+currentF+'&end='+(startF+500)+' target=”_blank”>'+initial.toString(16)+'</a>');
+                    for (var j = 0; j < 5; j++) {
                         var cell = row.insertCell(j);
                         cell.innerHTML = data[j];
                     }
