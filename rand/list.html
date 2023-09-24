@@ -78,6 +78,20 @@
             <input type="text" id="max" name="end" class="input1">
         </div>
     </div>
+    <label>次の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="nextmin" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="nextmax" name="end" class="input1">
+        </div>
+    </div>
+    <label>フィルタ機能を有効化する</label>
+    <input type="checkbox" id="filter" name="filter" checked >
     </div>
     <br>
 </div>
@@ -88,6 +102,7 @@
         <th>seed</th>
         <th>%</th>
         <th>しらべる</th>
+        <th>次の%</th>
     </tr>
     </thead>
 </table>
@@ -127,7 +142,12 @@
         if (document.getElementById('max').value !== "") {
             list.push(document.getElementById('max'));
         }
-
+        if (document.getElementById('nextmin').value !== "") {
+            list.push(document.getElementById('nextmin'));
+        }
+        if (document.getElementById('nextmax').value !== "") {
+            list.push(document.getElementById('nextmax'));
+        }
         let queryParams = new URLSearchParams("");
 
         list.forEach(inputElement => {
@@ -137,6 +157,11 @@
                 queryParams.set(inputId, inputValue);
             }
         });
+
+        if (document.getElementById('filter').checked !== true) {
+            queryParams.set("filter", "0");
+        }
+
         let newURL;
         if (queryParams.toString() !== "") {
             newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
@@ -157,6 +182,8 @@
             document.getElementById('end'),
             document.getElementById('min'),
             document.getElementById('max'),
+            document.getElementById('nextmin'),
+            document.getElementById('nextmax'),
         ];
         let queryParams = new URLSearchParams(window.location.search);
 
@@ -167,6 +194,10 @@
                 inputElement.value = paramValue;
             }
         });
+
+        if (queryParams.get("filter")){
+            document.getElementById('filter').checked = false;
+        }
         updateTable();
     }
 
@@ -193,26 +224,43 @@
         const end = Math.max(tmp1, tmp2);
         let min = decode(document.getElementById('min').value);
         let max = decode(document.getElementById('max').value);
+        let nextmin = decode(document.getElementById('nextmin').value);
+        let nextmax = decode(document.getElementById('nextmax').value);
 
+        let checked = document.getElementById('filter').checked;
         let output = [];
+        console.log(seedStart);
         let now = BigInt(seedStart);
         for (let currentF = 1; currentF <= end; currentF++) {
             now = rand(now); //乱数を更新
             if (currentF < start){
                 continue;
             }
+            let tmp = rand(now);
+            let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
+            let percentInt = calculatePercentInt(tmp); //調べるは+1した乱数を参照するため
+            let status = (((percentInt % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
 
-            let percent = calculatePercent(rand(now)); //調べるは+1した乱数を参照するため
-            let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+            let nextpercent = calculatePercent(rand(tmp));
+            //let nextstatus = (((nextpercent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
 
-            if (min !== null&&min > percent){
-                continue;
+            if (checked){
+                if (min !== null&&min > percent){
+                    continue;
+                }
+                if (max !== null&&max < percent){
+                    continue;
+                }
+
+                if (nextmin !== null&&nextmin > nextpercent){
+                    continue;
+                }
+                if (nextmax !== null&&nextmax < nextpercent){
+                    continue;
+                }
             }
-            if (max !== null&&max < percent){
-                continue;
-            }
 
-            output.push([currentF, "0x"+now.toString(16).toUpperCase(), percent, status]);
+            output.push([currentF, "0x"+now.toString(16).toUpperCase(), percent, status, nextpercent]);
         }
         maketable(output);
     }
@@ -252,6 +300,9 @@
             document.getElementById('end'),
             document.getElementById('min'),
             document.getElementById('max'),
+            document.getElementById('nextmin'),
+            document.getElementById('nextmax'),
+            document.getElementById('filter'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', updateTable);

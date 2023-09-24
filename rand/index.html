@@ -313,7 +313,7 @@
             let now = BigInt(initial);//0x3275c
             for (let currentF = 1; currentF <= end; currentF++) {
                 now = rand(now); //乱数を更新
-                let percent = calculatePercent(rand(now)); //調べるは+1した乱数を参照するため
+                let percent = calculatePercentInt(rand(now)); //調べるは+1した乱数を参照するため
                 let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
                 if (status === "ようす") {
                     str += "0";
@@ -357,6 +357,19 @@
         //}
         //console.log(j+" => 0x"+now.toString(16)+" => "+percent.toString(10)+", "+(((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき"));
     }
+
+    // let seed = BigInt("0x267bea47bbc4ea03");
+    // //let rand1 = seed * BigInt("6726279311198226789") + BigInt("2531011") >> BigInt(32);
+    // // let test = seed / BigInt("4294967296");
+    // // console.log(test);
+    // let rand2 = GetRand(seed);//GetRand(seed);
+    // console.log(rand2);
+    // //console.log((rand2 * BigInt("100")) / BigInt("4294967296"));
+    //
+    // function GetRand(seed){
+    //     return (seed * BigInt("0x5D588B656C078965") + BigInt("0x269EC3")) >> BigInt("32");
+    // }
+    //console.log(rand1 * BigInt(100) / BigInt(4294967296.0));
 </script>
 </body>
 </html>
