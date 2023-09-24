@@ -67,7 +67,8 @@
             <input type="text" id="end" name="end" class="input1" value="100">
         </div>
     </div>
-    <label>% 下限値～上限値</label>
+    <label>% 下限値～上限値</label><br>
+    <span>(以上～以下)</span><br>
     <div class="container">
         <div class="input-container">
             <input type="text" id="min" name="start" class="input1">
@@ -91,12 +92,31 @@
             <input type="text" id="nextmax" name="end" class="input1">
         </div>
     </div>
-    <label>フィルタ機能を有効化する</label>
-    <input type="checkbox" id="filter" name="filter" checked >
+    <label>その次の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="next2min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="next2max" name="end" class="input1">
+        </div>
     </div>
-    <br>
+    <label>フィルタ機能を有効化する</label>
+    <input type="checkbox" id="filter" name="filter" checked><br><br>
+    <span>非表示設定</span><br>
+    <label>「seed」を非表示にする</label>
+    <input type="checkbox" id="hideseeds" name="hideseeds"><br>
+    <label>「次の%」を非表示にする</label>
+    <input type="checkbox" id="hidep1" name="hidep1" checked><br>
+    <label>「その次の%」を非表示にする</label>
+    <input type="checkbox" id="hidep2" name="hidep2" checked><br>
 </div>
-<table id="example" class="example">
+<br>
+</div>
+<table id="example" class="example" style="width:100%">
     <thead>
     <tr>
         <th>[F]</th>
@@ -104,6 +124,7 @@
         <th>%</th>
         <th>しらべる</th>
         <th>次の%</th>
+        <th>その次の%</th>
     </tr>
     </thead>
 </table>
@@ -111,18 +132,28 @@
     let URL = "";
     let hasUpdate = false;
 
-    setInterval(function(){
-        if (hasUpdate&&URL !== ""){
-            hasUpdate =false;
+    setInterval(function () {
+        if (hasUpdate && URL !== "") {
+            hasUpdate = false;
             window.history.replaceState({}, '', URL);
-        }
-    },1000);
+            if (document.getElementById('seed').value !== "") {
+                document.title = document.getElementById('seed').value + "の簡易乱数表";
+            } else {
+                document.title = "簡易乱数表";
+            }
 
-    function decode(input){
-        if (input === ""){
+        }
+    }, 1000);
+
+    function decode(input) {
+        if (input === "") {
             return null;
         }
-        return parseInt(input);
+        let purse = parseFloat(input);
+        if (isNaN(purse)){
+            return null;
+        }
+        return purse;
     }
 
     function saveInputValuesToURL1() {
@@ -149,6 +180,12 @@
         if (document.getElementById('nextmax').value !== "") {
             list.push(document.getElementById('nextmax'));
         }
+        if (document.getElementById('next2min').value !== "") {
+            list.push(document.getElementById('next2min'));
+        }
+        if (document.getElementById('next2max').value !== "") {
+            list.push(document.getElementById('next2max'));
+        }
         let queryParams = new URLSearchParams("");
 
         list.forEach(inputElement => {
@@ -161,6 +198,16 @@
 
         if (document.getElementById('filter').checked !== true) {
             queryParams.set("filter", "0");
+        }
+
+        if (document.getElementById('hideseeds').checked === true) {
+            queryParams.set("hideseeds", "1");
+        }
+        if (document.getElementById('hidep1').checked === false) {
+            queryParams.set("hidep1", "0");
+        }
+        if (document.getElementById('hidep2').checked === false) {
+            queryParams.set("hidep2", "0");
         }
 
         let newURL;
@@ -185,6 +232,10 @@
             document.getElementById('max'),
             document.getElementById('nextmin'),
             document.getElementById('nextmax'),
+            document.getElementById('next2min'),
+            document.getElementById('next2max'),
+
+
         ];
         let queryParams = new URLSearchParams(window.location.search);
 
@@ -196,27 +247,40 @@
             }
         });
 
-        if (queryParams.get("filter")){
+        if (queryParams.get("filter") === "0") {
             document.getElementById('filter').checked = false;
         }
+
+        if (queryParams.get("hideseeds") === "1") {
+            document.getElementById('hideseeds').checked = true;
+        }
+
+        if (queryParams.get("hidep1") === "0") {
+            document.getElementById('hidep1').checked = false;
+        }
+
+        if (queryParams.get("hidep2") === "0") {
+            document.getElementById('hidep2').checked = false;
+        }
+
         updateTable();
     }
 
     function updateTable() {
         saveInputValuesToURL1();
         const inputElement = document.getElementById('seed');
-        const seedStart =  inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
-        if (seedStart === null){
+        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        if (seedStart === null) {
             maketable([]);
             return;
         }
         const inputElement1 = document.getElementById('start').value;
         const inputElement2 = document.getElementById('end').value;
-        if (inputElement1 === ""){
+        if (inputElement1 === "") {
             maketable([]);
             return;
         }
-        if (inputElement2 === ""){
+        if (inputElement2 === "") {
             maketable([]);
         }
         const tmp1 = parseInt(inputElement1);
@@ -227,39 +291,107 @@
         let max = decode(document.getElementById('max').value);
         let nextmin = decode(document.getElementById('nextmin').value);
         let nextmax = decode(document.getElementById('nextmax').value);
-
+        let next2min = decode(document.getElementById('next2min').value);
+        let next2max = decode(document.getElementById('next2max').value);
         let checked = document.getElementById('filter').checked;
+        let hideseeds = document.getElementById('hideseeds').checked;
+        let hidep1 = document.getElementById('hidep1').checked;
+        let hidep2 = document.getElementById('hidep2').checked;
         let output = [];
         let now = BigInt(seedStart);
+        //0だけ特別に処理する
+        if (start === 0) {
+            do{
+                let tmp = rand(now);
+                let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
+                let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+                let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
+                let tmp2 = rand(tmp);
+                let nextpercent = calculatePercentFloat(tmp2);
+                let next2percent = calculatePercentFloat(rand(tmp2));
+                let viewSeed = "0x" + seedStart.toString(16).toUpperCase();
+                if (hideseeds) {
+                    viewSeed = "";
+                }
+                if (hidep1) {
+                    nextpercent = "";
+                }
+                if (hidep2) {
+                    next2percent = "";
+                }
+                if (checked) {
+                    if (min !== null && min > percentfloat) {
+                        break;
+                    }
+                    if (max !== null && max < percentfloat) {
+                        break;
+                    }
+
+                    if (nextmin !== null && nextmin > nextpercent) {
+                        break;
+                    }
+                    if (nextmax !== null && nextmax < nextpercent) {
+                        break;
+                    }
+                    if (next2min !== null && next2min > next2percent) {
+                        break;
+                    }
+                    if (next2max !== null && next2max < next2percent) {
+                        break;
+                    }
+                }
+                output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent]);
+            }while (false);
+        }
+        //他の処理
         for (let currentF = 1; currentF <= end; currentF++) {
             now = rand(now); //乱数を更新
-            if (currentF < start){
+            if (currentF < start) {
                 continue;
             }
             let tmp = rand(now);
             let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
             let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
 
-            let nextpercent = calculatePercent(rand(tmp));
-            //let nextstatus = (((nextpercent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+            let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
+            let tmp2 = rand(tmp);
+            let nextpercent = calculatePercentFloat(tmp2);
+            let next2percent = calculatePercentFloat(rand(tmp2));
 
-            if (checked){
-                if (min !== null&&min > percent){
+            if (checked) {
+                if (min !== null && min > percentfloat) {
                     continue;
                 }
-                if (max !== null&&max < percent){
+                if (max !== null && max < percentfloat) {
                     continue;
                 }
 
-                if (nextmin !== null&&nextmin > nextpercent){
+                if (nextmin !== null && nextmin > nextpercent) {
                     continue;
                 }
-                if (nextmax !== null&&nextmax < nextpercent){
+                if (nextmax !== null && nextmax < nextpercent) {
+                    continue;
+                }
+                if (next2min !== null && next2min > next2percent) {
+                    continue;
+                }
+                if (next2max !== null && next2max < next2percent) {
                     continue;
                 }
             }
 
-            output.push([currentF, "0x"+now.toString(16).toUpperCase(), percent, status, nextpercent]);
+            let viewSeed = "0x" + now.toString(16).toUpperCase();
+            if (hideseeds) {
+                viewSeed = "";
+            }
+            if (hidep1) {
+                nextpercent = "";
+            }
+            if (hidep2) {
+                next2percent = "";
+            }
+
+            output.push([currentF, viewSeed, percentfloat, status, nextpercent, next2percent]);
         }
         maketable(output);
     }
@@ -288,6 +420,30 @@
         }
         // テーブルの作成
         table = $('#example').DataTable(tableOptions);
+        // Toggle the visibility
+
+
+        let table1 = $('#example').DataTable();
+        let c = table1.column(1);
+        if (document.getElementById('hideseeds').checked === true) {
+            c.visible(false);
+        } else {
+            c.visible(true);
+        }
+        let c1 = table1.column(4);
+        if (document.getElementById('hidep1').checked === true) {
+            c1.visible(false);
+        } else {
+            c1.visible(true);
+        }
+        let c2 = table1.column(5);
+        if (document.getElementById('hidep2').checked === true) {
+            c2.visible(false);
+        } else {
+            c2.visible(true);
+        }
+
+
     }
 
     window.addEventListener('load', () => {
@@ -302,6 +458,11 @@
             document.getElementById('nextmin'),
             document.getElementById('nextmax'),
             document.getElementById('filter'),
+            document.getElementById('next2min'),
+            document.getElementById('next2max'),
+            document.getElementById('hideseeds'),
+            document.getElementById('hidep1'),
+            document.getElementById('hidep2'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', updateTable);

@@ -63,6 +63,7 @@
 <div class="container">
     <h1>乱数総当たりツール</h1>
     <a href="list.html" target=”_blank”>簡易乱数表はこちら</a><br>
+    <span>1以上の乱数を総当たりします</span><br>
     <!--form action="#" method="post"-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <label for="seedStart">開始seed</label>
@@ -72,7 +73,7 @@
 
     <label for="end">1seed辺りの調査回数</label><br>
     <span>(制限する時は現在F+入力個数以上にする必要があります。)</span><br>
-    <input type="text" id="end" name="end" value="500"><br>
+    <input type="text" id="end" name="end" value="1000"><br>
     <label for="maxCount">表示上限</label>
     <input type="text" id="maxCount" name="maxCount" value="1000"><br>
     <span>消費数指定、未入力で乱数を特定するには20個以上の入力が必要です</span><br>
@@ -136,7 +137,7 @@
         if (document.getElementById('seedEnd').value !== "0x327ff"){
             list.push(document.getElementById('seedEnd'));
         }
-        if (document.getElementById('end').value !== "500"){
+        if (document.getElementById('end').value !== "1000"){
             list.push(document.getElementById('end'));
         }
         if (document.getElementById('maxCount').value !== "1000"){
@@ -311,6 +312,7 @@
             }
             let str = "";
             let now = BigInt(initial);//0x3275c
+
             for (let currentF = 1; currentF <= end; currentF++) {
                 now = rand(now); //乱数を更新
                 let percent = calculatePercent(rand(now)); //調べるは+1した乱数を参照するため
