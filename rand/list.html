@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易乱数表</title>
+    <script src="rand.js"></script>
+    <script src="main.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/select/1.6.2/css/select.dataTables.min.css" rel="stylesheet"/>
+
+    <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        .container {
+            margin: 20px auto;
+            max-width: 450px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+
+        }
+
+        .input1 {
+            width: 49%;
+            padding: 15px;
+        }
+
+        .input-container {
+            display: inline-block; /* input要素を横並びに配置するためのスタイル */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>簡易乱数表</h1>
+    <label for="seed">初期seed</label>
+    <input type="text" id="seed" name="seed" class="input"><br>
+    <label for="share">この入力を共有</label>
+    <input type="text" id="share" name="share" onclick="this.select()" class="input"><br>
+    <label>消費数</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="start" name="start" class="input1" value="0">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="end" name="end" class="input1" value="100">
+        </div>
+    </div>
+    <label>% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="max" name="end" class="input1">
+        </div>
+    </div>
+    </div>
+    <br>
+</div>
+<table id="example" class="example">
+    <thead>
+    <tr>
+        <th>[F]</th>
+        <th>seed</th>
+        <th>%</th>
+        <th>しらべる</th>
+    </tr>
+    </thead>
+</table>
+<script>
+    let URL = "";
+    let hasUpdate = false;
+
+    setInterval(function(){
+        if (hasUpdate&&URL !== ""){
+            hasUpdate =false;
+            window.history.replaceState({}, '', URL);
+        }
+    },1000);
+
+    function decode(input){
+        if (input === ""){
+            return null;
+        }
+        return parseInt(input);
+    }
+
+    function saveInputValuesToURL1() {
+        let list = [];
+
+        if (document.getElementById('seed').value !== "") {
+            list.push(document.getElementById('seed'));
+        }
+        if (document.getElementById('start').value !== "0") {
+            list.push(document.getElementById('start'));
+        }
+        if (document.getElementById('end').value !== "100") {
+            list.push(document.getElementById('end'));
+        }
+        if (document.getElementById('min').value !== "") {
+            list.push(document.getElementById('min'));
+        }
+        if (document.getElementById('max').value !== "") {
+            list.push(document.getElementById('max'));
+        }
+
+        let queryParams = new URLSearchParams("");
+
+        list.forEach(inputElement => {
+            if (inputElement.value !== "") {
+                const inputId = inputElement.id;
+                const inputValue = inputElement.value;
+                queryParams.set(inputId, inputValue);
+            }
+        });
+        let newURL;
+        if (queryParams.toString() !== "") {
+            newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        } else {
+            newURL = `${window.location.origin}${window.location.pathname}`;
+        }
+
+        //window.history.replaceState({}, '', newURL);
+        document.getElementById('share').value = newURL;
+        URL = newURL;
+        hasUpdate = true;
+    }
+
+    function loadInputValuesFromURL1() {
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('min'),
+            document.getElementById('max'),
+        ];
+        let queryParams = new URLSearchParams(window.location.search);
+
+        list.forEach(inputElement => {
+            const inputId = inputElement.id;
+            const paramValue = queryParams.get(inputId);
+            if (paramValue !== null) {
+                inputElement.value = paramValue;
+            }
+        });
+        updateTable();
+    }
+
+    function updateTable() {
+        saveInputValuesToURL1();
+        const inputElement = document.getElementById('seed');
+        const seedStart =  inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        if (seedStart === null){
+            maketable([]);
+            return;
+        }
+        const inputElement1 = document.getElementById('start').value;
+        const inputElement2 = document.getElementById('end').value;
+        if (inputElement1 === ""){
+            maketable([]);
+            return;
+        }
+        if (inputElement2 === ""){
+            maketable([]);
+        }
+        const tmp1 = parseInt(inputElement1);
+        const tmp2 = parseInt(inputElement2);
+        const start = Math.min(tmp1, tmp2);
+        const end = Math.max(tmp1, tmp2);
+        let min = decode(document.getElementById('min').value);
+        let max = decode(document.getElementById('max').value);
+
+        let output = [];
+        let now = BigInt(seedStart);
+        for (let currentF = 1; currentF <= end; currentF++) {
+            now = rand(now); //乱数を更新
+            if (currentF < start){
+                continue;
+            }
+
+            let percent = calculatePercent(rand(now)); //調べるは+1した乱数を参照するため
+            let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+
+            if (min !== null&&min > percent){
+                continue;
+            }
+            if (max !== null&&max < percent){
+                continue;
+            }
+
+            output.push([currentF, "0x"+now.toString(16).toUpperCase(), percent, status]);
+        }
+        maketable(output);
+    }
+
+
+    function maketable(tableData) {
+        if ($.fn.dataTable.isDataTable('#example')) {
+            table = $('#example').DataTable();
+            table.destroy();
+        }
+
+        // オプションの設定
+        var tableOptions = {
+            "dom": 'Bfrtip',
+            "buttons": [
+                'colvis',
+                'excel',
+                'csv',
+                'pdf',
+                'copy',
+                'print'
+            ],
+            "data": tableData,
+            "select": true,
+            "displayLength": 1000,
+        }
+        // テーブルの作成
+        table = $('#example').DataTable(tableOptions);
+    }
+
+    window.addEventListener('load', () => {
+        loadInputValuesFromURL1();
+        saveInputValuesToURL1();
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('min'),
+            document.getElementById('max'),
+        ];
+        list.forEach(inputElement => {
+            inputElement.addEventListener('input', updateTable);
+        });
+        updateTable();
+    });
+
+
+</script>
+</body>
+</html>

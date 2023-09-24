@@ -63,7 +63,7 @@
 <div class="container">
     <h1>乱数総当たりツール</h1>
     <!--form action="#" method="post"-->
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <label for="seedStart">開始seed</label>
     <input type="text" id="seedStart" name="seedStart" value="0x32700">
     <label for="end">終了seed</label>
@@ -79,6 +79,8 @@
     <input type="text" id="nowCount" name="nowCount"><br>
     <label for="end">最後の項目の消費数(任意、優先)</label>
     <input type="text" id="nowCount1" name="nowCount1"><br>
+    <label for="seed1">初期シード指定(指定したシード値以外除外,例:0x3272f)</label>
+    <input type="text" id="seed1" name="seed1"><br>
     <button class="red-button" type="submit" onclick="onReset1()">リセット</button><br>
     <label for="end">この入力を共有</label>
     <input type="text" id="share" name="share" onclick="this.select()"><br>
@@ -94,10 +96,15 @@
         <tr>
             <th>seed</th>
             <th>開始[F]</th>
+            <th>最終項目[F]</th>
             <th>現在地[F]</th>
+            <th>リスト表示</th>
         </tr>
     </table>
     <span id="error"></span><br>
+    <span id="info1"></span><br>
+    <span id="info"></span><br>
+
 
 
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
@@ -107,12 +114,12 @@
     const TYPE_SELECT_COUNT = 50;
     let URL = "";
     let hasUpdate = false;
-    // setInterval(function(){
-    //     if (hasUpdate&&URL !== ""){
-    //         hasUpdate =false;
-    //         window.history.replaceState({}, '', URL);
-    //     }
-    // },1000);
+    setInterval(function(){
+        if (hasUpdate&&URL !== ""){
+            hasUpdate =false;
+            window.history.replaceState({}, '', URL);
+        }
+    },1000);
     for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
         generateDropdown();
     }
@@ -120,25 +127,41 @@
         window.location.href = `${window.location.origin}${window.location.pathname}`;
     }
     function saveInputValuesToURL() {
-        let list = [
-            document.getElementById('seedStart'),
-            document.getElementById('seedEnd'),
-            document.getElementById('end'),
-            document.getElementById('maxCount'),
-            document.getElementById('nowCount'),
-            document.getElementById('nowCount1')
-        ];
+        let list = [];
 
-        let queryParams = new URLSearchParams(window.location.search);
+        if (document.getElementById('seedStart').value !== "0x32700"){
+            list.push(document.getElementById('seedStart'));
+        }
+        if (document.getElementById('seedEnd').value !== "0x327ff"){
+            list.push(document.getElementById('seedEnd'));
+        }
+        if (document.getElementById('end').value !== "500"){
+            list.push(document.getElementById('end'));
+        }
+        if (document.getElementById('maxCount').value !== "1000"){
+            list.push(document.getElementById('maxCount'));
+        }
+        if (document.getElementById('nowCount').value !== ""){
+            list.push(document.getElementById('nowCount'));
+        }
+        if (document.getElementById('nowCount1').value !== ""){
+            list.push(document.getElementById('nowCount1'));
+        }
+        if (document.getElementById('seed1').value !== ""){
+            list.push(document.getElementById('seed1'));
+        }
 
+        let queryParams = new URLSearchParams("");
 
         list.forEach(inputElement => {
+            console.log(inputElement)
             if (inputElement.value !== "") {
                 const inputId = inputElement.id;
                 const inputValue = inputElement.value;
                 queryParams.set(inputId, inputValue);
             }
         });
+        console.log(queryParams.toString());
 
         let str = "";
         for (let i = 0; i <= TYPE_SELECT_COUNT; i++) {
@@ -152,14 +175,20 @@
                 str += "1";
             }
         }
-        queryParams.set("status", str);
-        // if (str !== ""){
-        //     queryParams.set("status", str);
-        // }
+        if (str !== ""){
+            queryParams.set("status", str);
+        }
 
 
         // 現在のURLにクエリパラメータを設定
-        const newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        let newURL;
+        if (queryParams.toString() !== ""){
+            newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        }else{
+            newURL = `${window.location.origin}${window.location.pathname}`;
+        }
+
+        console.log(newURL);
         //window.history.replaceState({}, '', newURL);
         document.getElementById('share').value = newURL;
         URL = newURL;
@@ -173,7 +202,8 @@
             document.getElementById('end'),
             document.getElementById('maxCount'),
             document.getElementById('nowCount'),
-            document.getElementById('nowCount1')
+            document.getElementById('nowCount1'),
+            document.getElementById('seed1')
         ];
 
         let queryParams = new URLSearchParams(window.location.search);
@@ -190,7 +220,6 @@
         if (input === null){
             return;
         }
-        let str = "";
         for (var i = 0; i < input.length; i++) {
             let status = "こうげき";
             if (input.charAt(i) === "0") {
@@ -211,7 +240,8 @@
             document.getElementById('end'),
             document.getElementById('maxCount'),
             document.getElementById('nowCount'),
-            document.getElementById('nowCount1')
+            document.getElementById('nowCount1'),
+            document.getElementById('seed1')
         ];
 
         list.forEach(inputElement => {
@@ -220,7 +250,6 @@
     });
 
     function onRun() {
-        console.log(0x32700);
         const seedStart = decodeHexValue(document.getElementById('seedStart').value);
         const seedEnd = decodeHexValue(document.getElementById('seedEnd').value);
         const end = parseInt(document.getElementById('end').value);
@@ -232,6 +261,8 @@
         if (nowCount !== null && nowCount1 !== null) {
             nowCount = null;
         }
+        let inputElement2 = document.getElementById('seed1');
+        let seed1 = inputElement2.value.trim() !== '' ? decodeHexValue(inputElement2.value) : null;
         if (seedEnd - seedStart < 0) {
             window.alert("開始seedと終了シードが不正です");
             return;
@@ -254,7 +285,9 @@
         //     return;
         // }
         document.getElementById('error').innerHTML = "";
-        console.log(need)
+        document.getElementById('info').innerHTML = "";
+        document.getElementById('info1').innerHTML = "";
+        console.log(need);
 
         //need = ['ようす', 'こうげき', 'こうげき', 'ようす', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす', 'こうげき', 'ようす', 'ようす', 'こうげき', 'こうげき', 'こうげき', 'こうげき', 'ようす', 'こうげき'];
         //0x3272f 18個
@@ -284,6 +317,9 @@
 
         let found = 0;
         for (let initial = seedStart; initial <= seedEnd; initial++) {
+            if (seed1 !== null&&initial !== seed1){
+                continue;
+            }
             let str = "";
             let now = BigInt(initial);//0x3275c
             for (let currentF = 1; currentF <= end; currentF++) {
@@ -304,10 +340,10 @@
                         continue;
                     }
                     ++found;
-                    console.log("!! 0x" + initial.toString(16) + " " + startF + " " + currentF + 1);
-                    let data = ["0x" + initial.toString(16), startF, currentF + 1];
+                    //console.log("!! 0x" + initial.toString(16) + " " + startF + " " + currentF + 1);
+                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1];
                     var row = table.insertRow(-1); // テーブルの末尾に行を追加
-                    for (var j = 0; j < 3; j++) {
+                    for (var j = 0; j < 4; j++) {
                         var cell = row.insertCell(j);
                         cell.innerHTML = data[j];
                     }
@@ -318,9 +354,19 @@
                 break;
             }
         }
+        if (seed1 !== null){
+            document.getElementById('info1').innerHTML = "「初期シード = 0x"+seed1.toString(16)+"」でフィルターされています。";
+        }
+        if (nowCount !== null) {
+            document.getElementById('info').innerHTML = "「1つめの項目の消費数 = "+nowCount+"」でフィルターされています。";
+        }
+        if (nowCount1 !== null) {
+            document.getElementById('info').innerHTML = "「最後の項目の消費数 = "+nowCount1+"」でフィルターされています。<br>この項目が正しくない場合、このツールは間違った初期シードを表示します";
+        }
         if (found === 0) {
             document.getElementById('error').innerHTML = "一致なし";
         }
+
         //}
         //console.log(j+" => 0x"+now.toString(16)+" => "+percent.toString(10)+", "+(((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき"));
     }
