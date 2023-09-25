@@ -1,16 +1,13 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <title>乱数総当たりツール</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <style>
-        body {
-            text-align: center;
-        }
-
         .container {
+            text-align: center;
             margin: 20px auto;
             max-width: 450px;
         }
@@ -120,10 +117,24 @@
     <span id="info1"></span><br>
     <span id="info"></span><br>
 
-
-
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
     <!--/form-->
+</div>
+<br>
+<br>
+<div>
+    <span>使い方</span><br>
+    <ul style="list-style: disc; padding-left: 40px; color: black;">
+        <li>シンボルに接触し、戦闘に入ります</li>
+        <li>戦闘開始時に「魔物たちはまだこちらに気づいていない」または「魔物たちはおどろきとまどっている」と表示(「[魔物名]があらわれた」以外)された場合、全員「ぼうぎょ」して1ターン待ちます。</li>
+        <li>このツールを開き、「しらべる」コマンドで、</li>
+        <ul style="list-style: disc; padding-left: 40px; color: black;">
+            <li>「[魔物名]はこちらのようすをうかがっている！」と表示された場合「ようす」</li>
+            <li>「[魔物名]はこうげきにそなえている。」と表示された場合「こうげき」</li>
+        </ul>
+        <li>を「選択してください」付近のドロップダウンに入力します。</li>
+        <li>ツールに18個～23個入力した時点で、「開始」ボタンを押して、検索結果を確認します(候補が1つになるまで入力を繰り返してください)</li>
+    </ul>
 </div>
 <script>
     const TYPE_SELECT_COUNT = 50;
