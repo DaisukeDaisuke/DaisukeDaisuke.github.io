@@ -21,6 +21,12 @@
             margin-bottom: 10px;
         }
 
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
         select {
             width: 100%;
             padding: 15px; /* 高さを増やす */
@@ -73,14 +79,14 @@
 
     <label for="end">1seed辺りの調査回数</label><br>
     <span>(制限する時は現在F+入力個数以上にする必要があります。)</span><br>
-    <input type="text" id="end" name="end" value="1000"><br>
+    <input type="number" id="end" name="end" value="1000"><br>
     <label for="maxCount">表示上限</label>
-    <input type="text" id="maxCount" name="maxCount" value="1000"><br>
+    <input type="number" id="maxCount" name="maxCount" value="1000"><br>
     <span>消費数指定、未入力で乱数を特定するには20個以上の入力が必要です</span><br>
     <label for="end">1つめの項目の消費数(任意)</label>
-    <input type="text" id="nowCount" name="nowCount"><br>
+    <input type="number" id="nowCount" name="nowCount"><br>
     <label for="end">最後の項目の消費数(任意、優先)</label>
-    <input type="text" id="nowCount1" name="nowCount1"><br>
+    <input type="number" id="nowCount1" name="nowCount1"><br>
     <label for="seed1">初期シード指定(指定したシード値以外除外,例:0x3272f)</label>
     <input type="text" id="seed1" name="seed1"><br>
     <button class="red-button" type="submit" onclick="onReset1()">リセット</button><br>
@@ -330,7 +336,7 @@
                         continue;
                     }
                     ++found;
-                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed='+initial.toString(16)+'&start='+(currentF + 1)+'&end='+(startF+500)+'" target=”_blank”>'+initial.toString(16)+'</a>'];
+                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed='+initial.toString(16)+'&start='+(currentF + 1)+'&end='+(startF+500)+'#table" target=”_blank”>'+initial.toString(16)+'</a>'];
                     var row = table.insertRow(-1); // テーブルの末尾に行を追加
                     for (var j = 0; j < 5; j++) {
                         var cell = row.insertCell(j);
