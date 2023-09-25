@@ -114,7 +114,8 @@
     <label>「その次の%」を非表示にする</label>
     <input type="checkbox" id="hidep2" name="hidep2" checked><br>
     <br>
-    <span>小数点以下には、計算上生じる誤差があります。</span>
+    <span>小数点以下には、計算上生じる誤差があります。</span><br><br>
+    <span id="info"></span>
 </div>
 <br>
 </div>
@@ -309,6 +310,11 @@
         let hidep1 = document.getElementById('hidep1').checked;
         let hidep2 = document.getElementById('hidep2').checked;
         let output = [];
+        if (checked){
+            document.getElementById('info').innerText = "";
+        }else{
+            document.getElementById('info').innerText = "フィルタ機能が無効化されています。";
+        }
         let now = BigInt(seedStart);
         //0だけ特別に処理する
         if (start === 0) {
