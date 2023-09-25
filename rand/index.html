@@ -77,6 +77,13 @@
     <label for="end">終了seed</label>
     <input type="text" id="seedEnd" name="seedEnd" value="0x327ff"><br>
 
+    <label>検索範囲指定ショートカット</label><br>
+    <select id="seedlist">
+        <option></option>
+        <option>700-7ff</option>
+        <option>600-8ff</option>
+    </select>
+
     <label for="end">1seed辺りの調査回数</label><br>
     <span>(制限する時は現在F+入力個数以上にする必要があります。)</span><br>
     <input type="number" id="end" name="end" value="1000"><br>
@@ -133,6 +140,25 @@
     }
     function onReset1(){
         window.location.href = `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function seedlist1(){
+        console.log();
+        let element = document.getElementById('seedlist').value;
+        let start = null;
+        let end = null;
+        if (element === "700-7ff"){
+            start = "0x32700";
+            end = "0x327ff";
+        }
+        if (element === "600-8ff"){
+            start = "0x32600";
+            end = "0x328ff";
+        }
+        if (start !== null&&end !== null){
+            document.getElementById('seedStart').value = start;
+            document.getElementById('seedEnd').value = end;
+        }
     }
     function saveInputValuesToURL() {
         let list = [];
@@ -251,6 +277,8 @@
         list.forEach(inputElement => {
             inputElement.addEventListener('input', saveInputValuesToURL);
         });
+        document.getElementById('seedlist').addEventListener('input', seedlist1);
+
     });
 
     function onRun() {
@@ -290,6 +318,7 @@
         document.getElementById('error').innerHTML = "";
         document.getElementById('info').innerHTML = "";
         document.getElementById('info1').innerHTML = "";
+
         let search = "";
         for (let m = 0; m <= need.length - 1; m++) {
             if (need[m] === "ようす") {
