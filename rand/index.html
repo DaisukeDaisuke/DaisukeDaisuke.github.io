@@ -230,7 +230,6 @@
         });
 
         let str = "";
-        let yoko = "";
         for (let i = 0; i <= TYPE_SELECT_COUNT; i++) {
             let select = document.getElementById("menu" + i).value;
             if (select === "") {
@@ -238,10 +237,8 @@
             }
             if (select === "ようす") {
                 str += "0";
-                yoko += "よ";
             } else {
                 str += "1";
-                yoko += "こ";
             }
         }
 
