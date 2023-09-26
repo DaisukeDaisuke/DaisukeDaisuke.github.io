@@ -345,11 +345,14 @@
         let inputElement2 = document.getElementById('seed1');
         let seed1 = inputElement2.value.trim() !== '' ? decodeHexValue(inputElement2.value) : null;
 
-        if (seed1 >= seedStart && seed1 <= seedEnd) {
-            //nope
-        } else {
-            window.alert("エラー: 初期シード指定「0x"+(seed1.toString(16))+"」は、検索範囲内の数値ではありません");
+        if(seed1 !== null){
+            if (seed1 >= seedStart && seed1 <= seedEnd) {
+                //nope
+            } else {
+                window.alert("エラー: 初期シード指定「0x"+(seed1.toString(16))+"」は、検索範囲内の数値ではありません");
+            }
         }
+
         if (seedEnd - seedStart < 0) {
             window.alert("開始seedと終了シードが不正です");
             return;
