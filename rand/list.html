@@ -55,6 +55,8 @@
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
     <label for="share">この入力を共有</label>
     <input type="text" id="share" name="share" onclick="this.select()" class="input" readonly="readonly"><br>
+    <label for="maxdisplay">表示上限(軽量化用)</label><br>
+    <input type="number" id="maxdisplay" name="maxdisplay" class="input1" placeholder="1000"><br><br>
     <label>消費数</label>
     <div class="container">
         <div class="input-container">
@@ -198,6 +200,9 @@
         if (document.getElementById('next2max').value !== "") {
             list.push(document.getElementById('next2max'));
         }
+        if (document.getElementById('maxdisplay').value !== ""){
+            list.push(document.getElementById('maxdisplay'));
+        }
         let queryParams = new URLSearchParams("");
 
         list.forEach(inputElement => {
@@ -246,6 +251,7 @@
             document.getElementById('nextmax'),
             document.getElementById('next2min'),
             document.getElementById('next2max'),
+            document.getElementById('maxdisplay'),
 
 
         ];
@@ -305,6 +311,8 @@
         let nextmax = decode(document.getElementById('nextmax').value);
         let next2min = decode(document.getElementById('next2min').value);
         let next2max = decode(document.getElementById('next2max').value);
+        let inputElement3 = document.getElementById('maxdisplay');
+        let maxdisplay = inputElement3.value.trim() !== '' ? parseInt(inputElement3.value) : null;
         let checked = document.getElementById('filter').checked;
         let hideseeds = document.getElementById('hideseeds').checked;
         let hidep1 = document.getElementById('hidep1').checked;
@@ -357,9 +365,11 @@
                         break;
                     }
                 }
+
                 output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent]);
             }while (false);
         }
+        let displaycount = 1;
         //他の処理
         for (let currentF = 1; currentF <= end; currentF++) {
             now = rand(now); //乱数を更新
@@ -408,7 +418,12 @@
                 next2percent = "";
             }
 
+            if (maxdisplay !== null&&displaycount >= maxdisplay){
+                continue;
+            }
+
             output.push([currentF, viewSeed, percentfloat, status, nextpercent, next2percent]);
+            ++displaycount;
         }
         maketable(output);
     }
@@ -492,6 +507,7 @@
             document.getElementById('hideseeds'),
             document.getElementById('hidep1'),
             document.getElementById('hidep2'),
+            document.getElementById('maxdisplay'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);
