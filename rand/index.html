@@ -101,6 +101,9 @@
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
     <br>
 
+    <span>よこ入力またはドロップダウンどちらかだけを使用してください。<br>両方使用した場合入力が消えます。</span><br>
+    <label>「よ」「こ」入力(モバイル用)</label>
+    <input type="text" id="yoko" name="yoko" placeholder="よこよここ"><br>
     <label>選択してください(飛ばし不可)</label>
     <div class="dropdown"></div>
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
@@ -152,6 +155,24 @@
     }
     function onReset1(){
         window.location.href = `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function yokoUpdate(){
+        console.log("!!");
+        let input = document.getElementById('yoko').value;
+        for (var i = 0; i < TYPE_SELECT_COUNT; i++) {
+            var character = input.charAt(i);
+            let tmp = "";
+            if (i <= input.length-1) {
+                if (character === "よ") {
+                    tmp = "ようす";
+                } else if (character === "こ") {
+                    tmp = "こうげき";
+                }
+            }
+            document.getElementById("menu" + i).value = tmp;
+        }
+        saveInputValuesToURL();
     }
 
     function seedlist1(){
@@ -209,6 +230,7 @@
         });
 
         let str = "";
+        let yoko = "";
         for (let i = 0; i <= TYPE_SELECT_COUNT; i++) {
             let select = document.getElementById("menu" + i).value;
             if (select === "") {
@@ -216,14 +238,16 @@
             }
             if (select === "ようす") {
                 str += "0";
+                yoko += "よ";
             } else {
                 str += "1";
+                yoko += "こ";
             }
         }
+
         if (str !== ""){
             queryParams.set("status", str);
         }
-
 
         // 現在のURLにクエリパラメータを設定
         let newURL;
@@ -276,6 +300,19 @@
     window.addEventListener('load', () => {
         loadInputValuesFromURL();
         saveInputValuesToURL();
+        let yoko = "";
+        for (let i = 0; i <= TYPE_SELECT_COUNT; i++) {
+            let select = document.getElementById("menu" + i).value;
+            if (select === "") {
+                break;
+            }
+            if (select === "ようす") {
+                yoko += "よ";
+            } else {
+                yoko += "こ";
+            }
+        }
+        document.getElementById('yoko').value = yoko;
         // 各 input 要素に変更リスナーを追加
         let list = [
             document.getElementById('seedStart'),
@@ -291,6 +328,8 @@
             inputElement.addEventListener('input', saveInputValuesToURL);
         });
         document.getElementById('seedlist').addEventListener('input', seedlist1);
+        document.getElementById('yoko').addEventListener('input', yokoUpdate);
+
 
     });
 
