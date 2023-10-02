@@ -93,11 +93,20 @@
     <input type="number" id="nowCount1" name="nowCount1"><br>
     <label for="seed1">初期シード指定(指定したシード値以外除外,例:0x3272f)</label>
     <input type="text" id="seed1" name="seed1" placeholder="3272f"><br>
+    <label>初期シード指定ショートカット<br>(全ての乱数を総当たりする時は変更しないでください)</label><br>
+    <select id="shortcut">
+        <option></option>
+        <option>ここ, レオノ(0x32741)</option>
+        <option>よよ, ハイローズ(0x3276c)</option>
+        <option>こよこよ, りり(0x32763)</option>
+        <option>こよここ, レオノ(アローラ)(0x3275c)</option>
+    </select>
     <button class="red-button" type="submit" onclick="onReset1()">リセット</button>
     <br>
     <label for="end">この入力を共有</label>
     <input type="text" id="share" name="share" onclick="this.select()" readonly="readonly"><br>
-
+    <label>これより下の入力変更時に自動で「開始」して1個以下で告知する(自動開始時限定)</label><br>
+    <input type="checkbox" id="autostart" name="autostart"><br><br>
 
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
     <br>
@@ -108,7 +117,7 @@
     <label>選択してください(飛ばし不可)</label>
     <div class="dropdown"></div>
     <button class="blue-button" type="submit" onclick="onRun()">開始</button>
-    <table id="myTable">
+    <table id="table">
         <tr>
             <th>seed</th>
             <th>開始[F]</th>
@@ -155,12 +164,20 @@
     const TYPE_SELECT_COUNT = 50;
     let URL = "";
     let hasUpdate = false;
+    let tableUpdate = false;
     setInterval(function () {
         if (hasUpdate && URL !== "") {
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
         }
     }, 1000);
+    setInterval(function () {
+        if (tableUpdate&&document.getElementById('autostart').checked === true){
+            tableUpdate = false;
+            onRun(true);
+        }
+    }, 500);
+
     for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
         generateDropdown();
     }
@@ -170,7 +187,7 @@
     }
 
     function yokoUpdate() {
-        console.log("!!");
+        tableUpdate = true;
         let input = document.getElementById('yoko').value;
         for (var i = 0; i < TYPE_SELECT_COUNT; i++) {
             var character = input.charAt(i);
@@ -207,6 +224,34 @@
         }
     }
 
+    function shortcutUpdate(){
+        let element = document.getElementById('shortcut').value;
+        let seed = null;
+        switch(element){
+            case "ここ, レオノ(0x32741)":
+                seed = "0x32741";
+                break;
+            case "よよ, ハイローズ(0x3276c)":
+                seed = "0x3276c";
+                break;
+            case "こよこよ, りり(0x32763)":
+                seed = "0x32763";
+                break;
+            case "こよここ, レオノ(アローラ)(0x3275c)":
+                seed = "0x3275c";
+                break;
+        }
+        if (seed !== null){
+            document.getElementById('seed1').value = seed;
+        }
+        saveInputValuesToURL();
+    }
+
+    function onTableUpdate(){
+        tableUpdate = true;
+        saveInputValuesToURL();
+    }
+
     function saveInputValuesToURL() {
         let list = [];
 
@@ -241,6 +286,10 @@
                 queryParams.set(inputId, inputValue);
             }
         });
+
+        if (document.getElementById('autostart').checked === true) {
+            queryParams.set("autostart", "1");
+        }
 
         let str = "";
         for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
@@ -293,6 +342,10 @@
             }
         });
 
+        if (queryParams.get("autostart") === "1") {
+            document.getElementById('autostart').checked = true;
+        }
+
         const input = queryParams.get("status");
         if (input === null) {
             return;
@@ -331,7 +384,8 @@
             document.getElementById('maxCount'),
             document.getElementById('nowCount'),
             document.getElementById('nowCount1'),
-            document.getElementById('seed1')
+            document.getElementById('seed1'),
+            document.getElementById('autostart'),
         ];
 
         list.forEach(inputElement => {
@@ -339,11 +393,13 @@
         });
         document.getElementById('seedlist').addEventListener('input', seedlist1);
         document.getElementById('yoko').addEventListener('input', yokoUpdate);
+        document.getElementById('shortcut').addEventListener('input', shortcutUpdate)
+
 
 
     });
 
-    function onRun() {
+    function onRun(doNotice = false) {
         const seedStart = decodeHexValue(document.getElementById('seedStart').value);
         const seedEnd = decodeHexValue(document.getElementById('seedEnd').value);
         const end = parseInt(document.getElementById('end').value);
@@ -401,7 +457,7 @@
         }
 
         // テーブル要素を取得
-        var table = document.getElementById("myTable");
+        var table = document.getElementById("table");
 
         // テーブルの行の数を取得
         var rowCount = table.rows.length;
@@ -462,9 +518,35 @@
             document.getElementById('error').innerHTML = "一致なし";
         }
 
+        if (doNotice === true&&found <= 1){
+            if (found === 0){
+                window.alert("一致なし");
+            }else{
+                window.alert("1件見つかりました");
+            }
+            window.location.hash = "#table";
+        }
+
         //}
         //console.log(j+" => 0x"+now.toString(16)+" => "+percent.toString(10)+", "+(((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき"));
     }
+
+    // const data = document.querySelectorAll('[data-new-notification-exists]')[0];
+    // var mo = new MutationObserver(function() {
+    //     alert('divの中身が変更されたよ');
+    // });
+    // var config = {
+    //     childList: true,
+    //     attributes: true,
+    //     characterData: true,
+    //     subtree: true,//孫以降のノードの変化も検出
+    //     attributeOldValue: true,//変化前の属性データを記録する
+    //     characterDataOldValue: true,//変化前のテキストノードを記録する
+    //     attributeFilter: [],//配列で記述した属性だけを見張る
+    // };
+    // mo.observe(data, config);
+
+
 </script>
 </body>
 </html>

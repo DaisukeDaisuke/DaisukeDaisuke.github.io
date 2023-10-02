@@ -28,7 +28,7 @@ function generateDropdown() {
     const spanElement = document.createElement("span");
     spanElement.classList.add("box");
     spanElement.textContent = dropdownCounter + 1; // 数字を設定
-    selectElement.addEventListener('input', saveInputValuesToURL);
+    selectElement.addEventListener('input', onTableUpdate);
     // dropdown-containerにselect要素とspan要素を追加
     dropdownContainer.appendChild(selectElement);
     dropdownContainer.appendChild(spanElement);
