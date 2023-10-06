@@ -77,8 +77,14 @@
     <label>検索範囲指定ショートカット</label><br>
     <select id="seedlist">
         <option></option>
-        <option>700-7ff</option>
-        <option>600-8ff</option>
+        <option>700-7ff (実機, JP)</option>
+        <option>600-8ff (実機, JP)</option>
+        <option>31600-31fff (実機, EU)</option>
+        <option>31600-319ff (実機, NA)</option>
+        <option>28000-2ffff (DeSmuME)</option>
+        <option>3c000-3dfff (melonDS)</option>
+        <option>16000-19fff (No$GBA)</option>
+        <option>16000-3ffff (全て)</option>
     </select>
 
     <label for="end">1seed辺りの調査回数</label><br>
@@ -209,14 +215,39 @@
         let element = document.getElementById('seedlist').value;
         let start = null;
         let end = null;
-        if (element === "700-7ff") {
+        if (element === "700-7ff (実機, JP)") {
             start = "0x32700";
             end = "0x327ff";
         }
-        if (element === "600-8ff") {
+        if (element === "600-8ff (実機, JP)") {
             start = "0x32600";
             end = "0x328ff";
         }
+        if (element === "31600-31fff (実機, EU)") {
+            start = "0x31600";
+            end = "0x31fff";
+        }
+        if (element === "31600-319ff (実機, NA)") {
+            start = "0x31600";
+            end = "0x319ff";
+        }
+        if (element === "28000-2ffff (DeSmuME)") {
+            start = "0x28000";
+            end = "0x2ffff";
+        }
+        if (element === "3c000-3dfff (melonDS)") {
+            start = "0x3c000";
+            end = "0x3dfff";
+        }
+        if (element === "16000-19fff (No$GBA)") {
+            start = "0x16000";
+            end = "0x19fff";
+        }
+        if (element === "16000-3ffff (全て)") {
+            start = "0x16000";
+            end = "0x3ffff";
+        }
+
         if (start !== null && end !== null) {
             document.getElementById('seedStart').value = start;
             document.getElementById('seedEnd').value = end;
