@@ -106,6 +106,30 @@
             <input type="number" id="next2max" name="end" class="input1">
         </div>
     </div>
+    <label>3個先の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="next3min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="next3max" name="end" class="input1">
+        </div>
+    </div>
+    <label>4個先の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="next4min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="next4max" name="end" class="input1">
+        </div>
+    </div>
     <label>フィルタ機能を有効化する</label>
     <input type="checkbox" id="filter" name="filter" checked><br><br>
     <span>非表示設定</span><br>
@@ -115,6 +139,10 @@
     <input type="checkbox" id="hidep1" name="hidep1" checked><br>
     <label>「その次の%」を非表示にする</label>
     <input type="checkbox" id="hidep2" name="hidep2" checked><br>
+    <label>「3個先の%」を非表示にする</label>
+    <input type="checkbox" id="hidep3" name="hidep3" checked><br>
+    <label>「4個先の%」を非表示にする</label>
+    <input type="checkbox" id="hidep4" name="hidep4" checked><br>
     <br>
     <span>小数点以下には、計算上生じる誤差があります。</span><br><br>
     <span id="info"></span>
@@ -130,6 +158,8 @@
         <th>しらべる</th>
         <th>次の%</th>
         <th>その次の%</th>
+        <th>3個先の%</th>
+        <th>4個先の%</th>
     </tr>
     </thead>
 </table>
@@ -200,6 +230,18 @@
         if (document.getElementById('next2max').value !== "") {
             list.push(document.getElementById('next2max'));
         }
+        if (document.getElementById('next3min').value !== "") {
+            list.push(document.getElementById('next3min'));
+        }
+        if (document.getElementById('next3max').value !== "") {
+            list.push(document.getElementById('next3max'));
+        }
+        if (document.getElementById('next4min').value !== "") {
+            list.push(document.getElementById('next4min'));
+        }
+        if (document.getElementById('next4max').value !== "") {
+            list.push(document.getElementById('next4max'));
+        }
         if (document.getElementById('maxdisplay').value !== ""){
             list.push(document.getElementById('maxdisplay'));
         }
@@ -226,6 +268,12 @@
         if (document.getElementById('hidep2').checked === false) {
             queryParams.set("hidep2", "0");
         }
+        if (document.getElementById('hidep3').checked === false) {
+            queryParams.set("hidep3", "0");
+        }
+        if (document.getElementById('hidep4').checked === false) {
+            queryParams.set("hidep4", "0");
+        }
 
         let newURL;
         if (queryParams.toString() !== "") {
@@ -251,6 +299,10 @@
             document.getElementById('nextmax'),
             document.getElementById('next2min'),
             document.getElementById('next2max'),
+            document.getElementById('next3min'),
+            document.getElementById('next3max'),
+            document.getElementById('next4min'),
+            document.getElementById('next4max'),
             document.getElementById('maxdisplay'),
 
 
@@ -279,6 +331,14 @@
 
         if (queryParams.get("hidep2") === "0") {
             document.getElementById('hidep2').checked = false;
+        }
+
+        if (queryParams.get("hidep3") === "0") {
+            document.getElementById('hidep3').checked = false;
+        }
+
+        if (queryParams.get("hidep4") === "0") {
+            document.getElementById('hidep4').checked = false;
         }
 
         updateTable();
@@ -311,12 +371,18 @@
         let nextmax = decode(document.getElementById('nextmax').value);
         let next2min = decode(document.getElementById('next2min').value);
         let next2max = decode(document.getElementById('next2max').value);
+        let next3min = decode(document.getElementById('next3min').value);
+        let next3max = decode(document.getElementById('next3max').value);
+        let next4min = decode(document.getElementById('next4min').value);
+        let next4max = decode(document.getElementById('next4max').value);
         let inputElement3 = document.getElementById('maxdisplay');
         let maxdisplay = inputElement3.value.trim() !== '' ? parseInt(inputElement3.value) : null;
         let checked = document.getElementById('filter').checked;
         let hideseeds = document.getElementById('hideseeds').checked;
         let hidep1 = document.getElementById('hidep1').checked;
         let hidep2 = document.getElementById('hidep2').checked;
+        let hidep3 = document.getElementById('hidep3').checked;
+        let hidep4 = document.getElementById('hidep4').checked;
         let output = [];
         if (checked){
             document.getElementById('info').innerText = "";
@@ -333,7 +399,12 @@
                 let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
                 let tmp2 = rand(tmp);
                 let nextpercent = calculatePercentFloat(tmp2);
-                let next2percent = calculatePercentFloat(rand(tmp2));
+                let tmp3 = rand(tmp2);
+                let next2percent = calculatePercentFloat(tmp3);
+                let tmp4 = rand(tmp3);
+                let next3percent = calculatePercentFloat(tmp4);
+                let tmp5 = rand(tmp4);
+                let next4percent = calculatePercentFloat(tmp5);
                 let viewSeed = "0x" + seedStart.toString(16).toUpperCase();
                 if (hideseeds) {
                     viewSeed = "";
@@ -364,9 +435,21 @@
                     if (next2max !== null && next2max < next2percent) {
                         break;
                     }
+                    if (next3min !== null && next3min > next3percent) {
+                        break;
+                    }
+                    if (next3max !== null && next3max < next3percent) {
+                        break;
+                    }
+                    if (next4min !== null && next4min > next4percent) {
+                        break;
+                    }
+                    if (next4max !== null && next4max < next4percent) {
+                        break;
+                    }
                 }
 
-                output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent]);
+                output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent, next3percent, next4percent]);
             }while (false);
         }
         let displaycount = 1;
@@ -383,7 +466,12 @@
             let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
             let tmp2 = rand(tmp);
             let nextpercent = calculatePercentFloat(tmp2);
-            let next2percent = calculatePercentFloat(rand(tmp2));
+            let tmp3 = rand(tmp2);
+            let next2percent = calculatePercentFloat(tmp3);
+            let tmp4 = rand(tmp3);
+            let next3percent = calculatePercentFloat(tmp4);
+            let tmp5 = rand(tmp4);
+            let next4percent = calculatePercentFloat(tmp5);
 
             if (checked) {
                 if (min !== null && min > percentfloat) {
@@ -405,6 +493,18 @@
                 if (next2max !== null && next2max < next2percent) {
                     continue;
                 }
+                if (next3min !== null && next3min > next3percent) {
+                    continue;
+                }
+                if (next3max !== null && next3max < next3percent) {
+                    continue;
+                }
+                if (next4min !== null && next4min > next4percent) {
+                    continue;
+                }
+                if (next4max !== null && next4max < next4percent) {
+                    continue;
+                }
             }
 
             let viewSeed = "0x" + now.toString(16).toUpperCase();
@@ -417,12 +517,18 @@
             if (hidep2) {
                 next2percent = "";
             }
+            if (hidep3) {
+                next3percent = "";
+            }
+            if (hidep4) {
+                next4percent = "";
+            }
 
             if (maxdisplay !== null&&displaycount >= maxdisplay){
                 continue;
             }
 
-            output.push([currentF, viewSeed, percentfloat, status, nextpercent, next2percent]);
+            output.push([currentF, viewSeed, percentfloat, status, nextpercent, next2percent, next3percent, next4percent]);
             ++displaycount;
         }
         maketable(output);
@@ -474,6 +580,18 @@
         } else {
             c2.visible(true);
         }
+        let c3 = table1.column(6);
+        if (document.getElementById('hidep3').checked === true) {
+            c3.visible(false);
+        } else {
+            c3.visible(true);
+        }
+        let c4 = table1.column(7);
+        if (document.getElementById('hidep4').checked === true) {
+            c4.visible(false);
+        } else {
+            c4.visible(true);
+        }
     }
 
     function preUpdateTable(){
@@ -504,9 +622,15 @@
             document.getElementById('filter'),
             document.getElementById('next2min'),
             document.getElementById('next2max'),
+            document.getElementById('next3min'),
+            document.getElementById('next3max'),
+            document.getElementById('next4min'),
+            document.getElementById('next4max'),
             document.getElementById('hideseeds'),
             document.getElementById('hidep1'),
             document.getElementById('hidep2'),
+            document.getElementById('hidep3'),
+            document.getElementById('hidep4'),
             document.getElementById('maxdisplay'),
         ];
         list.forEach(inputElement => {
