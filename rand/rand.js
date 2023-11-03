@@ -21,7 +21,6 @@ function calculatePercent(input) {
     return output;
 }
 
-
 /**
  * @param {BigInt} input
  * @returns Number
@@ -44,4 +43,14 @@ function calculatePercentFloat(input) {
  */
 function division(a, b){
     return Number(a * 10000n / b) / 10000;
+}
+
+/**
+ * @param {Number} nowPercent
+ * @param {Number} max
+ * @returns Number
+ */
+function getRand(nowPercent, max){
+    let randomValue = nowPercent / 100 * max;
+    return Math.floor(randomValue);
 }

@@ -145,6 +145,7 @@
     <input type="checkbox" id="hidep4" name="hidep4" checked><br>
     <br>
     <span>小数点以下には、計算上生じる誤差があります。</span><br><br>
+    <span id="init">初期消費: </span><br><br>
     <span id="info"></span>
 </div>
 <br>
@@ -361,6 +362,7 @@
         if (inputElement2 === "") {
             maketable([]);
         }
+
         const tmp1 = parseInt(inputElement1);
         const tmp2 = parseInt(inputElement2);
         const start = Math.min(tmp1, tmp2);
@@ -532,6 +534,17 @@
             ++displaycount;
         }
         maketable(output);
+        const json = '[{"4":23,"5":24},{"4":24,"5":23},{"4":23,"5":24},{"4":24,"5":23}]'
+        const obj = JSON.parse(json)
+
+        const f0 = rand(BigInt(seedStart))
+        const f1 = rand(f0)
+        const percent0 = calculatePercentFloat(f0)
+        const percent1 = calculatePercentFloat(f1)
+        const rand0 = getRand(percent0, 4.0)
+        const rand1 = getRand(percent1, 2.0) + 4
+
+        document.getElementById('init').innerHTML = "初期消費: "+obj[rand0][rand1]+" (現在地)"
     }
 
 
