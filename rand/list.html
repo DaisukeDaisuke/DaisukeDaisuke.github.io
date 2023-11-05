@@ -146,6 +146,7 @@
     <br>
     <span>小数点以下には、計算上生じる誤差があります。</span><br><br>
     <span id="init">初期消費: </span><br><br>
+    <span id="init1">タイプ: </span><br><br>
     <span id="info"></span>
 </div>
 <br>
@@ -180,13 +181,13 @@
                 document.title = "簡易乱数表";
             }
         }
-        if (hasTableUpdate === true){
+        if (hasTableUpdate === true) {
             hasTableUpdate = false;
             updateTable();
         }
     }, 1000);
 
-    function update1(){
+    function update1() {
 
     }
 
@@ -195,7 +196,7 @@
             return null;
         }
         let purse = parseFloat(input);
-        if (isNaN(purse)){
+        if (isNaN(purse)) {
             return null;
         }
         return purse;
@@ -243,7 +244,7 @@
         if (document.getElementById('next4max').value !== "") {
             list.push(document.getElementById('next4max'));
         }
-        if (document.getElementById('maxdisplay').value !== ""){
+        if (document.getElementById('maxdisplay').value !== "") {
             list.push(document.getElementById('maxdisplay'));
         }
         let queryParams = new URLSearchParams("");
@@ -386,15 +387,15 @@
         let hidep3 = document.getElementById('hidep3').checked;
         let hidep4 = document.getElementById('hidep4').checked;
         let output = [];
-        if (checked){
+        if (checked) {
             document.getElementById('info').innerText = "";
-        }else{
+        } else {
             document.getElementById('info').innerText = "フィルタ機能が無効化されています。";
         }
         let now = BigInt(seedStart);
         //0だけ特別に処理する
         if (start === 0) {
-            do{
+            do {
                 let tmp = rand(now);
                 let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
                 let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
@@ -452,7 +453,7 @@
                 }
 
                 output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent, next3percent, next4percent]);
-            }while (false);
+            } while (false);
         }
         let displaycount = 1;
         //他の処理
@@ -526,7 +527,7 @@
                 next4percent = "";
             }
 
-            if (maxdisplay !== null&&displaycount >= maxdisplay){
+            if (maxdisplay !== null && displaycount >= maxdisplay) {
                 continue;
             }
 
@@ -544,7 +545,27 @@
         const rand0 = getRand(percent0, 4.0)
         const rand1 = getRand(percent1, 2.0) + 4
 
-        document.getElementById('init').innerHTML = "初期消費: "+obj[rand0][rand1]+" (現在地)"
+        document.getElementById('init').innerHTML = "初期消費: " + obj[rand0][rand1] + " (現在地)";
+
+        let now1 = BigInt(seedStart);
+        for (let currentF = 0; currentF <= 7; currentF++) {
+            [now1, ret] = ARand(now1);
+            var type = getType(ret);
+        }
+        let obj1 = [
+            "鉱石",
+            "石",
+            "聖水",
+            "花",
+            "海",
+            "草",
+            "茸",
+            "砂",
+        ];
+        console.log(type)
+        document.getElementById('init1').innerHTML = "タイプ: " + obj1[type] + " ("+type+", 最速起動)";
+
+
     }
 
 
@@ -607,12 +628,12 @@
         }
     }
 
-    function preUpdateTable(){
+    function preUpdateTable() {
         hasTableUpdate = true;
     }
 
-    function jumpHash(){
-        if (hash === "#table"){
+    function jumpHash() {
+        if (hash === "#table") {
             console.log("!!");
             window.location.hash = hash;
         }
