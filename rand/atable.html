@@ -200,7 +200,7 @@
         let now = BigInt(seedStart);
         //0だけ特別に処理する
         if (start === 0) {
-            [now, ret] = ARand(now);
+            let ret = BigInt("0x7FFF") & rightShift(now,0x10);
             let viewSeed = "0x" + now.toString(16).toUpperCase();
             let viewSeed1 = "0x" + ret.toString(16).toUpperCase();
             output.push([0, viewSeed, viewSeed1, getType(ret)]);
