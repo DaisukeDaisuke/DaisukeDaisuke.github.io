@@ -199,22 +199,26 @@
         let output = [];
         let now = BigInt(seedStart);
         //0だけ特別に処理する
+        let previous;
         if (start === 0) {
-            let ret = BigInt("0x7FFF") & rightShift(now,0x10);
+            //let ret = BigInt("0x7FFF") & rightShift(now,0x10);
+            [now1, ret] = ARand(now);
             let viewSeed = "0x" + now.toString(16).toUpperCase();
             let viewSeed1 = "0x" + ret.toString(16).toUpperCase();
             output.push([0, viewSeed, viewSeed1, getType(ret)]);
         }
         //他の処理
+
         for (let currentF = 1; currentF <= end; currentF++) {
             if (currentF < start) {
                 continue;
             }
             [now, ret] = ARand(now);
-            let viewSeed = "0x" + now.toString(16).toUpperCase();
-            let viewSeed1 = "0x" + ret.toString(16).toUpperCase();
+            [_, ret1] = ARand(now);
 
-            output.push([currentF, viewSeed, viewSeed1, getType(ret)]);
+            let viewSeed = "0x" + now.toString(16).toUpperCase();
+            let viewSeed1 = "0x" + ret1.toString(16).toUpperCase();
+            output.push([currentF, viewSeed, viewSeed1, getType(ret1)]);
         }
         maketable(output);
     }
