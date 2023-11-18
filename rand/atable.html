@@ -68,6 +68,21 @@
         </div>
     </div>
     <br>
+    <label>% 下限値～上限値(小数点対応)</label><br>
+    <span>(以上～未満)</span><br>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="max" name="end" class="input1">
+        </div>
+    </div>
+    <label>フィルタ機能を有効化する</label>
+    <input type="checkbox" id="filter" name="filter" checked><br><br>
 </div>
 <br>
 </div>
@@ -76,6 +91,7 @@
     <tr>
         <th>[F]</th>
         <th>seed</th>
+        <th>%</th>
         <th>返り値</th>
         <th>タイプ</th>
     </tr>
@@ -130,7 +146,17 @@
         if (document.getElementById('end').value !== "100") {
             list.push(document.getElementById('end'));
         }
+        if (document.getElementById('min').value !== "") {
+            list.push(document.getElementById('min'));
+        }
+        if (document.getElementById('max').value !== "") {
+            list.push(document.getElementById('max'));
+        }
         let queryParams = new URLSearchParams("");
+
+        if (document.getElementById('filter').checked !== true) {
+            queryParams.set("filter", "0");
+        }
 
         list.forEach(inputElement => {
             if (inputElement.value !== "") {
@@ -158,10 +184,15 @@
             document.getElementById('seed'),
             document.getElementById('start'),
             document.getElementById('end'),
-
+            document.getElementById('min'),
+            document.getElementById('max'),
 
         ];
         let queryParams = new URLSearchParams(window.location.search);
+
+        if (queryParams.get("filter") === "0") {
+            document.getElementById('filter').checked = false;
+        }
 
         list.forEach(inputElement => {
             const inputId = inputElement.id;
@@ -196,6 +227,9 @@
         const tmp2 = parseInt(inputElement2);
         const start = Math.min(tmp1, tmp2);
         const end = Math.max(tmp1, tmp2);
+        let min = decode(document.getElementById('min').value);
+        let max = decode(document.getElementById('max').value);
+        let checked = document.getElementById('filter').checked;
         let output = [];
         let now = BigInt(seedStart);
         //0だけ特別に処理する
@@ -205,20 +239,43 @@
             [now1, ret] = ARand(now);
             let viewSeed = "0x" + now.toString(16).toUpperCase();
             let viewSeed1 = "0x" + ret.toString(16).toUpperCase();
-            output.push([0, viewSeed, viewSeed1, getType(ret)]);
+            do{
+                let percentfloat = calculateATablePercentFloat(ret)
+                if (checked) {
+                    if (min !== null && min > percentfloat) {
+                        break;
+                    }
+                    if (max !== null && max < percentfloat) {
+                        break;
+                    }
+                }
+                output.push([0, viewSeed, percentfloat, viewSeed1, getType(ret)]);
+            }while (false);
+
         }
         //他の処理
 
         for (let currentF = 1; currentF <= end; currentF++) {
+            [now, ret] = ARand(now);
             if (currentF < start) {
                 continue;
             }
-            [now, ret] = ARand(now);
             [_, ret1] = ARand(now);
 
             let viewSeed = "0x" + now.toString(16).toUpperCase();
             let viewSeed1 = "0x" + ret1.toString(16).toUpperCase();
-            output.push([currentF, viewSeed, viewSeed1, getType(ret1)]);
+            do{
+                let percentfloat = calculateATablePercentFloat(ret1)
+                if (checked) {
+                    if (min !== null && min > percentfloat) {
+                        break;
+                    }
+                    if (max !== null && max < percentfloat) {
+                        break;
+                    }
+                }
+                output.push([currentF, viewSeed, percentfloat, viewSeed1, getType(ret1)]);
+            }while (false);
         }
         maketable(output);
     }
@@ -271,6 +328,9 @@
             document.getElementById('seed'),
             document.getElementById('start'),
             document.getElementById('end'),
+            document.getElementById('min'),
+            document.getElementById('max'),
+            document.getElementById('filter'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);

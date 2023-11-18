@@ -99,3 +99,14 @@ function leftShift(num, shift) { // <<
 function rightShift(num, shift) { // >>
     return num / (2n ** BigInt(shift));
 }
+
+/**
+ * @param {BigInt} input - input seed
+ * @return BigInt
+ */
+function calculateATablePercentFloat(input) {
+    let output = input * BigInt(100);
+    //output = output / test;
+    output = division(output, BigInt("0x7fff"));
+    return output;
+}
