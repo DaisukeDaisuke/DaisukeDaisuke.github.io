@@ -231,9 +231,9 @@
         }
 
         if (
-            document.getElementById('select1').value === "noselect"&&
-            document.getElementById('select2').value === "noselect"&&
-            document.getElementById('select3').value === "noselect"&&
+            document.getElementById('select1').value === "noselect" &&
+            document.getElementById('select2').value === "noselect" &&
+            document.getElementById('select3').value === "noselect" &&
             document.getElementById('select4').value === "noselect"
         ) {
             maketable([]);
@@ -302,7 +302,7 @@
 
                     let tmp2 = rand(now)
                     let percent2 = calculatePercentFloat(tmp2)
-                    let rand2 = getRand(percent2, encMax)+1
+                    let rand2 = getRand(percent2, encMax) + 1
 
                     if (rand2 > enc2g) {
                         G = "2G"
@@ -375,23 +375,23 @@
                         } else {
                             result1 += item[0]
                         }
-                        if (item[1] === 0){
+                        if (item[1] === 0) {
                             result1 += "x0 "
                             //result1 = '<p style=\"color: gray;\">'+result1+'</p>';
-                        }else{
-                            result1 += "x"+item[1]+" "
+                        } else {
+                            result1 += "x" + item[1] + " "
                         }
 
 
                     });
                     let base = 2;
-                    if (G === "2G"){
+                    if (G === "2G") {
                         base = 5
-                    }else if(G === "3G"){
+                    } else if (G === "3G") {
                         base = 7
                     }
                     output[currentF - start][arraykey * 2 + 1] = result1
-                    output[currentF - start][arraykey * 2 + 2] = G+"("+(base+total)+")"
+                    output[currentF - start][arraykey * 2 + 2] = G + "(" + (base + total) + ")"
 
 
                     // let otomo = otomoCache[tableId][rand2]
@@ -425,6 +425,19 @@
             "select": true,
             "displayLength": 2000,
             "fixedHeader": true,
+            "initComplete": function (settings) {
+                let list = [
+                    document.getElementById('select1'),
+                    document.getElementById('select2'),
+                    document.getElementById('select3'),
+                    document.getElementById('select4'),
+                ];
+                Object.keys(list).forEach(arraykey => {
+                    let element = list[arraykey]
+                    randomColumnIndex = arraykey * 2 + 1
+                    $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
+                });
+            }
         }
         // テーブルの作成
         table = $('#table').DataTable(tableOptions);
@@ -469,7 +482,7 @@
             c7.visible(true);
         }
 
-        table1.on( 'draw', function () {
+        table1.on('draw', function () {
             let list = [
                 document.getElementById('select1'),
                 document.getElementById('select2'),
@@ -481,7 +494,7 @@
                 randomColumnIndex = arraykey * 2 + 1
                 $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
             });
-        } );
+        });
 
 
     }
@@ -514,7 +527,7 @@
                 encDataCache.push(encdata[0])
 
                 let data2 = encdata[0]["data"];
-                let nears = {...data["nears"][key][data2["2g"]+"/"+data2["max"]+"/"+data2["3g"]+"/"+data2["3gmax"]]} // copy
+                let nears = {...data["nears"][key][data2["2g"] + "/" + data2["max"] + "/" + data2["3g"] + "/" + data2["3gmax"]]} // copy
 
 
                 for (let id in encdata) {
