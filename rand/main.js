@@ -40,3 +40,42 @@ function generateDropdown() {
     // カウンターをインクリメント
     dropdownCounter++;
 }
+
+
+function createSelectElement(containerId, label, options) {
+    // コンテナ要素を取得
+    const container = document.getElementById(containerId);
+
+    // 新しいセレクト要素を作成
+    const select = document.createElement('select');
+
+    // セレクト要素にIDを設定
+    select.id = label;
+
+    // オプションを追加
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.id;
+        optionElement.text = option.label;
+        select.appendChild(optionElement);
+    });
+
+    // コンテナにセレクト要素を追加
+    container.appendChild(select);
+}
+
+function generateEmptyArray(rows, columns, start) {
+    const resultArray = [];
+
+    for (let i = 0; i < rows; i++) {
+        const row = [start];
+        ++start
+        for (let j = 0; j < columns; j++) {
+            row.push(" ");
+        }
+
+        resultArray.push(row);
+    }
+
+    return resultArray;
+}
