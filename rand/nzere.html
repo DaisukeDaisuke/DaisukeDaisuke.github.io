@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易乱数表</title>
+    <title>エラフィタ地方北部(northern Zere)のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -59,7 +59,7 @@
 </head>
 <body>
 <div class="container" id="container">
-    <h1>簡易乱数表</h1>
+    <h1>エラフィタ地方北部</h1>
     <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
     <label for="seed">初期seed</label>
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
@@ -266,7 +266,7 @@
             document.getElementById('select3'),
             document.getElementById('select4'),
         ];
-        const output = generateEmptyArray(end - start, 8, start);
+        const output = generateEmptyArray(end - start, 9, start);
         Object.keys(list).forEach(arraykey => {
             const item = list[arraykey]
             let now = BigInt(seedStart)
