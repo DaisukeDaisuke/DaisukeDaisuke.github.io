@@ -185,7 +185,7 @@
         hasUpdate = true;
     }
 
-    function loadInputValuesFromURL1() {
+    function loadInputValuesFromURL1(bool = true) {
         let list = [
             document.getElementById('seed'),
             document.getElementById('start'),
@@ -206,7 +206,9 @@
             }
         });
 
-        updateTable();
+        if (bool) {
+            updateTable();
+        }
     }
 
     function updateTable() {
@@ -528,7 +530,6 @@
                     name = name.trim()
                     name += ")"
                 }
-                //console.log(nears, data2["2g"]+"/"+data2["max"]+"/"+data2["3g"]+"/"+data2["3gmax"])
 
                 names[count] = name
                 selectData.push({id: count, label: encdata[0]["name"] + " " + name});
@@ -544,7 +545,7 @@
         createSelectElement('container', "select4", selectData);
 
 
-        loadInputValuesFromURL1();
+        loadInputValuesFromURL1(false);
         saveInputValuesToURL1();
         setTimeout("jumpHash()", 1000);
         let list = [

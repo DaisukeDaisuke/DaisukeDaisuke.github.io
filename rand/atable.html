@@ -179,7 +179,7 @@
         hasUpdate = true;
     }
 
-    function loadInputValuesFromURL1() {
+    function loadInputValuesFromURL1(bool = true) {
         let list = [
             document.getElementById('seed'),
             document.getElementById('start'),
@@ -202,7 +202,9 @@
             }
         });
 
-        updateTable();
+        if (bool) {
+            updateTable();
+        }
     }
 
     function updateTable() {
@@ -322,7 +324,7 @@
     window.addEventListener('load', () => {
         hash = window.location.hash;
         console.log(hash);
-        loadInputValuesFromURL1();
+        loadInputValuesFromURL1(false);
         saveInputValuesToURL1();
         setTimeout("jumpHash()", 1000);
         let list = [
