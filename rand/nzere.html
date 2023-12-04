@@ -400,7 +400,10 @@
             }
         });
 
-        maketable(output);
+        //setTimeout(() => {
+            maketable(output);
+        //}, 100);
+
     }
 
 
@@ -529,7 +532,7 @@
                 let data2 = encdata[0]["data"];
                 let nears = {...data["nears"][key][data2["2g"] + "/" + data2["max"] + "/" + data2["3g"] + "/" + data2["3gmax"]]} // copy
 
-
+                let max = encdata[0]["max"]
                 for (let id in encdata) {
                     const data2 = encdata[id]
                     name += data2["displayname"] + " ";
@@ -543,6 +546,7 @@
                     name = name.trim()
                     name += ")"
                 }
+                name += " x"+max
 
                 names[count] = name
                 selectData.push({id: count, label: encdata[0]["name"] + " " + name});
@@ -574,7 +578,9 @@
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);
         });
+
         updateTable();
+
     });
 
 
