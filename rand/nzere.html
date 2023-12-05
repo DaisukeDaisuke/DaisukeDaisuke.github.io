@@ -78,6 +78,8 @@
         </div>
     </div>
     <br>
+    <label>ヘッダー追尾</label>
+    <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
 </div>
 </div>
 <br>
@@ -164,6 +166,8 @@
         let queryParams = new URLSearchParams("");
 
 
+
+
         list.forEach(inputElement => {
             if (inputElement.value !== "") {
                 const inputId = inputElement.id;
@@ -171,6 +175,10 @@
                 queryParams.set(inputId, inputValue);
             }
         });
+
+        if (document.getElementById('fixedheader').checked !== true) {
+            queryParams.set("fixedheader", "0");
+        }
 
         let newURL;
         if (queryParams.toString() !== "") {
@@ -205,6 +213,10 @@
                 inputElement.value = paramValue;
             }
         });
+
+        if (queryParams.get("fixedheader") === "0") {
+            document.getElementById('fixedheader').checked = false;
+        }
 
         if (bool) {
             updateTable();
@@ -427,7 +439,6 @@
             "data": tableData,
             "select": true,
             "displayLength": 2000,
-            "fixedHeader": true,
             "initComplete": function (settings) {
                 let list = [
                     document.getElementById('select1'),
@@ -442,6 +453,11 @@
                 });
             }
         }
+
+        if (document.getElementById('fixedheader').checked === true){
+            tableOptions["fixedHeader"] = true
+        }
+
         // テーブルの作成
         table = $('#table').DataTable(tableOptions);
         // Toggle the visibility
@@ -573,7 +589,7 @@
             document.getElementById('select2'),
             document.getElementById('select3'),
             document.getElementById('select4'),
-
+            document.getElementById('fixedheader'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);
