@@ -516,7 +516,7 @@
                 for (let i = 0; i < freeCache.length; i++) {
                     let element = freeCache[i]
                     let nowCount = element[5] + element[2]
-                    if (freeCache2[nowCount] !== null && freeCache2[nowCount - start] !== undefined) {
+                    if (freeCache2[nowCount - start] !== null && freeCache2[nowCount - start] !== undefined) {
                         output[i][arraykey * 5 + 3] = freeCache2[nowCount - start] + "(" + (nowCount + freeCache2[nowCount - start]) + "F)"
                         // if (freeCache1[nowCount + 4] !== null && freeCache1[nowCount + 4] !== undefined) {
                         //     output[i][arraykey * 6 + 4] = freeCache2[nowCount + 4] + "(" + (nowCount + freeCache2[nowCount + 4] + 4) + "F)"
