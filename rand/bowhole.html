@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>封印のほこら(quarantomb)のエンカウントテーブル</title>
+    <title>魔獣の洞くつ(The Bowhole)のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -132,19 +132,19 @@
     let hasUpdate = false;
     let hasTableUpdate = false;
     let hash = "";
-    const json = '{"otomo":{"30":[{"rand":7,"id":132,"displayname":"まじゅつし","min":1,"max":2,"countrand":1},{"rand":12,"id":108,"displayname":"ミイラ男","min":1,"max":2,"countrand":1},{"rand":17,"id":83,"displayname":"はにわナイト","min":1,"max":2,"countrand":1},{"rand":18,"id":3,"displayname":"メタルスライム","min":1,"max":1,"countrand":0},{"rand":25,"id":8,"displayname":"さまようたましい","min":1,"max":2,"countrand":1},{"rand":30,"id":31,"displayname":"しにがみ","min":1,"max":2,"countrand":1}]},"max":{"30":3},"nears":{"30":{"30\\/7\\/12\\/11\\/12":{"しにがみ":true,"ミイラ男":true,"はにわナイト":true},"30\\/7\\/11\\/11\\/11":{"メタルスライム":true}}},"ennkaunnto":{"30":{"30\\/7\\/12\\/11\\/12\\/1\\/2":[{"tableid":30,"monsterId":31,"displayname":"しにがみ","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":108,"displayname":"ミイラ男","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":83,"displayname":"はにわナイト","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""}],"30\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":30,"monsterId":3,"displayname":"メタルスライム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":""}]}}}';
+    const json = '{"otomo":{"146":[{"rand":4,"id":44,"displayname":"おどるほうせき","min":1,"max":2,"countrand":1},{"rand":11,"id":172,"displayname":"うごくせきぞう","min":1,"max":1,"countrand":0},{"rand":18,"id":203,"displayname":"リビングスタチュー","min":1,"max":1,"countrand":0},{"rand":25,"id":192,"displayname":"デビルアーマー","min":1,"max":2,"countrand":1},{"rand":26,"id":27,"displayname":"はぐれメタル","min":1,"max":1,"countrand":0},{"rand":33,"id":212,"displayname":"スネークロード","min":1,"max":2,"countrand":1}],"147":[{"rand":4,"id":44,"displayname":"おどるほうせき","min":1,"max":3,"countrand":2},{"rand":11,"id":172,"displayname":"うごくせきぞう","min":1,"max":2,"countrand":1},{"rand":18,"id":203,"displayname":"リビングスタチュー","min":1,"max":2,"countrand":1},{"rand":25,"id":192,"displayname":"デビルアーマー","min":1,"max":2,"countrand":1},{"rand":26,"id":27,"displayname":"はぐれメタル","min":1,"max":1,"countrand":0},{"rand":33,"id":212,"displayname":"スネークロード","min":1,"max":2,"countrand":1}]},"max":{"146":3,"147":3},"nears":{"146":{"146\\/6\\/9\\/9\\/9":{"リビングスタチュー":true,"ギガントヒルズ":true,"うごくせきぞう":true},"146\\/6\\/8\\/8\\/8":{"はぐれメタル":true},"146\\/7\\/7\\/7\\/7":{"ひとくいばこ":true,"ミミック":true}},"147":{"147\\/6\\/9\\/9\\/9":{"リビングスタチュー":true,"ギガントヒルズ":true,"うごくせきぞう":true},"147\\/6\\/8\\/8\\/8":{"はぐれメタル":true},"147\\/7\\/7\\/7\\/7":{"ミミック":true}}},"ennkaunnto":{"146":{"146\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":146,"monsterId":203,"displayname":"リビングスタチュー","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"},{"tableid":146,"monsterId":174,"displayname":"ギガントヒルズ","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"},{"tableid":146,"monsterId":172,"displayname":"うごくせきぞう","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}],"146\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":146,"monsterId":27,"displayname":"はぐれメタル","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}],"146\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":146,"monsterId":38,"displayname":"ひとくいばこ","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"},{"tableid":146,"monsterId":39,"displayname":"ミミック","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}]},"147":{"147\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":147,"monsterId":203,"displayname":"リビングスタチュー","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"B3F"}],"147\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":147,"monsterId":174,"displayname":"ギガントヒルズ","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B3F"},{"tableid":147,"monsterId":172,"displayname":"うごくせきぞう","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B3F"}],"147\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":147,"monsterId":27,"displayname":"はぐれメタル","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B3F"}],"147\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":147,"monsterId":39,"displayname":"ミミック","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B3F"}]}}}'
     const data = JSON.parse(json);
     let encDataCache = [];
-    const percent1G = 63.6364;
+    const percent1G = 75.0000;
 
     setInterval(function () {
         if (hasUpdate && URL !== "") {
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", 封印のほこら(quarantomb)のエンカウントテーブル";
+                document.title = document.getElementById('seed').value + ", 魔獣の洞くつ(The Bowhole)のエンカウントテーブル";
             } else {
-                document.title = "封印のほこら(quarantomb)のエンカウントテーブル";
+                document.title = "魔獣の洞くつ(The Bowhole)のエンカウントテーブル";
             }
         }
         if (hasTableUpdate === true) {

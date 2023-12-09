@@ -95,18 +95,27 @@
         <th>エンカ1</th>
         <th>G</th>
         <th>次の1G</th>
+        <th>次の1G+4</th>
         <th>逃げ</th>
-        <th>よこ</th>
+        <th>逃げ+4</th>
         <th>エンカ2</th>
         <th>G</th>
         <th>次の1G</th>
+        <th>次の1G+4</th>
         <th>逃げ</th>
-        <th>よこ</th>
+        <th>逃げ+4</th>
         <th>エンカ3</th>
         <th>G</th>
         <th>次の1G</th>
+        <th>次の1G+4</th>
         <th>逃げ</th>
-        <th>よこ</th>
+        <th>逃げ+4</th>
+        <th>エンカ4</th>
+        <th>G</th>
+        <th>次の1G</th>
+        <th>次の1G+4</th>
+        <th>逃げ</th>
+        <th>逃げ+4</th>
     </tr>
     </thead>
 </table>
@@ -135,7 +144,6 @@
     const json = '{"otomo":{"30":[{"rand":7,"id":132,"displayname":"まじゅつし","min":1,"max":2,"countrand":1},{"rand":12,"id":108,"displayname":"ミイラ男","min":1,"max":2,"countrand":1},{"rand":17,"id":83,"displayname":"はにわナイト","min":1,"max":2,"countrand":1},{"rand":18,"id":3,"displayname":"メタルスライム","min":1,"max":1,"countrand":0},{"rand":25,"id":8,"displayname":"さまようたましい","min":1,"max":2,"countrand":1},{"rand":30,"id":31,"displayname":"しにがみ","min":1,"max":2,"countrand":1}]},"max":{"30":3},"nears":{"30":{"30\\/7\\/12\\/11\\/12":{"しにがみ":true,"ミイラ男":true,"はにわナイト":true},"30\\/7\\/11\\/11\\/11":{"メタルスライム":true}}},"ennkaunnto":{"30":{"30\\/7\\/12\\/11\\/12\\/1\\/2":[{"tableid":30,"monsterId":31,"displayname":"しにがみ","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":108,"displayname":"ミイラ男","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":83,"displayname":"はにわナイト","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""}],"30\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":30,"monsterId":3,"displayname":"メタルスライム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":""}]}}}';
     const data = JSON.parse(json);
     let encDataCache = [];
-    const percent1G = 63.6364;
 
     setInterval(function () {
         if (hasUpdate && URL !== "") {
@@ -189,6 +197,9 @@
         if (document.getElementById('select3').value !== "noselect") {
             list.push(document.getElementById('select3'));
         }
+        if (document.getElementById('select4').value !== "noselect") {
+            list.push(document.getElementById('select4'));
+        }
         let queryParams = new URLSearchParams("");
 
 
@@ -232,6 +243,7 @@
             document.getElementById('select1'),
             document.getElementById('select2'),
             document.getElementById('select3'),
+            document.getElementById('select4'),
 
         ];
         let queryParams = new URLSearchParams(window.location.search);
@@ -282,7 +294,8 @@
         if (
             document.getElementById('select1').value === "noselect" &&
             document.getElementById('select2').value === "noselect" &&
-            document.getElementById('select3').value === "noselect"
+            document.getElementById('select3').value === "noselect" &&
+            document.getElementById('select4').value === "noselect"
         ) {
             maketable([]);
             return;
@@ -317,9 +330,10 @@
             document.getElementById('select1'),
             document.getElementById('select2'),
             document.getElementById('select3'),
+            document.getElementById('select4'),
         ];
 
-        const output = generateEmptyArray(end - start, 1 + 5 * 3, start);
+        const output = generateEmptyArray(end - start, 25, start);
         Object.keys(list).forEach(arraykey => {
             let freeCache = [];
             const item = list[arraykey]
@@ -331,24 +345,17 @@
                     let total = 0
                     let G = "1G"
 
-
                     //1Gの数
                     now = rand(now)
                     if (currentF < start) {
                         continue;
                     }
-
-
-
                     let encData = encDataCache[item.value]
                     let tableId = encData["tableid"];
                     let countrand = encData["countrand"]
                     let percent1 = calculatePercentFloat(now)
                     let count1G = getRand(percent1, countrand + 1);
-
-                    freeCache[currentF - start] = [percent1]
-                    freeCache[currentF - start][4] = now
-                    freeCache[currentF - start][5] = currentF
+                    freeCache[currentF] = [percent1]
                     count1G += encData["min"]
                     result[1] = [null, count1G]
                     total += count1G
@@ -363,8 +370,6 @@
                     let tmp2 = rand(now)
                     let percent2 = calculatePercentFloat(tmp2)
                     let rand2 = getRand(percent2, encMax) + 1
-
-                    freeCache[currentF - start][3] = percent2
 
                     if (rand2 > enc2g) {
                         G = "2G"
@@ -453,15 +458,14 @@
                     } else if (G === "3G") {
                         base = 7
                     }
-                    if (otomOnly && freeCache[currentF - start][3] >= percent1G) {
+                    if (otomOnly && G !== "1G") {
                         deleteList[currentF - start] = true
                     }
-                    output[currentF - start][arraykey * 5 + 1] = result1
-                    output[currentF - start][arraykey * 5 + 2] = G + "(" + (base + total) + ")"
+                    output[currentF - start][arraykey * 6 + 1] = result1
+                    output[currentF - start][arraykey * 6 + 2] = G + "(" + (base + total) + ")"
 
-
-                    freeCache[currentF - start][1] = G
-                    freeCache[currentF - start][2] = base + total
+                    freeCache[currentF][1] = G
+                    freeCache[currentF][2] = base + total
 
                     // let otomo = otomoCache[tableId][rand2]
 
@@ -471,13 +475,16 @@
                 let freeCache1 = []
                 for (var i = freeCache.length - 1; i >= 0; i--) {
                     let element = freeCache[i];
+                    if (freeCache[i + 1] === undefined) {
+                        continue;
+                    }
                     if (is1G) {
                         if (element[0] < 25) {
                             freecount = 0
                         }
                     }
                     //if (element[1] === "1G") {
-                    if (freeCache[i][3] < percent1G) {
+                    if (freeCache[i + 1][0] < 63.6364) {
                         is1G = true
                     } else {
                         is1G = false
@@ -492,18 +499,22 @@
                 }
                 for (let i = 0; i < freeCache.length; i++) {
                     let element = freeCache[i]
-                    let nowCount = element[5] + element[2]
-                    if (freeCache1[nowCount - start] !== null && freeCache1[nowCount] !== undefined) {
-                        output[i][arraykey * 5 + 4] = freeCache1[nowCount - start] + "(" + (nowCount + freeCache1[nowCount - start] + 1) + "F)"
-                        // if (freeCache1[nowCount + 4] !== null && freeCache1[nowCount + 4] !== undefined) {
-                        //     output[i][arraykey * 6 + 6] = freeCache1[nowCount + 4] + "(" + (nowCount + freeCache1[nowCount + 4] + 5) + "F)"
-                        // }
+                    let nowCount = i + element[2]
+                    if (freeCache1[nowCount] !== null && freeCache1[nowCount] !== undefined) {
+                        output[i][arraykey * 6 + 5] = freeCache1[nowCount] + "(" + (nowCount + freeCache1[nowCount] + 1) + "F)"
+                        if (freeCache1[nowCount + 4] !== null && freeCache1[nowCount + 4] !== undefined) {
+                            output[i][arraykey * 6 + 6] = freeCache1[nowCount + 4] + "(" + (nowCount + freeCache1[nowCount + 4] + 5) + "F)"
+                        }
                     }
                 }
                 let freeCache2 = []
                 freecount = null
                 for (var j = freeCache.length - 1; j >= 0; j--) {
-                    if (freeCache[j][3] < percent1G) {
+
+                    if (freeCache[j + 1] === undefined) {
+                        continue;
+                    }
+                    if (freeCache[j + 1][0] < 63.6364) {
                         freecount = 0
                     } else {
                         if (freecount !== null) {
@@ -512,35 +523,18 @@
                     }
                     freeCache2[j] = freecount
                 }
-                console.log(freeCache2)
                 for (let i = 0; i < freeCache.length; i++) {
                     let element = freeCache[i]
-                    let nowCount = element[5] + element[2]
-                    if (freeCache2[nowCount] !== null && freeCache2[nowCount - start] !== undefined) {
-                        output[i][arraykey * 5 + 3] = freeCache2[nowCount - start] + "(" + (nowCount + freeCache2[nowCount - start]) + "F)"
-                        // if (freeCache1[nowCount + 4] !== null && freeCache1[nowCount + 4] !== undefined) {
-                        //     output[i][arraykey * 6 + 4] = freeCache2[nowCount + 4] + "(" + (nowCount + freeCache2[nowCount + 4] + 4) + "F)"
-                        // }
-                    }
-                }
-
-
-                for (let i = 0; i < freeCache.length; i++) {
-                    let element = freeCache[i]
-                    let tmp = freeCache[i][4]
-                    let status = ""
-                    for (let k = 0; k < freeCache[i][2] + 4; k++) {
-                        if (k >= freeCache[i][2]){
-                            let percent_1 = calculatePercent(tmp)
-                            status += (((percent_1 % BigInt(2)).toString(10)) === "0" ? "よ" : "こ")
+                    let nowCount = i + element[2]
+                    if (freeCache2[nowCount] !== null && freeCache2[nowCount] !== undefined) {
+                        output[i][arraykey * 6 + 3] = freeCache2[nowCount] + "(" + (nowCount + freeCache2[nowCount]) + "F)"
+                        if (freeCache1[nowCount + 4] !== null && freeCache1[nowCount + 4] !== undefined) {
+                            output[i][arraykey * 6 + 4] = freeCache2[nowCount + 4] + "(" + (nowCount + freeCache2[nowCount + 4] + 4) + "F)"
                         }
-                        tmp = rand(tmp)
                     }
-
-                    output[i][arraykey * 5 + 5] = status
                 }
-            }
 
+            }
         });
 
 
@@ -586,10 +580,11 @@
                     document.getElementById('select1'),
                     document.getElementById('select2'),
                     document.getElementById('select3'),
+                    document.getElementById('select4'),
                 ];
                 Object.keys(list).forEach(arraykey => {
                     let element = list[arraykey]
-                    randomColumnIndex = arraykey * 5 + 1
+                    randomColumnIndex = arraykey * 6 + 1
                     $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
                 });
             }
@@ -609,57 +604,87 @@
         let c_1 = table1.column(3);
         let c_5 = table1.column(4);
         let c_9 = table1.column(5);
+        let c_13 = table1.column(6);
         if (document.getElementById('select1').value === "noselect") {
             c.visible(false);
             c1.visible(false);
             c_1.visible(false);
             c_5.visible(false);
             c_9.visible(false);
+            c_13.visible(false);
         } else {
             c.visible(true);
             c1.visible(true);
             c_1.visible(true);
             c_5.visible(true);
             c_9.visible(true);
+            c_13.visible(true);
 
         }
 
-        let c2 = table1.column(6);
-        let c3 = table1.column(7);
-        let c_2 = table1.column(8);
-        let c_6 = table1.column(9);
-        let c_10 = table1.column(10);
+        let c2 = table1.column(7);
+        let c3 = table1.column(8);
+        let c_2 = table1.column(9);
+        let c_6 = table1.column(10);
+        let c_10 = table1.column(11);
+        let c_14 = table1.column(12);
         if (document.getElementById('select2').value === "noselect") {
             c2.visible(false);
             c3.visible(false);
             c_2.visible(false);
             c_6.visible(false);
             c_10.visible(false);
+            c_14.visible(false);
         } else {
             c2.visible(true);
             c3.visible(true);
             c_2.visible(true);
             c_6.visible(true);
             c_10.visible(true);
+            c_14.visible(true);
         }
 
-        let c4 = table1.column(11);
-        let c5 = table1.column(12);
-        let c_3 = table1.column(13);
-        let c_7 = table1.column(14);
-        let c_11 = table1.column(15);
+        let c4 = table1.column(13);
+        let c5 = table1.column(14);
+        let c_3 = table1.column(15);
+        let c_7 = table1.column(16);
+        let c_11 = table1.column(17);
+        let c_15 = table1.column(18);
         if (document.getElementById('select3').value === "noselect") {
             c4.visible(false);
             c5.visible(false);
             c_3.visible(false);
             c_7.visible(false);
             c_11.visible(false);
+            c_15.visible(false);
         } else {
             c4.visible(true);
             c5.visible(true);
             c_3.visible(true);
             c_7.visible(true);
             c_11.visible(true);
+            c_15.visible(true);
+        }
+        let c6 = table1.column(19);
+        let c7 = table1.column(20);
+        let c_4 = table1.column(21);
+        let c_8 = table1.column(22);
+        let c_12 = table1.column(23);
+        let c_16 = table1.column(24);
+        if (document.getElementById('select4').value === "noselect") {
+            c6.visible(false);
+            c7.visible(false);
+            c_4.visible(false);
+            c_8.visible(false);
+            c_12.visible(false);
+            c_16.visible(false);
+        } else {
+            c6.visible(true);
+            c7.visible(true);
+            c_4.visible(true);
+            c_8.visible(true);
+            c_12.visible(true);
+            c_16.visible(true);
         }
 
         table1.on('draw', function () {
@@ -667,10 +692,11 @@
                 document.getElementById('select1'),
                 document.getElementById('select2'),
                 document.getElementById('select3'),
+                document.getElementById('select4'),
             ];
             Object.keys(list).forEach(arraykey => {
                 let element = list[arraykey]
-                randomColumnIndex = arraykey * 5 + 1
+                randomColumnIndex = arraykey * 6 + 1
                 $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
             });
         });
@@ -773,6 +799,7 @@
         createSelectElement('container', "select1", selectData);
         createSelectElement('container', "select2", selectData);
         createSelectElement('container', "select3", selectData);
+        createSelectElement('container', "select4", selectData);
         createPElement('container', 'お供検索');
         createCheckbox('container', "otomOnly", "1Gだけ表示", false)
         createBrElement('container')
@@ -791,6 +818,7 @@
             document.getElementById('select1'),
             document.getElementById('select2'),
             document.getElementById('select3'),
+            document.getElementById('select4'),
             document.getElementById('fixedheader'),
             document.getElementById('otomOnly'),
             //document.getElementById('otomoSelect1'),

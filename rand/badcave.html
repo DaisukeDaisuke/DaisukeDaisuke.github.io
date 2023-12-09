@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>封印のほこら(quarantomb)のエンカウントテーブル</title>
+    <title>サンマロウ北の洞窟(The Bad Cave)のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -132,19 +132,19 @@
     let hasUpdate = false;
     let hasTableUpdate = false;
     let hash = "";
-    const json = '{"otomo":{"30":[{"rand":7,"id":132,"displayname":"まじゅつし","min":1,"max":2,"countrand":1},{"rand":12,"id":108,"displayname":"ミイラ男","min":1,"max":2,"countrand":1},{"rand":17,"id":83,"displayname":"はにわナイト","min":1,"max":2,"countrand":1},{"rand":18,"id":3,"displayname":"メタルスライム","min":1,"max":1,"countrand":0},{"rand":25,"id":8,"displayname":"さまようたましい","min":1,"max":2,"countrand":1},{"rand":30,"id":31,"displayname":"しにがみ","min":1,"max":2,"countrand":1}]},"max":{"30":3},"nears":{"30":{"30\\/7\\/12\\/11\\/12":{"しにがみ":true,"ミイラ男":true,"はにわナイト":true},"30\\/7\\/11\\/11\\/11":{"メタルスライム":true}}},"ennkaunnto":{"30":{"30\\/7\\/12\\/11\\/12\\/1\\/2":[{"tableid":30,"monsterId":31,"displayname":"しにがみ","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":108,"displayname":"ミイラ男","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""},{"tableid":30,"monsterId":83,"displayname":"はにわナイト","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":""}],"30\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":30,"monsterId":3,"displayname":"メタルスライム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":""}]}}}';
+    const json = '{"otomo":{"88":[{"rand":6,"id":17,"displayname":"ベホイミスライム","min":1,"max":2,"countrand":1},{"rand":12,"id":133,"displayname":"きとうし","min":1,"max":3,"countrand":2},{"rand":13,"id":76,"displayname":"メタルブラザーズ","min":1,"max":1,"countrand":0},{"rand":18,"id":42,"displayname":"メーダロード","min":1,"max":2,"countrand":1},{"rand":24,"id":92,"displayname":"デッドペッカー","min":1,"max":3,"countrand":2},{"rand":31,"id":177,"displayname":"メタルハンター","min":1,"max":2,"countrand":1}],"89":[{"rand":6,"id":17,"displayname":"ベホイミスライム","min":1,"max":2,"countrand":1},{"rand":11,"id":42,"displayname":"メーダロード","min":1,"max":2,"countrand":1},{"rand":18,"id":260,"displayname":"オーシャンクロー","min":1,"max":1,"countrand":0},{"rand":19,"id":76,"displayname":"メタルブラザーズ","min":1,"max":1,"countrand":0},{"rand":25,"id":92,"displayname":"デッドペッカー","min":1,"max":3,"countrand":2},{"rand":32,"id":177,"displayname":"メタルハンター","min":1,"max":2,"countrand":1}]},"max":{"88":4,"89":4},"nears":{"88":{"88\\/7\\/9\\/9\\/9":{"オーシャンクロー":true},"88\\/6\\/9\\/9\\/9":{"メーダロード":true,"メタルハンター":true},"88\\/6\\/8\\/8\\/8":{"メタルブラザーズ":true}},"89":{"89\\/7\\/10\\/10\\/10":{"オーシャンクロー":true},"89\\/6\\/9\\/9\\/9":{"メーダロード":true,"メタルハンター":true},"89\\/6\\/8\\/8\\/8":{"メタルブラザーズ":true},"89\\/7\\/7\\/7\\/7":{"ひとくいばこ":true}}},"ennkaunnto":{"88":{"88\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":88,"monsterId":260,"displayname":"オーシャンクロー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B1F"}],"88\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":88,"monsterId":42,"displayname":"メーダロード","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"B1F"}],"88\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":88,"monsterId":177,"displayname":"メタルハンター","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B1F"}],"88\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":88,"monsterId":76,"displayname":"メタルブラザーズ","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B1F"}]},"89":{"89\\/7\\/10\\/10\\/10\\/1\\/2":[{"tableid":89,"monsterId":260,"displayname":"オーシャンクロー","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":2,"countrand":1,"has3g":false,"name":"B2F"}],"89\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":89,"monsterId":42,"displayname":"メーダロード","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"B2F"}],"89\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":89,"monsterId":177,"displayname":"メタルハンター","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}],"89\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":89,"monsterId":76,"displayname":"メタルブラザーズ","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}],"89\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":89,"monsterId":38,"displayname":"ひとくいばこ","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"B2F"}]}}}'
     const data = JSON.parse(json);
     let encDataCache = [];
-    const percent1G = 63.6364;
+    const percent1G = 75.0000;
 
     setInterval(function () {
         if (hasUpdate && URL !== "") {
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", 封印のほこら(quarantomb)のエンカウントテーブル";
+                document.title = document.getElementById('seed').value + ", サンマロウ北の洞窟(The Bad Cave)のエンカウントテーブル";
             } else {
-                document.title = "封印のほこら(quarantomb)のエンカウントテーブル";
+                document.title = "サンマロウ北の洞窟(The Bad Cave)のエンカウントテーブル";
             }
         }
         if (hasTableUpdate === true) {
