@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易乱数表</title>
+    <script src="rand.js"></script>
+    <script src="../main.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/select/1.6.2/css/select.dataTables.min.css" rel="stylesheet"/>
+
+    <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        .container {
+            margin: 20px auto;
+            max-width: 450px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+
+        }
+
+        .input1 {
+            width: 49%;
+            padding: 15px;
+        }
+
+        .input-container {
+            display: inline-block; /* input要素を横並びに配置するためのスタイル */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>簡易乱数表</h1>
+    <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
+    <label for="seed">初期seed</label>
+    <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
+    <label for="share">この入力を共有</label>
+    <input type="text" id="share" name="share" onclick="this.select()" class="input" readonly="readonly"><br>
+    <label for="maxdisplay">表示上限(軽量化用)</label><br>
+    <input type="number" id="maxdisplay" name="maxdisplay" class="input1" placeholder="1000"><br><br>
+    <label for="decimal">小数点の桁数</label><br>
+    <input type="number" id="decimal" name="decimal" class="input1" placeholder="16" value="16"><br><br>
+    <label>消費数</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="start" name="start" class="input1" value="0">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="end" name="end" class="input1" value="100">
+        </div>
+    </div>
+    <label>% 下限値～上限値(小数点対応)</label><br>
+    <span>(以上～未満)</span><br>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="max" name="end" class="input1">
+        </div>
+    </div>
+    <label>次の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="nextmin" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="nextmax" name="end" class="input1">
+        </div>
+    </div>
+    <label>その次の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="next2min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="next2max" name="end" class="input1">
+        </div>
+    </div>
+    <label>3個先の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="next3min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="next3max" name="end" class="input1">
+        </div>
+    </div>
+    <label>4個先の% 下限値～上限値</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="next4min" name="start" class="input1">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="next4max" name="end" class="input1">
+        </div>
+    </div>
+    <label>フィルタ機能を有効化する</label>
+    <input type="checkbox" id="filter" name="filter" checked><br><br>
+    <span>非表示設定</span><br>
+    <label>「seed」を非表示にする</label>
+    <input type="checkbox" id="hideseeds" name="hideseeds"><br>
+    <label>「次の%」を非表示にする</label>
+    <input type="checkbox" id="hidep1" name="hidep1" checked><br>
+    <label>「その次の%」を非表示にする</label>
+    <input type="checkbox" id="hidep2" name="hidep2" checked><br>
+    <label>「3個先の%」を非表示にする</label>
+    <input type="checkbox" id="hidep3" name="hidep3" checked><br>
+    <label>「4個先の%」を非表示にする</label>
+    <input type="checkbox" id="hidep4" name="hidep4" checked><br>
+    <br>
+    <span>小数点以下には、計算上生じる誤差があります。</span><br><br>
+    <span id="init">初期消費: </span><br><br>
+    <span id="init1">タイプ: </span><br><br>
+    <span id="info"></span>
+</div>
+<br>
+</div>
+<table id="table" class="table" style="width:100%">
+    <thead>
+    <tr>
+        <th>[F]</th>
+        <th>seed</th>
+        <th>%</th>
+        <th>しらべる</th>
+        <th>次の%</th>
+        <th>その次の%</th>
+        <th>3個先の%</th>
+        <th>4個先の%</th>
+    </tr>
+    </thead>
+</table>
+<script>
+
+    let URL = "";
+    let hasUpdate = false;
+    let hasTableUpdate = false;
+    let hash = "";
+
+    setInterval(function () {
+        if (hasUpdate && URL !== "") {
+            hasUpdate = false;
+            window.history.replaceState({}, '', URL);
+            if (document.getElementById('seed').value !== "") {
+                document.title = document.getElementById('seed').value + "の簡易乱数表";
+            } else {
+                document.title = "簡易乱数表";
+            }
+        }
+        if (hasTableUpdate === true) {
+            hasTableUpdate = false;
+            updateTable();
+        }
+    }, 1000);
+
+    function update1() {
+
+    }
+
+    function decode(input) {
+        if (input === "") {
+            return null;
+        }
+        let purse = parseFloat(input);
+        if (isNaN(purse)) {
+            return null;
+        }
+        return purse;
+    }
+
+    function saveInputValuesToURL1() {
+        let list = [];
+
+        if (document.getElementById('seed').value !== "0x327") {
+            list.push(document.getElementById('seed'));
+        }
+        if (document.getElementById('start').value !== "0") {
+            list.push(document.getElementById('start'));
+        }
+        if (document.getElementById('end').value !== "100") {
+            list.push(document.getElementById('end'));
+        }
+        if (document.getElementById('min').value !== "") {
+            list.push(document.getElementById('min'));
+        }
+        if (document.getElementById('max').value !== "") {
+            list.push(document.getElementById('max'));
+        }
+        if (document.getElementById('nextmin').value !== "") {
+            list.push(document.getElementById('nextmin'));
+        }
+        if (document.getElementById('nextmax').value !== "") {
+            list.push(document.getElementById('nextmax'));
+        }
+        if (document.getElementById('next2min').value !== "") {
+            list.push(document.getElementById('next2min'));
+        }
+        if (document.getElementById('next2max').value !== "") {
+            list.push(document.getElementById('next2max'));
+        }
+        if (document.getElementById('next3min').value !== "") {
+            list.push(document.getElementById('next3min'));
+        }
+        if (document.getElementById('next3max').value !== "") {
+            list.push(document.getElementById('next3max'));
+        }
+        if (document.getElementById('next4min').value !== "") {
+            list.push(document.getElementById('next4min'));
+        }
+        if (document.getElementById('next4max').value !== "") {
+            list.push(document.getElementById('next4max'));
+        }
+        if (document.getElementById('maxdisplay').value !== "") {
+            list.push(document.getElementById('maxdisplay'));
+        }
+        if (document.getElementById('decimal').value !== "16") {
+            list.push(document.getElementById('decimal'));
+        }
+
+        let queryParams = new URLSearchParams("");
+
+        list.forEach(inputElement => {
+            if (inputElement.value !== "") {
+                const inputId = inputElement.id;
+                const inputValue = inputElement.value;
+                queryParams.set(inputId, inputValue);
+            }
+        });
+
+        if (document.getElementById('filter').checked !== true) {
+            queryParams.set("filter", "0");
+        }
+
+        if (document.getElementById('hideseeds').checked === true) {
+            queryParams.set("hideseeds", "1");
+        }
+        if (document.getElementById('hidep1').checked === false) {
+            queryParams.set("hidep1", "0");
+        }
+        if (document.getElementById('hidep2').checked === false) {
+            queryParams.set("hidep2", "0");
+        }
+        if (document.getElementById('hidep3').checked === false) {
+            queryParams.set("hidep3", "0");
+        }
+        if (document.getElementById('hidep4').checked === false) {
+            queryParams.set("hidep4", "0");
+        }
+
+        let newURL;
+        if (queryParams.toString() !== "") {
+            newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        } else {
+            newURL = `${window.location.origin}${window.location.pathname}`;
+        }
+
+        //window.history.replaceState({}, '', newURL);
+        document.getElementById('share').value = newURL;
+        URL = newURL;
+        hasUpdate = true;
+    }
+
+    function loadInputValuesFromURL1(bool = true) {
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('min'),
+            document.getElementById('max'),
+            document.getElementById('nextmin'),
+            document.getElementById('nextmax'),
+            document.getElementById('next2min'),
+            document.getElementById('next2max'),
+            document.getElementById('next3min'),
+            document.getElementById('next3max'),
+            document.getElementById('next4min'),
+            document.getElementById('next4max'),
+            document.getElementById('maxdisplay'),
+            document.getElementById('decimal'),
+
+
+        ];
+        let queryParams = new URLSearchParams(window.location.search);
+
+        list.forEach(inputElement => {
+            const inputId = inputElement.id;
+            const paramValue = queryParams.get(inputId);
+            if (paramValue !== null) {
+                inputElement.value = paramValue;
+            }
+        });
+
+        if (queryParams.get("filter") === "0") {
+            document.getElementById('filter').checked = false;
+        }
+
+        if (queryParams.get("hideseeds") === "1") {
+            document.getElementById('hideseeds').checked = true;
+        }
+
+        if (queryParams.get("hidep1") === "0") {
+            document.getElementById('hidep1').checked = false;
+        }
+
+        if (queryParams.get("hidep2") === "0") {
+            document.getElementById('hidep2').checked = false;
+        }
+
+        if (queryParams.get("hidep3") === "0") {
+            document.getElementById('hidep3').checked = false;
+        }
+
+        if (queryParams.get("hidep4") === "0") {
+            document.getElementById('hidep4').checked = false;
+        }
+
+        if (bool) {
+            updateTable();
+        }
+    }
+
+    function updateTable() {
+        saveInputValuesToURL1();
+        const inputElement = document.getElementById('seed');
+        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        if (seedStart === null) {
+            maketable([]);
+            return;
+        }
+        const inputElement1 = document.getElementById('start').value;
+        const inputElement2 = document.getElementById('end').value;
+        if (inputElement1 === "") {
+            maketable([]);
+            return;
+        }
+        if (inputElement2 === "") {
+            maketable([]);
+            return;
+        }
+
+        const tmp1 = parseInt(inputElement1);
+        const tmp2 = parseInt(inputElement2);
+        const start = Math.min(tmp1, tmp2);
+        const end = Math.max(tmp1, tmp2);
+        let min = decode(document.getElementById('min').value);
+        let max = decode(document.getElementById('max').value);
+        let nextmin = decode(document.getElementById('nextmin').value);
+        let nextmax = decode(document.getElementById('nextmax').value);
+        let next2min = decode(document.getElementById('next2min').value);
+        let next2max = decode(document.getElementById('next2max').value);
+        let next3min = decode(document.getElementById('next3min').value);
+        let next3max = decode(document.getElementById('next3max').value);
+        let next4min = decode(document.getElementById('next4min').value);
+        let next4max = decode(document.getElementById('next4max').value);
+        let inputElement3 = document.getElementById('maxdisplay');
+        let maxdisplay = inputElement3.value.trim() !== '' ? parseInt(inputElement3.value) : null;
+        let inputElement4 = document.getElementById('decimal');
+        let decimal = inputElement4.value.trim() !== '' ? parseInt(inputElement4.value) : null;
+        let checked = document.getElementById('filter').checked;
+        let hideseeds = document.getElementById('hideseeds').checked;
+        let hidep1 = document.getElementById('hidep1').checked;
+        let hidep2 = document.getElementById('hidep2').checked;
+        let hidep3 = document.getElementById('hidep3').checked;
+        let hidep4 = document.getElementById('hidep4').checked;
+        let output = [];
+        if (checked) {
+            document.getElementById('info').innerText = "";
+        } else {
+            document.getElementById('info').innerText = "フィルタ機能が無効化されています。";
+        }
+        if (decimal === null){
+            decimal = 16
+        }
+        if (decimal <= 0) {
+            decimal = 0
+        }
+        setDecimal(decimal)
+        let now = BigInt(seedStart);
+        //0だけ特別に処理する
+        if (start === 0) {
+            do {
+                let tmp = rand(now);
+                let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
+                let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+                let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
+                let tmp2 = rand(tmp);
+                let nextpercent = calculatePercentFloat(tmp2);
+                let tmp3 = rand(tmp2);
+                let next2percent = calculatePercentFloat(tmp3);
+                let tmp4 = rand(tmp3);
+                let next3percent = calculatePercentFloat(tmp4);
+                let tmp5 = rand(tmp4);
+                let next4percent = calculatePercentFloat(tmp5);
+                let viewSeed = "0x" + seedStart.toString(16).toUpperCase();
+                if (hideseeds) {
+                    viewSeed = "";
+                }
+                if (hidep1) {
+                    nextpercent = "";
+                }
+                if (hidep2) {
+                    next2percent = "";
+                }
+                if (checked) {
+                    if (min !== null && min > percentfloat) {
+                        break;
+                    }
+                    if (max !== null && max < percentfloat) {
+                        break;
+                    }
+
+                    if (nextmin !== null && nextmin > nextpercent) {
+                        break;
+                    }
+                    if (nextmax !== null && nextmax < nextpercent) {
+                        break;
+                    }
+                    if (next2min !== null && next2min > next2percent) {
+                        break;
+                    }
+                    if (next2max !== null && next2max < next2percent) {
+                        break;
+                    }
+                    if (next3min !== null && next3min > next3percent) {
+                        break;
+                    }
+                    if (next3max !== null && next3max < next3percent) {
+                        break;
+                    }
+                    if (next4min !== null && next4min > next4percent) {
+                        break;
+                    }
+                    if (next4max !== null && next4max < next4percent) {
+                        break;
+                    }
+                }
+
+                output.push([0, viewSeed, percentfloat, status, nextpercent, next2percent, next3percent, next4percent]);
+            } while (false);
+        }
+        let displaycount = 1;
+        //他の処理
+        for (let currentF = 1; currentF <= end; currentF++) {
+            now = rand(now); //乱数を更新
+            if (currentF < start) {
+                continue;
+            }
+            let tmp = rand(now);
+            let percent = calculatePercent(tmp); //調べるは+1した乱数を参照するため
+            let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+
+            let percentfloat = calculatePercentFloat(tmp); //調べるは+1した乱数を参照するため
+            let tmp2 = rand(tmp);
+            let nextpercent = calculatePercentFloat(tmp2);
+            let tmp3 = rand(tmp2);
+            let next2percent = calculatePercentFloat(tmp3);
+            let tmp4 = rand(tmp3);
+            let next3percent = calculatePercentFloat(tmp4);
+            let tmp5 = rand(tmp4);
+            let next4percent = calculatePercentFloat(tmp5);
+
+            if (checked) {
+                if (min !== null && min > percentfloat) {
+                    continue;
+                }
+                if (max !== null && max < percentfloat) {
+                    continue;
+                }
+
+                if (nextmin !== null && nextmin > nextpercent) {
+                    continue;
+                }
+                if (nextmax !== null && nextmax < nextpercent) {
+                    continue;
+                }
+                if (next2min !== null && next2min > next2percent) {
+                    continue;
+                }
+                if (next2max !== null && next2max < next2percent) {
+                    continue;
+                }
+                if (next3min !== null && next3min > next3percent) {
+                    continue;
+                }
+                if (next3max !== null && next3max < next3percent) {
+                    continue;
+                }
+                if (next4min !== null && next4min > next4percent) {
+                    continue;
+                }
+                if (next4max !== null && next4max < next4percent) {
+                    continue;
+                }
+            }
+
+            let viewSeed = "0x" + now.toString(16).toUpperCase();
+            if (hideseeds) {
+                viewSeed = "";
+            }
+            if (hidep1) {
+                nextpercent = "";
+            }
+            if (hidep2) {
+                next2percent = "";
+            }
+            if (hidep3) {
+                next3percent = "";
+            }
+            if (hidep4) {
+                next4percent = "";
+            }
+
+            if (maxdisplay !== null && displaycount >= maxdisplay) {
+                continue;
+            }
+
+            output.push([currentF, viewSeed, percentfloat, status, nextpercent, next2percent, next3percent, next4percent]);
+            ++displaycount;
+        }
+        maketable(output);
+        const json = '[{"4":23,"5":24},{"4":24,"5":23},{"4":23,"5":24},{"4":24,"5":23}]'
+        const obj = JSON.parse(json)
+
+        const f0 = rand(BigInt(seedStart))
+        const f1 = rand(f0)
+        const percent0 = calculatePercentFloat(f0)
+        const percent1 = calculatePercentFloat(f1)
+        const rand0 = getRand(percent0, 4.0)
+        const rand1 = getRand(percent1, 2.0) + 4
+
+        document.getElementById('init').innerHTML = "初期消費: " + obj[rand0][rand1] + " (現在地)(JP rom only)";
+
+        let now1 = BigInt(seedStart);
+        for (let currentF = 0; currentF <= 8; currentF++) {
+            [now1, ret] = ARand(now1);
+            var type = getType(ret);
+        }
+        let obj1 = [
+            "鉱石",
+            "石",
+            "聖水",
+            "花",
+            "海",
+            "草",
+            "茸",
+            "砂",
+        ];
+        console.log(type)
+        document.getElementById('init1').innerHTML = "タイプ: " + obj1[type] + " (" + type + ", 最速起動)";
+
+
+    }
+
+
+    function maketable(tableData) {
+        if ($.fn.dataTable.isDataTable('#table')) {
+            table = $('#table').DataTable();
+            table.destroy();
+        }
+
+        // オプションの設定
+        var tableOptions = {
+            "dom": 'Bfrtip',
+            "buttons": [
+                'colvis',
+                'excel',
+                'csv',
+                'pdf',
+                'copy',
+                'print'
+            ],
+            "data": tableData,
+            "select": true,
+            "displayLength": 1000,
+        }
+        // テーブルの作成
+        table = $('#table').DataTable(tableOptions);
+        // Toggle the visibility
+
+
+        let table1 = $('#table').DataTable();
+        let c = table1.column(1);
+        if (document.getElementById('hideseeds').checked === true) {
+            c.visible(false);
+        } else {
+            c.visible(true);
+        }
+        let c1 = table1.column(4);
+        if (document.getElementById('hidep1').checked === true) {
+            c1.visible(false);
+        } else {
+            c1.visible(true);
+        }
+        let c2 = table1.column(5);
+        if (document.getElementById('hidep2').checked === true) {
+            c2.visible(false);
+        } else {
+            c2.visible(true);
+        }
+        let c3 = table1.column(6);
+        if (document.getElementById('hidep3').checked === true) {
+            c3.visible(false);
+        } else {
+            c3.visible(true);
+        }
+        let c4 = table1.column(7);
+        if (document.getElementById('hidep4').checked === true) {
+            c4.visible(false);
+        } else {
+            c4.visible(true);
+        }
+    }
+
+    function preUpdateTable() {
+        hasTableUpdate = true;
+    }
+
+    function jumpHash() {
+        if (hash === "#table") {
+            console.log("!!");
+            window.location.hash = hash;
+        }
+    }
+
+    window.addEventListener('load', () => {
+        hash = window.location.hash;
+        console.log(hash);
+        loadInputValuesFromURL1(false);
+        saveInputValuesToURL1();
+        setTimeout("jumpHash()", 1000);
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('min'),
+            document.getElementById('max'),
+            document.getElementById('nextmin'),
+            document.getElementById('nextmax'),
+            document.getElementById('filter'),
+            document.getElementById('next2min'),
+            document.getElementById('next2max'),
+            document.getElementById('next3min'),
+            document.getElementById('next3max'),
+            document.getElementById('next4min'),
+            document.getElementById('next4max'),
+            document.getElementById('hideseeds'),
+            document.getElementById('hidep1'),
+            document.getElementById('hidep2'),
+            document.getElementById('hidep3'),
+            document.getElementById('hidep4'),
+            document.getElementById('maxdisplay'),
+            document.getElementById('decimal'),
+        ];
+        list.forEach(inputElement => {
+            inputElement.addEventListener('input', preUpdateTable);
+        });
+        updateTable();
+    });
+
+
+</script>
+</body>
+</html>
