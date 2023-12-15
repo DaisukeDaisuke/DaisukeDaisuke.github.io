@@ -128,6 +128,7 @@
     // console.log(checkArrayContains(inputArray, targetArray2)); // true
 
 
+
     let URL = "";
     let hasUpdate = false;
     let hasTableUpdate = false;
@@ -313,6 +314,7 @@
             otomoCache1[tableId] = lastElement["rand"];
         });
 
+        console.log(otomoCache)
         let list = [
             document.getElementById('select1'),
             document.getElementById('select2'),
@@ -420,6 +422,9 @@
                             }
                             count -= backup - result[i][1];
                             ++i
+                            if (result[i] === undefined){
+                                i = 1
+                            }
                             if (i === 4) {
                                 i = 1
                             }
