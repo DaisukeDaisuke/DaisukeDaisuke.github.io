@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>エラフィタ地方北部(northern Zere)のエンカウントテーブル</title>
+    <title>ウォルロ地方(高台)のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -59,7 +59,7 @@
 </head>
 <body>
 <div class="container" id="container">
-    <h1>エラフィタ地方北部</h1>
+    <h1>ウォルロ地方(高台)</h1>
     <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
     <label for="seed">初期seed</label>
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
@@ -80,6 +80,7 @@
     <br>
     <label>ヘッダー追尾</label>
     <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
+    <p>地図法で使う事を想定して、消費数を+4しています</p><br>
 </div>
 </div>
 <br>
@@ -90,12 +91,16 @@
         <th>[F]</th>
         <th>エンカ1</th>
         <th>G</th>
+        <th>次のF</th>
         <th>エンカ2</th>
         <th>G</th>
+        <th>次のF</th>
         <th>エンカ3</th>
         <th>G</th>
+        <th>次のF</th>
         <th>エンカ4</th>
         <th>G</th>
+        <th>次のF</th>
     </tr>
     </thead>
 </table>
@@ -113,9 +118,9 @@
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", エラフィタ地方北部(northern Zere)のエンカウントテーブル";
+                document.title = document.getElementById('seed').value + ", ウォルロ地方(高台)のエンカウントテーブル";
             } else {
-                document.title = "エラフィタ地方北部(northern Zere)のエンカウントテーブル";
+                document.title = "ウォルロ地方(高台)のエンカウントテーブル";
             }
         }
         if (hasTableUpdate === true) {
@@ -280,7 +285,7 @@
             document.getElementById('select3'),
             document.getElementById('select4'),
         ];
-        const output = generateEmptyArray(end - start, 9, start);
+        const output = generateEmptyArray(end - start, 13, start);
         Object.keys(list).forEach(arraykey => {
             const item = list[arraykey]
             let now = BigInt(seedStart)
@@ -405,8 +410,9 @@
                     } else if (G === "3G") {
                         base = 7
                     }
-                    output[currentF - start][arraykey * 2 + 1] = result1
-                    output[currentF - start][arraykey * 2 + 2] = G + "(" + (base + total) + ")"
+                    output[currentF - start][arraykey * 3 + 1] = result1
+                    output[currentF - start][arraykey * 3 + 2] = G + "(" + (base + total + 4) + ")"
+                    output[currentF - start][arraykey * 3 + 3] = (currentF + base + total + 4) + "f"
 
 
                     // let otomo = otomoCache[tableId][rand2]
@@ -451,7 +457,7 @@
                 ];
                 Object.keys(list).forEach(arraykey => {
                     let element = list[arraykey]
-                    randomColumnIndex = arraykey * 2 + 1
+                    randomColumnIndex = arraykey * 3 + 1
                     $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
                 });
             }
@@ -465,43 +471,21 @@
         table = $('#table').DataTable(tableOptions);
         // Toggle the visibility
         let table1 = $('#table').DataTable();
-        let c = table1.column(1);
-        let c1 = table1.column(2);
-        if (document.getElementById('select1').value === "noselect") {
-            c.visible(false);
-            c1.visible(false);
-        } else {
-            c.visible(true);
-            c1.visible(true);
-        }
 
-        let c2 = table1.column(3);
-        let c3 = table1.column(4);
-        if (document.getElementById('select2').value === "noselect") {
-            c2.visible(false);
-            c3.visible(false);
-        } else {
-            c2.visible(true);
-            c3.visible(true);
-        }
-
-        let c4 = table1.column(5);
-        let c5 = table1.column(6);
-        if (document.getElementById('select3').value === "noselect") {
-            c4.visible(false);
-            c5.visible(false);
-        } else {
-            c4.visible(true);
-            c5.visible(true);
-        }
-        let c6 = table1.column(7);
-        let c7 = table1.column(8);
-        if (document.getElementById('select4').value === "noselect") {
-            c6.visible(false);
-            c7.visible(false);
-        } else {
-            c6.visible(true);
-            c7.visible(true);
+        let k = 1
+        for (let i = 1; i <= 4; i++) {
+            let c = table1.column(k++);
+            let c1 = table1.column(k++);
+            let c2 = table1.column(k++);
+            if (document.getElementById('select'+i).value === "noselect") {
+                c.visible(false);
+                c1.visible(false);
+                c2.visible(false);
+            } else {
+                c.visible(true);
+                c1.visible(true);
+                c2.visible(true);
+            }
         }
 
         table1.on('draw', function () {
@@ -513,7 +497,7 @@
             ];
             Object.keys(list).forEach(arraykey => {
                 let element = list[arraykey]
-                randomColumnIndex = arraykey * 2 + 1
+                randomColumnIndex = arraykey * 3 + 1
                 $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
             });
         });
