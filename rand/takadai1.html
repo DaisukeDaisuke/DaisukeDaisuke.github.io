@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ウォルロ地方(高台)のエンカウントテーブル(略名)</title>
+    <title>ウォルロ地方(高台)のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -59,7 +59,7 @@
 </head>
 <body>
 <div class="container" id="container">
-    <h1>ウォルロ地方(高台)(略名)</h1>
+    <h1>ウォルロ地方(高台)</h1>
     <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
     <label for="seed">初期seed</label>
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
@@ -80,6 +80,8 @@
     <br>
     <label>ヘッダー追尾</label>
     <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
+    <label>逃げ列を非表示にする</label>
+    <input type="checkbox" id="flee" name="flee"><br><br>
     <p>地図法で使う事を想定して、消費数を+4しています</p><br>
 </div>
 </div>
@@ -89,6 +91,7 @@
     <thead>
     <tr>
         <th>[F]</th>
+        <th>逃げる</th>
         <th>エンカ1</th>
         <th>G</th>
         <th>次のF</th>
@@ -120,9 +123,9 @@
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", ウォルロ地方(高台)のエンカウントテーブル(略名)";
+                document.title = document.getElementById('seed').value + ", ウォルロ地方(高台)のエンカウントテーブル";
             } else {
-                document.title = "ウォルロ地方(高台)のエンカウントテーブル(略名)";
+                document.title = "ウォルロ地方(高台)のエンカウントテーブル";
             }
         }
         if (hasTableUpdate === true) {
@@ -187,6 +190,12 @@
             queryParams.set("fixedheader", "0");
         }
 
+        if (document.getElementById('flee').checked === true) {
+            queryParams.set("flee", "1");
+        }
+
+
+
         let newURL;
         if (queryParams.toString() !== "") {
             newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
@@ -224,6 +233,10 @@
         if (queryParams.get("fixedheader") === "0") {
             document.getElementById('fixedheader').checked = false;
         }
+        if (queryParams.get("flee") === "1") {
+            document.getElementById('flee').checked = true;
+        }
+
 
         if (bool) {
             updateTable();
@@ -287,7 +300,7 @@
             document.getElementById('select3'),
             document.getElementById('select4'),
         ];
-        const output = generateEmptyArray(end - start, 13, start);
+        const output = generateEmptyArray(end - start, 14, start);
         Object.keys(list).forEach(arraykey => {
             const item = list[arraykey]
             let now = BigInt(seedStart)
@@ -311,6 +324,9 @@
                     count1G += encData["min"]
                     result[1] = [null, count1G]
                     total += count1G
+                    if (percent1 < 25){
+                        output[currentF - start][1] = "逃"
+                    }
 
                     //お供判定
                     let encdata2 = encDataCache[item.value];
@@ -412,9 +428,9 @@
                     } else if (G === "3G") {
                         base = 7
                     }
-                    output[currentF - start][arraykey * 3 + 1] = result1
-                    output[currentF - start][arraykey * 3 + 2] = G + "(" + (base + total + 4) + ")"
-                    output[currentF - start][arraykey * 3 + 3] = (currentF + base + total + 4) + "f"
+                    output[currentF - start][arraykey * 3 + 2] = result1
+                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total + 4) + ")"
+                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total + 4) + "f"
 
 
                     // let otomo = otomoCache[tableId][rand2]
@@ -459,7 +475,7 @@
                 ];
                 Object.keys(list).forEach(arraykey => {
                     let element = list[arraykey]
-                    randomColumnIndex = arraykey * 3 + 1
+                    randomColumnIndex = arraykey * 3 + 2
                     $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
                 });
             }
@@ -474,7 +490,15 @@
         // Toggle the visibility
         let table1 = $('#table').DataTable();
 
-        let k = 1
+        if (document.getElementById('flee').checked === true){
+            let c3 = table1.column(1);
+            c3.visible(false);
+        }else{
+            let c3 = table1.column(1);
+            c3.visible(true);
+        }
+
+        let k = 2
         for (let i = 1; i <= 4; i++) {
             let c = table1.column(k++);
             let c1 = table1.column(k++);
@@ -499,7 +523,7 @@
             ];
             Object.keys(list).forEach(arraykey => {
                 let element = list[arraykey]
-                randomColumnIndex = arraykey * 3 + 1
+                randomColumnIndex = arraykey * 3 + 2
                 $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
             });
         });
@@ -580,6 +604,7 @@
             document.getElementById('select3'),
             document.getElementById('select4'),
             document.getElementById('fixedheader'),
+            document.getElementById('flee'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);
