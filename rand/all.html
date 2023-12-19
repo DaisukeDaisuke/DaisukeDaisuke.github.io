@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全部入りのエンカウントテーブル</title>
+    <script src="rand.js"></script>
+    <script src="main.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/select/1.6.2/css/select.dataTables.min.css" rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.dataTables.min.css" rel="stylesheet"/>
+
+    <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
+
+    <style>
+        body {
+            text-align: center;
+        }
+
+        .container {
+            margin: 20px auto;
+            max-width: 450px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+
+        }
+
+        .input1 {
+            width: 49%;
+            padding: 15px;
+        }
+
+        .input-container {
+            display: inline-block; /* input要素を横並びに配置するためのスタイル */
+        }
+
+        select {
+            width: 100%;
+            padding: 15px; /* 高さを増やす */
+            margin-bottom: 20px;
+            max-width: 450px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="container">
+    <h1>全部入り</h1>
+    <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
+    <label for="seed">初期seed</label>
+    <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
+    <label for="share">この入力を共有</label>
+    <input type="text" id="share" name="share" onclick="this.select()" class="input" readonly="readonly"><br>
+    <label>消費数</label>
+    <div class="container">
+        <div class="input-container">
+            <input type="number" id="start" name="start" class="input1" value="0">
+        </div>
+        <div class="input-container">
+            <span>~</span>
+        </div>
+        <div class="input-container">
+            <input type="number" id="end" name="end" class="input1" value="100">
+        </div>
+    </div>
+    <br>
+    <label>ヘッダー追尾</label>
+    <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
+    <label>逃げ列を非表示にする</label>
+    <input type="checkbox" id="flee" name="flee" checked><br><br>
+    <label>次のF列を非表示にする</label>
+    <input type="checkbox" id="nextF" name="nextF" checked><br><br>
+</div>
+</div>
+<br>
+</div>
+<table id="table" class="table" style="width:100%">
+    <thead>
+    <tr>
+        <th>[F]</th>
+        <th>逃げる</th>
+        <th>エンカ1</th>
+        <th>G</th>
+        <th>次のF</th>
+        <th>エンカ2</th>
+        <th>G</th>
+        <th>次のF</th>
+        <th>エンカ3</th>
+        <th>G</th>
+        <th>次のF</th>
+        <th>エンカ4</th>
+        <th>G</th>
+        <th>次のF</th>
+    </tr>
+    </thead>
+</table>
+<script>
+    let URL = "";
+    let hasUpdate = false;
+    let hasTableUpdate = false;
+    let hash = "";
+    const json = '{"otomo":{"33":[{"rand":4,"id":7,"displayname":"メラゴースト","min":1,"max":1,"countrand":0},{"rand":8,"id":43,"displayname":"わらいぶくろ","min":1,"max":1,"countrand":0},{"rand":12,"id":30,"displayname":"ゆうれい","min":1,"max":1,"countrand":0},{"rand":15,"id":23,"displayname":"リリパット","min":1,"max":1,"countrand":0},{"rand":20,"id":20,"displayname":"メタッピー","min":1,"max":1,"countrand":0},{"rand":24,"id":4,"displayname":"ドラキー","min":1,"max":1,"countrand":0}],"34":[{"rand":5,"id":7,"displayname":"メラゴースト","min":1,"max":1,"countrand":0},{"rand":8,"id":43,"displayname":"わらいぶくろ","min":1,"max":1,"countrand":0},{"rand":13,"id":30,"displayname":"ゆうれい","min":1,"max":1,"countrand":0},{"rand":16,"id":23,"displayname":"リリパット","min":1,"max":1,"countrand":0},{"rand":19,"id":20,"displayname":"メタッピー","min":1,"max":1,"countrand":0},{"rand":21,"id":4,"displayname":"ドラキー","min":1,"max":1,"countrand":0}],"32":[{"rand":3,"id":1,"displayname":"スライム","min":1,"max":1,"countrand":0},{"rand":7,"id":43,"displayname":"わらいぶくろ","min":1,"max":1,"countrand":0},{"rand":10,"id":1,"displayname":"スライム","min":1,"max":1,"countrand":0},{"rand":13,"id":23,"displayname":"リリパット","min":1,"max":1,"countrand":0},{"rand":18,"id":20,"displayname":"メタッピー","min":1,"max":1,"countrand":0},{"rand":22,"id":4,"displayname":"ドラキー","min":1,"max":1,"countrand":0}],"12":[{"rand":5,"id":1,"displayname":"スライム","min":1,"max":1,"countrand":0},{"rand":10,"id":57,"displayname":"ズッキーニャ","min":1,"max":1,"countrand":0},{"rand":13,"id":56,"displayname":"モーモン","min":1,"max":1,"countrand":0},{"rand":14,"id":32,"displayname":"じんめんちょう","min":1,"max":1,"countrand":0},{"rand":17,"id":63,"displayname":"ドロザラー","min":1,"max":1,"countrand":0}],"14":[{"rand":2,"id":56,"displayname":"モーモン","min":1,"max":1,"countrand":0},{"rand":7,"id":4,"displayname":"ドラキー","min":1,"max":1,"countrand":0},{"rand":10,"id":57,"displayname":"ズッキーニャ","min":1,"max":1,"countrand":0},{"rand":13,"id":32,"displayname":"じんめんちょう","min":1,"max":1,"countrand":0},{"rand":15,"id":1,"displayname":"スライム","min":1,"max":1,"countrand":0},{"rand":20,"id":63,"displayname":"ドロザラー","min":1,"max":1,"countrand":0}],"15":[{"rand":4,"id":56,"displayname":"モーモン","min":1,"max":1,"countrand":0},{"rand":9,"id":23,"displayname":"リリパット","min":1,"max":1,"countrand":0},{"rand":13,"id":32,"displayname":"じんめんちょう","min":1,"max":1,"countrand":0},{"rand":15,"id":57,"displayname":"ズッキーニャ","min":1,"max":1,"countrand":0},{"rand":17,"id":1,"displayname":"スライム","min":1,"max":1,"countrand":0},{"rand":21,"id":63,"displayname":"ドロザラー","min":1,"max":1,"countrand":0}],"30":[{"rand":7,"id":132,"displayname":"まじゅつし","min":1,"max":2,"countrand":1},{"rand":12,"id":108,"displayname":"ミイラ男","min":1,"max":2,"countrand":1},{"rand":17,"id":83,"displayname":"はにわナイト","min":1,"max":2,"countrand":1},{"rand":18,"id":3,"displayname":"メタルスライム","min":1,"max":1,"countrand":0},{"rand":25,"id":8,"displayname":"さまようたましい","min":1,"max":2,"countrand":1},{"rand":30,"id":31,"displayname":"しにがみ","min":1,"max":2,"countrand":1}],"88":[{"rand":6,"id":17,"displayname":"ベホイミ","min":1,"max":2,"countrand":1},{"rand":12,"id":133,"displayname":"きとうし","min":1,"max":3,"countrand":2},{"rand":13,"id":76,"displayname":"メタルブラザーズ","min":1,"max":1,"countrand":0},{"rand":18,"id":42,"displayname":"メーダロード","min":1,"max":2,"countrand":1},{"rand":24,"id":92,"displayname":"デッドペッカー","min":1,"max":3,"countrand":2},{"rand":31,"id":177,"displayname":"メタルハンター","min":1,"max":2,"countrand":1}],"146":[{"rand":4,"id":44,"displayname":"おどるほうせき","min":1,"max":2,"countrand":1},{"rand":11,"id":172,"displayname":"うごくせきぞう","min":1,"max":1,"countrand":0},{"rand":18,"id":203,"displayname":"リビングスタチュー","min":1,"max":1,"countrand":0},{"rand":25,"id":192,"displayname":"デビルアーマー","min":1,"max":2,"countrand":1},{"rand":26,"id":27,"displayname":"はぐれメタル","min":1,"max":1,"countrand":0},{"rand":33,"id":212,"displayname":"スネークロード","min":1,"max":2,"countrand":1}],"147":[{"rand":4,"id":44,"displayname":"おどるほうせき","min":1,"max":3,"countrand":2},{"rand":11,"id":172,"displayname":"うごくせきぞう","min":1,"max":2,"countrand":1},{"rand":18,"id":203,"displayname":"リビングスタチュー","min":1,"max":2,"countrand":1},{"rand":25,"id":192,"displayname":"デビルアーマー","min":1,"max":2,"countrand":1},{"rand":26,"id":27,"displayname":"はぐれメタル","min":1,"max":1,"countrand":0},{"rand":33,"id":212,"displayname":"スネークロード","min":1,"max":2,"countrand":1}],"0":[{"rand":5,"id":2,"displayname":"赤スライム","min":1,"max":1,"countrand":0},{"rand":9,"id":28,"displayname":"おおきづち","min":1,"max":1,"countrand":0},{"rand":12,"id":26,"displayname":"バブル","min":1,"max":1,"countrand":0},{"rand":13,"id":60,"displayname":"ウパソルジャー","min":1,"max":1,"countrand":0},{"rand":18,"id":9,"displayname":"おばけキノコ","min":1,"max":1,"countrand":0},{"rand":22,"id":35,"displayname":"みならいあくま","min":1,"max":1,"countrand":0}],"2":[{"rand":4,"id":30,"displayname":"ゆうれい","min":1,"max":1,"countrand":0},{"rand":9,"id":28,"displayname":"おおきづち","min":1,"max":1,"countrand":0},{"rand":14,"id":26,"displayname":"バブル","min":1,"max":1,"countrand":0},{"rand":16,"id":60,"displayname":"ウパソルジャー","min":1,"max":1,"countrand":0},{"rand":20,"id":9,"displayname":"おばけキノコ","min":1,"max":1,"countrand":0},{"rand":25,"id":35,"displayname":"みならいあくま","min":1,"max":1,"countrand":0}],"3":[{"rand":3,"id":2,"displayname":"赤スライム","min":1,"max":1,"countrand":0},{"rand":8,"id":28,"displayname":"おおきづち","min":1,"max":1,"countrand":0},{"rand":13,"id":26,"displayname":"バブル","min":1,"max":1,"countrand":0},{"rand":15,"id":60,"displayname":"ウパソルジャー","min":1,"max":1,"countrand":0},{"rand":20,"id":9,"displayname":"おばけキノコ","min":1,"max":1,"countrand":0},{"rand":23,"id":35,"displayname":"みならいあくま","min":1,"max":1,"countrand":0}]},"max":{"33":2,"34":2,"32":2,"12":2,"14":2,"15":2,"30":3,"88":4,"146":3,"147":3,"0":2,"2":2,"3":2},"nears":{"33":{"33\\/7\\/9\\/9\\/9":{"メラゴースト":true,"わらいぶくろ":true,"メタッピー":true}},"34":{"34\\/5\\/7\\/7\\/7":{"メラゴースト":true,"メタッピー":true},"34\\/7\\/9\\/9\\/9":{"ゆうれい":true}},"32":{"32\\/7\\/9\\/9\\/9":{"わらいぶくろ":true,"メタッピー":true,"ドラキー":true}},"12":{"12\\/7\\/9\\/9\\/9":{"スライム":true,"モーモン":true,"ズッキーニャ":true,"ドロザラー":true}},"14":{"14\\/5\\/7\\/7\\/7":{"スライム":true,"モーモン":true,"ズッキーニャ":true,"ドロザラー":true}},"15":{"15\\/7\\/9\\/9\\/9":{"リリパット":true,"じんめんちょう":true,"ズッキーニャ":true}},"30":{"30\\/7\\/12\\/11\\/12":{"しにがみ":true,"ミイラ男":true,"はにわナイト":true},"30\\/7\\/11\\/11\\/11":{"メタルスライム":true}},"88":{"88\\/7\\/9\\/9\\/9":{"オーシャンクロー":true},"88\\/6\\/9\\/9\\/9":{"メーダロード":true,"メタルハンター":true},"88\\/6\\/8\\/8\\/8":{"メタルブラザーズ":true}},"146":{"146\\/6\\/9\\/9\\/9":{"リビングスタチュー":true,"ギガントヒルズ":true,"うごくせきぞう":true},"146\\/6\\/8\\/8\\/8":{"はぐれメタル":true},"146\\/7\\/7\\/7\\/7":{"ひとくいばこ":true,"ミミック":true}},"147":{"147\\/6\\/9\\/9\\/9":{"リビングスタチュー":true,"ギガントヒルズ":true,"うごくせきぞう":true},"147\\/6\\/8\\/8\\/8":{"はぐれメタル":true},"147\\/7\\/7\\/7\\/7":{"ミミック":true}},"0":{"0\\/7\\/10\\/10\\/10":{"赤スライム":true,"おばけキノコ":true,"みならいあくま":true,"おおきづち":true}},"2":{"2\\/5\\/8\\/8\\/8":{"赤スライム":true,"おばけキノコ":true,"みならいあくま":true,"おおきづち":true}},"3":{"3\\/7\\/10\\/10\\/10":{"おばけキノコ":true,"バブル":true}}},"ennkaunnto":{"33":{"33\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":33,"monsterId":7,"displayname":"メラゴースト","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b2f いつもの場所 ダンジョン"},{"tableid":33,"monsterId":43,"displayname":"わらいぶくろ","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b2f いつもの場所 ダンジョン"},{"tableid":33,"monsterId":20,"displayname":"メタッピー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b2f いつもの場所 ダンジョン"}]},"34":{"34\\/5\\/7\\/7\\/7\\/1\\/1":[{"tableid":34,"monsterId":7,"displayname":"メラゴースト","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b1f ブルドーガ前 ダンジョン"},{"tableid":34,"monsterId":20,"displayname":"メタッピー","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b1f ブルドーガ前 ダンジョン"}],"34\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":34,"monsterId":30,"displayname":"ゆうれい","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b1f ブルドーガ前 ダンジョン"}]},"32":{"32\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":32,"monsterId":43,"displayname":"わらいぶくろ","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b1f 入口に近い方 ダンジョン"},{"tableid":32,"monsterId":20,"displayname":"メタッピー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"キサゴナ遺跡 b1f 入口に近い方 ダンジョン"}],"32\\/7\\/9\\/9\\/9\\/1\\/2":[{"tableid":32,"monsterId":4,"displayname":"ドラキー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"キサゴナ遺跡 b1f 入口に近い方 ダンジョン"}]},"12":{"12\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":12,"monsterId":1,"displayname":"スライム","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 日中"},{"tableid":12,"monsterId":56,"displayname":"モーモン","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 日中"},{"tableid":12,"monsterId":57,"displayname":"ズッキーニャ","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 日中"},{"tableid":12,"monsterId":63,"displayname":"ドロザラー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 日中"}]},"14":{"14\\/5\\/7\\/7\\/7\\/1\\/1":[{"tableid":14,"monsterId":1,"displayname":"スライム","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 夜"},{"tableid":14,"monsterId":56,"displayname":"モーモン","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 夜"},{"tableid":14,"monsterId":57,"displayname":"ズッキーニャ","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 夜"},{"tableid":14,"monsterId":63,"displayname":"ドロザラー","percent":"71.4286","data":{"2g":5,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 全域 夜"}]},"15":{"15\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":15,"monsterId":23,"displayname":"リリパット","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 一部スポーンポイント 常時"},{"tableid":15,"monsterId":32,"displayname":"じんめんちょう","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 一部スポーンポイント 常時"},{"tableid":15,"monsterId":57,"displayname":"ズッキーニャ","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ウォルロ地方 一部スポーンポイント 常時"}]},"30":{"30\\/7\\/12\\/11\\/12\\/1\\/2":[{"tableid":30,"monsterId":31,"displayname":"しにがみ","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":"ふういんのほこら  ダンジョン"},{"tableid":30,"monsterId":108,"displayname":"ミイラ男","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":"ふういんのほこら  ダンジョン"},{"tableid":30,"monsterId":83,"displayname":"はにわナイト","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":"ふういんのほこら  ダンジョン"}],"30\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":30,"monsterId":3,"displayname":"メタルスライム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":"ふういんのほこら  ダンジョン"}]},"88":{"88\\/7\\/9\\/9\\/9\\/1\\/1":[{"tableid":88,"monsterId":260,"displayname":"オーシャンクロー","percent":"77.7778","data":{"2g":7,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"サンマロウ北のどうくつ B1F ダンジョン"}],"88\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":88,"monsterId":42,"displayname":"メーダロード","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"サンマロウ北のどうくつ B1F ダンジョン"}],"88\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":88,"monsterId":177,"displayname":"メタルハンター","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"サンマロウ北のどうくつ B1F ダンジョン"}],"88\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":88,"monsterId":76,"displayname":"メタルブラザーズ","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"サンマロウ北のどうくつ B1F ダンジョン"}]},"146":{"146\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":146,"monsterId":203,"displayname":"リビングスタチュー","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"},{"tableid":146,"monsterId":174,"displayname":"ギガントヒルズ","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"},{"tableid":146,"monsterId":172,"displayname":"うごくせきぞう","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"}],"146\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":146,"monsterId":27,"displayname":"はぐれメタル","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"}],"146\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":146,"monsterId":38,"displayname":"ひとくいばこ","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"},{"tableid":146,"monsterId":39,"displayname":"ミミック","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B2F ダンジョン"}]},"147":{"147\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":147,"monsterId":203,"displayname":"リビングスタチュー","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"魔獣のどうくつ B3F ダンジョン"}],"147\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":147,"monsterId":174,"displayname":"ギガントヒルズ","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B3F ダンジョン"},{"tableid":147,"monsterId":172,"displayname":"うごくせきぞう","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B3F ダンジョン"}],"147\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":147,"monsterId":27,"displayname":"はぐれメタル","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B3F ダンジョン"}],"147\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":147,"monsterId":39,"displayname":"ミミック","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"魔獣のどうくつ B3F ダンジョン"}]},"0":{"0\\/7\\/10\\/10\\/10\\/1\\/2":[{"tableid":0,"monsterId":2,"displayname":"赤スライム","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":2,"countrand":1,"has3g":false,"name":"西セントシュタイン 上半分 常時"}],"0\\/7\\/10\\/10\\/10\\/1\\/1":[{"tableid":0,"monsterId":9,"displayname":"おばけキノコ","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 上半分 常時"},{"tableid":0,"monsterId":35,"displayname":"みならいあくま","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 上半分 常時"},{"tableid":0,"monsterId":28,"displayname":"おおきづち","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 上半分 常時"}]},"2":{"2\\/5\\/8\\/8\\/8\\/1\\/2":[{"tableid":2,"monsterId":2,"displayname":"赤スライム","percent":"62.5000","data":{"2g":5,"max":8,"3g":8,"3gmax":8},"min":1,"max":2,"countrand":1,"has3g":false,"name":"西セントシュタイン 中央より少し下 常時"}],"2\\/5\\/8\\/8\\/8\\/1\\/1":[{"tableid":2,"monsterId":9,"displayname":"おばけキノコ","percent":"62.5000","data":{"2g":5,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 中央より少し下 常時"},{"tableid":2,"monsterId":35,"displayname":"みならいあくま","percent":"62.5000","data":{"2g":5,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 中央より少し下 常時"},{"tableid":2,"monsterId":28,"displayname":"おおきづち","percent":"62.5000","data":{"2g":5,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 中央より少し下 常時"}]},"3":{"3\\/7\\/10\\/10\\/10\\/1\\/1":[{"tableid":3,"monsterId":9,"displayname":"おばけキノコ","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 下付近 常時"},{"tableid":3,"monsterId":26,"displayname":"バブル","percent":"70.0000","data":{"2g":7,"max":10,"3g":10,"3gmax":10},"min":1,"max":1,"countrand":0,"has3g":false,"name":"西セントシュタイン 下付近 常時"}]}}}';
+    const data = JSON.parse(json);
+
+
+    let encDataCache = [];
+
+    setInterval(function () {
+        if (hasUpdate && URL !== "") {
+            hasUpdate = false;
+            window.history.replaceState({}, '', URL);
+            if (document.getElementById('seed').value !== "") {
+                document.title = document.getElementById('seed').value + ", 全部入りのエンカウントテーブル";
+            } else {
+                document.title = "全部入りのエンカウントテーブル";
+            }
+        }
+        if (hasTableUpdate === true) {
+            hasTableUpdate = false;
+            updateTable();
+        }
+    }, 1000);
+
+    function update1() {
+
+    }
+
+    function decode(input) {
+        if (input === "") {
+            return null;
+        }
+        let purse = parseFloat(input);
+        if (isNaN(purse)) {
+            return null;
+        }
+        return purse;
+    }
+
+    function saveInputValuesToURL1() {
+        let list = [];
+
+        if (document.getElementById('seed').value !== "0x327") {
+            list.push(document.getElementById('seed'));
+        }
+        if (document.getElementById('start').value !== "0") {
+            list.push(document.getElementById('start'));
+        }
+        if (document.getElementById('end').value !== "100") {
+            list.push(document.getElementById('end'));
+        }
+        if (document.getElementById('select1').value !== "noselect") {
+            list.push(document.getElementById('select1'));
+        }
+        if (document.getElementById('select2').value !== "noselect") {
+            list.push(document.getElementById('select2'));
+        }
+        if (document.getElementById('select3').value !== "noselect") {
+            list.push(document.getElementById('select3'));
+        }
+        if (document.getElementById('select4').value !== "noselect") {
+            list.push(document.getElementById('select4'));
+        }
+        let queryParams = new URLSearchParams("");
+
+
+
+
+        list.forEach(inputElement => {
+            if (inputElement.value !== "") {
+                const inputId = inputElement.id;
+                const inputValue = inputElement.value;
+                queryParams.set(inputId, inputValue);
+            }
+        });
+
+        if (document.getElementById('fixedheader').checked !== true) {
+            queryParams.set("fixedheader", "0");
+        }
+
+        if (document.getElementById('flee').checked === false) {
+            queryParams.set("flee", "0");
+        }
+        if (document.getElementById('nextF').checked === false) {
+            queryParams.set("nextF", "0");
+        }
+
+
+
+
+        let newURL;
+        if (queryParams.toString() !== "") {
+            newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        } else {
+            newURL = `${window.location.origin}${window.location.pathname}`;
+        }
+
+        //window.history.replaceState({}, '', newURL);
+        document.getElementById('share').value = newURL;
+        URL = newURL;
+        hasUpdate = true;
+    }
+
+    function loadInputValuesFromURL1(bool = true) {
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('select1'),
+            document.getElementById('select2'),
+            document.getElementById('select3'),
+            document.getElementById('select4'),
+
+        ];
+        let queryParams = new URLSearchParams(window.location.search);
+
+        list.forEach(inputElement => {
+            const inputId = inputElement.id;
+            const paramValue = queryParams.get(inputId);
+            if (paramValue !== null) {
+                inputElement.value = paramValue;
+            }
+        });
+
+        if (queryParams.get("fixedheader") === "0") {
+            document.getElementById('fixedheader').checked = false;
+        }
+        if (queryParams.get("flee") === "0") {
+            document.getElementById('flee').checked = false;
+        }
+        if (queryParams.get("nextF") === "0") {
+            document.getElementById('nextF').checked = false;
+        }
+
+
+
+        if (bool) {
+            updateTable();
+        }
+    }
+
+    function updateTable() {
+        saveInputValuesToURL1();
+        const inputElement = document.getElementById('seed');
+        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        if (seedStart === null) {
+            maketable([]);
+            return;
+        }
+        const inputElement1 = document.getElementById('start').value;
+        const inputElement2 = document.getElementById('end').value;
+        if (inputElement1 === "") {
+            maketable([]);
+            return;
+        }
+        if (inputElement2 === "") {
+            maketable([]);
+            return;
+        }
+
+        if (
+            document.getElementById('select1').value === "noselect" &&
+            document.getElementById('select2').value === "noselect" &&
+            document.getElementById('select3').value === "noselect" &&
+            document.getElementById('select4').value === "noselect"
+        ) {
+            maketable([]);
+            return;
+        }
+
+        const tmp1 = parseInt(inputElement1);
+        const tmp2 = parseInt(inputElement2);
+        const start = Math.min(tmp1, tmp2);
+        const end = Math.max(tmp1, tmp2);
+
+        let otomoCache = [];
+        let otomoCache1 = [];
+        Object.keys(data["otomo"]).forEach(tableId => {
+            let otomo = data["otomo"][tableId];
+            otomoCache[tableId] = [];
+            let nowcount = 0;
+            otomo.forEach(item => {
+                let rand = item["rand"]
+                for (let k = nowcount; k < rand; k++) {
+                    otomoCache[tableId].push(item)
+                }
+                nowcount = rand
+            });
+            const lastElement = otomo[otomo.length - 1];
+            otomoCache1[tableId] = lastElement["rand"];
+        });
+
+        let list = [
+            document.getElementById('select1'),
+            document.getElementById('select2'),
+            document.getElementById('select3'),
+            document.getElementById('select4'),
+        ];
+        const output = generateEmptyArray(end - start, 14, start);
+        Object.keys(list).forEach(arraykey => {
+            const item = list[arraykey]
+            let now = BigInt(seedStart)
+
+            if (item.value !== "noselect") {
+                for (let currentF = 0; currentF < end; currentF++) {
+                    let result = [];
+                    let total = 0
+                    let G = "1G"
+
+                    //1Gの数
+                    now = rand(now)
+                    if (currentF < start) {
+                        continue;
+                    }
+                    let encData = encDataCache[item.value]
+                    let tableId = encData["tableid"];
+                    let countrand = encData["countrand"]
+                    let percent1 = calculatePercentFloat(now)
+                    let count1G = getRand(percent1, countrand + 1);
+                    count1G += encData["min"]
+                    result[1] = [null, count1G]
+                    total += count1G
+                    if (percent1 < 25){
+                        output[currentF - start][1] = "逃"
+                    }
+
+                    //お供判定
+                    let encdata2 = encDataCache[item.value];
+                    let encdata1 = encdata2["data"];
+                    let encMax = encdata1["max"]
+                    let enc2g = encdata1["2g"]
+                    let enc3g = encdata1["3g"]
+
+                    let tmp2 = rand(now)
+                    let percent2 = calculatePercentFloat(tmp2)
+                    let rand2 = getRand(percent2, encMax) + 1
+
+                    if (rand2 > enc2g) {
+                        G = "2G"
+                        //2Gの種類
+                        let tmp3 = rand(tmp2)
+                        let percent3 = calculatePercentFloat(tmp3)
+                        let rand3 = getRand(percent3, otomoCache1[tableId])
+                        let selected2G = otomoCache[tableId][rand3];
+
+                        //2Gの数
+                        let tmp4 = rand(tmp3)
+                        let percent4 = calculatePercentFloat(tmp4)
+                        let rand4 = getRand(percent4, selected2G["countrand"] + 1)
+                        let count2G = rand4 + selected2G["min"];
+                        total += count2G
+
+                        result[2] = [selected2G["displayname"], count2G]
+                        //console.log(selected2G, selected2G["displayname"])
+                        if (encdata2["has3g"] === true) {
+                            if (enc3g < rand2) {
+                                G = "3G"
+                                let tmp5 = rand(tmp4)
+                                let percent5 = calculatePercentFloat(tmp5)
+                                let rand5 = getRand(percent5, otomoCache1[tableId])
+                                let selected3G = otomoCache[tableId][rand5];
+
+                                //2Gの数
+                                let tmp6 = rand(tmp5)
+                                let percent6 = calculatePercentFloat(tmp6)
+                                let rand6 = getRand(percent6, selected3G["countrand"] + 1)
+                                let count3G = rand6 + selected2G["min"];
+                                total += count3G
+                                result[3] = [selected3G["displayname"], count3G]
+                            }
+                        }
+                    }
+                    let max = data["max"][tableId];
+                    let count = total - max;
+                    if (0 < count) {
+                        let reduce = Math.floor(count / 3);
+                        if (reduce === 0) {
+                            reduce = 1;
+                        }
+                        let i = 1
+                        while (0 < count) {
+                            let backup = result[i][1]
+                            result[i][1] -= reduce
+                            if (result[i][1] <= 0) {
+                                result[i][1] = 0
+                            }
+                            if (i === 1 && result[i][1] === 0) {
+                                result[i][1] = 1
+                            }
+                            count -= backup - result[i][1];
+                            ++i
+                            if (result[i] === undefined){
+                                i = 1
+                            }
+                            if (i === 4) {
+                                i = 1
+                            }
+                        }
+                    }
+                    let resultText = ""
+                    let result1 = "";
+                    total = 0
+                    result.forEach(item => {
+                        total += item[1]
+                    });
+                    result.forEach(item => {
+                        if (item[0] === null) {
+                            result1 += ""
+                        } else {
+                            result1 += item[0]
+                        }
+                        if (item[1] === 0) {
+                            result1 += "x0 "
+                            //result1 = '<p style=\"color: gray;\">'+result1+'</p>';
+                        } else {
+                            result1 += "x" + item[1] + " "
+                        }
+
+
+                    });
+                    let base = 2;
+                    if (G === "2G") {
+                        base = 5
+                    } else if (G === "3G") {
+                        base = 7
+                    }
+                    output[currentF - start][arraykey * 3 + 2] = result1
+                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total) + ")"
+                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total) + "f"
+
+
+                    // let otomo = otomoCache[tableId][rand2]
+
+                }
+            }
+        });
+
+        //setTimeout(() => {
+            maketable(output);
+        //}, 100);
+
+    }
+
+
+    function maketable(tableData) {
+        if ($.fn.dataTable.isDataTable('#table')) {
+            table = $('#table').DataTable();
+            table.destroy();
+        }
+
+        // オプションの設定
+        var tableOptions = {
+            "dom": 'Bfrtip',
+            "buttons": [
+                'colvis',
+                'excel',
+                'csv',
+                'pdf',
+                'copy',
+                'print'
+            ],
+            "data": tableData,
+            "select": true,
+            "displayLength": 2000,
+            "initComplete": function (settings) {
+                let list = [
+                    document.getElementById('select1'),
+                    document.getElementById('select2'),
+                    document.getElementById('select3'),
+                    document.getElementById('select4'),
+                ];
+                Object.keys(list).forEach(arraykey => {
+                    let element = list[arraykey]
+                    randomColumnIndex = arraykey * 3 + 2
+                    $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
+                });
+            }
+        }
+
+        if (document.getElementById('fixedheader').checked === true){
+            tableOptions["fixedHeader"] = true
+        }
+
+        // テーブルの作成
+        table = $('#table').DataTable(tableOptions);
+        // Toggle the visibility
+        let table1 = $('#table').DataTable();
+
+        if (document.getElementById('flee').checked === true){
+            let c3 = table1.column(1);
+            c3.visible(false);
+        }else{
+            let c3 = table1.column(1);
+            c3.visible(true);
+        }
+
+        let k = 2
+        for (let i = 1; i <= 4; i++) {
+            let c = table1.column(k++);
+            let c1 = table1.column(k++);
+            let c2 = table1.column(k++);
+            if (document.getElementById('select'+i).value === "noselect") {
+                c.visible(false);
+                c1.visible(false);
+                c2.visible(false);
+            } else {
+                c.visible(true);
+                c1.visible(true);
+                if (document.getElementById('nextF').checked === false){
+                    c2.visible(true);
+                }else{
+                    c2.visible(false);
+                }
+            }
+        }
+
+        table1.on('draw', function () {
+            let list = [
+                document.getElementById('select1'),
+                document.getElementById('select2'),
+                document.getElementById('select3'),
+                document.getElementById('select4'),
+            ];
+            Object.keys(list).forEach(arraykey => {
+                let element = list[arraykey]
+                randomColumnIndex = arraykey * 3 + 2
+                $('#table thead th:eq(' + randomColumnIndex + ')').html(names[element.value]);
+            });
+        });
+
+
+    }
+
+    function preUpdateTable() {
+        hasTableUpdate = true;
+    }
+
+    function jumpHash() {
+        if (hash === "#table") {
+            window.location.hash = hash;
+        }
+    }
+
+    let names = []
+    window.addEventListener('load', () => {
+        hash = window.location.hash;
+
+        let selectData = [
+            {id: "noselect", label: "未選択"}
+        ];
+
+        const enc = data["ennkaunnto"];
+        let count = 0;
+        for (let key in enc) {
+            const data1 = enc[key]
+            for (let type in data1) {
+                const encdata = data1[type]
+                let name = "";
+                encDataCache.push(encdata[0])
+
+                let data2 = encdata[0]["data"];
+                let field = encdata[0]["name"];
+                name += field +  " "
+                console.log(field)
+                let nears = {...data["nears"][key][encdata[0]["tableid"] + "/" + data2["2g"] + "/" + data2["max"] + "/" + data2["3g"] + "/" + data2["3gmax"]]} // copy
+
+
+                let max = encdata[0]["max"]
+                for (let id in encdata) {
+                    const data2 = encdata[id]
+                    name += data2["displayname"] + " ";
+                    delete nears[data2["displayname"]]
+                }
+                if (Object.keys(nears).length !== 0) {    // Object.keys(dataList) は["apple","banana"]
+                    name += "("
+                    Object.keys(nears).forEach(arraykey => {
+                        name += arraykey + " "
+                    });
+                    name = name.trim()
+                    name += ")"
+                }
+                name += " x"+max
+
+                names[count] = name
+                selectData.push({id: count, label: encdata[0]["name"] + " " + name});
+                ++count;
+            }
+        }
+
+
+        // createSelectElement関数を呼び出してセレクト要素を生成
+        createSelectElement('container', "select1", selectData);
+        createSelectElement('container', "select2", selectData);
+        createSelectElement('container', "select3", selectData);
+        createSelectElement('container', "select4", selectData);
+
+
+        loadInputValuesFromURL1(false);
+        saveInputValuesToURL1();
+        setTimeout("jumpHash()", 1000);
+        let list = [
+            document.getElementById('seed'),
+            document.getElementById('start'),
+            document.getElementById('end'),
+            document.getElementById('select1'),
+            document.getElementById('select2'),
+            document.getElementById('select3'),
+            document.getElementById('select4'),
+            document.getElementById('fixedheader'),
+            document.getElementById('flee'),
+            document.getElementById('nextF'),
+        ];
+        list.forEach(inputElement => {
+            inputElement.addEventListener('input', preUpdateTable);
+        });
+
+        updateTable();
+
+    });
+
+
+</script>
+</body>
+</html>
