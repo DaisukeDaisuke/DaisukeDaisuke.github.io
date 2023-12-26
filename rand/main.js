@@ -137,3 +137,80 @@ function checkArrayContains(inputArray, targetArray) {
     // 全ての目標要素が一致した場合はtrueを返す
     return true;
 }
+
+
+function formatTime(seconds) {
+    seconds = Math.round(seconds * 10000) / 10000; // 小数点4桁で四捨五入
+
+    if (seconds < 60) {
+        return seconds.toFixed(4) + "秒";
+    } else if (seconds < 3600) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = (seconds % 60).toFixed(4);
+        return minutes + "分" + (remainingSeconds > 0 ? remainingSeconds + "秒" : "");
+    } else if (seconds < 86400) {
+        const hours = Math.floor(seconds / 3600);
+        const remainingMinutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = (seconds % 60).toFixed(4);
+        let result = hours + "時間";
+        if (remainingMinutes > 0) {
+            result += remainingMinutes + "分";
+        }
+        if (remainingSeconds > 0) {
+            result += remainingSeconds + "秒";
+        }
+        return result;
+    } else if (seconds < 2592000) { // 1ヶ月は約30日と仮定
+        const days = Math.floor(seconds / 86400);
+        const remainingHours = Math.floor((seconds % 86400) / 3600);
+        const remainingMinutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = (seconds % 60).toFixed(4);
+        let result = days + "日";
+        if (remainingHours > 0) {
+            result += remainingHours + "時間";
+        }
+        if (remainingMinutes > 0) {
+            result += remainingMinutes + "分";
+        }
+        if (remainingSeconds > 0) {
+            result += remainingSeconds + "秒";
+        }
+        return result;
+    } else if (seconds < 31536000) { // 1年は約365.25日と仮定（うるう年考慮）
+        const days = Math.floor(seconds / 86400);
+        const remainingHours = Math.floor((seconds % 86400) / 3600);
+        const remainingMinutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = (seconds % 60).toFixed(4);
+        let result = days + "日";
+        if (remainingHours > 0) {
+            result += remainingHours + "時間";
+        }
+        if (remainingMinutes > 0) {
+            result += remainingMinutes + "分";
+        }
+        if (remainingSeconds > 0) {
+            result += remainingSeconds + "秒";
+        }
+        return result;
+    } else {
+        const years = Math.floor(seconds / 31536000); // 1年は約365.25日と仮定（うるう年考慮）
+        const remainingDays = Math.floor((seconds % 31536000) / 86400);
+        const remainingHours = Math.floor((seconds % 86400) / 3600);
+        const remainingMinutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = (seconds % 60).toFixed(4);
+        let result = years + "年";
+        if (remainingDays > 0) {
+            result += remainingDays + "日";
+        }
+        if (remainingHours > 0) {
+            result += remainingHours + "時間";
+        }
+        if (remainingMinutes > 0) {
+            result += remainingMinutes + "分";
+        }
+        if (remainingSeconds > 0) {
+            result += remainingSeconds + "秒";
+        }
+        return result;
+    }
+}
