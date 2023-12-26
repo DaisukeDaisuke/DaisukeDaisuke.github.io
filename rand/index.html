@@ -93,7 +93,7 @@
     <label for="maxCount">表示上限</label>
     <input type="number" id="maxCount" name="maxCount" value="1000"><br>
     <span>消費数指定、未入力で乱数を特定するには20個以上の入力が必要です</span><br>
-    <label for="end">1つめの項目の消費数(任意)</label>
+    <label for="end">1つめの項目の消費数(任意、「0」は動きません！)</label>
     <input type="number" id="nowCount" name="nowCount"><br>
     <label for="end">最後の項目の消費数(任意、優先)</label>
     <input type="number" id="nowCount1" name="nowCount1"><br>
@@ -107,6 +107,8 @@
         <option>こよこよ, りり(0x32763)</option>
         <option>こよここ, レオノ(アローラ)(0x3275c)</option>
     </select>
+    <p id="prediction1"></p>
+    <p id="prediction2"></p><br>
     <button class="red-button" type="submit" onclick="onReset1()">リセット</button>
     <br>
     <label for="end">この入力を共有</label>
@@ -158,6 +160,7 @@
             ツールに23個程度入力した時点で、「開始」ボタンを押して、検索結果を確認します(候補が1つになるまで入力を繰り返してください)
         </li>
         <li>「一致なし」と表示された場合、入力ミスまたはフィルタ機能を無効にしてみてください</li>
+        <li>このツールは0fからではなく、1fから総当たりします。バグですが、0fで戦闘フェーズに入ることは不可能なので製作者は放置しています。</li>
     </ul>
 </div>
 <div>
@@ -178,6 +181,7 @@
             Once you have entered about 23 items into the tool, press the "開始"(start) button and check the search results (repeat until you have one candidate)
         </li>
         <li>If you see "一致なし"(No Match) try typing a typo or disabling the filter feature</li>
+        <li>This tool does brute force from 1f, not from 0f. Although it is a bug, it is impossible to enter the battle phase with 0f, so the creator has left it alone.</li>
     </ul>
 </div>
 <div>
@@ -304,6 +308,24 @@
     }
 
     function saveInputValuesToURL() {
+
+
+        const seedStart = decodeHexValue(document.getElementById('seedStart').value);
+        const seedEnd = decodeHexValue(document.getElementById('seedEnd').value);
+        const end = parseInt(document.getElementById('end').value);
+        const total = seedEnd-seedStart;
+        if (total > 0){
+            const count1 = Math.ceil(Math.log2(total*end));
+            const count2 = Math.ceil(Math.log2(total));
+            document.getElementById("prediction1").innerText = "1個に絞る為に必要な入力数(予測): "+count1+"個";
+            document.getElementById("prediction2").innerText = "開始Fを指定した場合の予想入力数: "+count2+"個";
+        }else{
+            document.getElementById("prediction1").innerText = "";
+            document.getElementById("prediction2").innerText = "";
+
+        }
+
+
         let list = [];
 
         if (document.getElementById('seedStart').value !== "0x32700") {
@@ -461,6 +483,9 @@
         let nowCount1 = inputElement1.value.trim() !== '' ? parseInt(inputElement1.value) : null;
         if (nowCount !== null && nowCount1 !== null) {
             nowCount = null;
+        }
+        if (nowCount === 0){
+            window.alert("「1つめの項目の消費数」を0にする事はできません(絶対に一致しません。)、製作者が0fではなく1fから総当たりするバグを放置したためです。");
         }
         let inputElement2 = document.getElementById('seed1');
         let seed1 = inputElement2.value.trim() !== '' ? decodeHexValue(inputElement2.value) : null;
