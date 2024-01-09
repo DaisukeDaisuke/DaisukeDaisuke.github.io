@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ウォルロ地方(高台)のエンカウントテーブル</title>
-    <script src="rand.js"></script>
-    <script src="main.js"></script>
+    <title>bowhole Encount Table</title>
+    <script src="../rand.js"></script>
+    <script src="../main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"/>
@@ -59,13 +59,12 @@
 </head>
 <body>
 <div class="container" id="container">
-    <h1>ウォルロ地方(高台)</h1>
-    <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
-    <label for="seed">初期seed</label>
+    <h1>bowhole</h1>
+    <label for="seed">Initial seed</label>
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
-    <label for="share">この入力を共有</label>
+    <label for="share">share input</label>
     <input type="text" id="share" name="share" onclick="this.select()" class="input" readonly="readonly"><br>
-    <label>消費数</label>
+    <label>consumption count</label>
     <div class="container">
         <div class="input-container">
             <input type="number" id="start" name="start" class="input1" value="0">
@@ -78,11 +77,14 @@
         </div>
     </div>
     <br>
-    <label>ヘッダー追尾</label>
+    <label>Header tracking</label>
     <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
-    <label>逃げ列を非表示にする</label>
-    <input type="checkbox" id="flee" name="flee"><br><br>
-    <p>地図法で使う事を想定して、消費数を+4しています</p><br>
+    <label>Hide flee column</label>
+    <input type="checkbox" id="flee" name="flee" checked><br><br>
+    <label>Hide nextF column</label>
+    <input type="checkbox" id="nextF" name="nextF" checked><br><br>
+    <label>Hide HP</label>
+    <input type="checkbox" id="hp" name="hp" checked><br><br>
 </div>
 </div>
 <br>
@@ -91,19 +93,19 @@
     <thead>
     <tr>
         <th>[F]</th>
-        <th>逃げる</th>
-        <th>エンカ1</th>
+        <th>flee</th>
+        <th>enc1</th>
         <th>G</th>
-        <th>次のF</th>
-        <th>エンカ2</th>
+        <th>nextF</th>
+        <th>enc2</th>
         <th>G</th>
-        <th>次のF</th>
-        <th>エンカ3</th>
+        <th>nextF</th>
+        <th>enc3</th>
         <th>G</th>
-        <th>次のF</th>
-        <th>エンカ4</th>
+        <th>nextF</th>
+        <th>enc4</th>
         <th>G</th>
-        <th>次のF</th>
+        <th>nextF</th>
     </tr>
     </thead>
 </table>
@@ -112,9 +114,8 @@
     let hasUpdate = false;
     let hasTableUpdate = false;
     let hash = "";
-    const json = '{"otomo":{"280":[{"rand":7,"id":2,"displayname":"スライムベス","min":1,"max":4,"countrand":3},{"rand":14,"id":179,"displayname":"キングスライム","min":1,"max":2,"countrand":1},{"rand":16,"id":26,"displayname":"バブルスライム","min":1,"max":5,"countrand":4},{"rand":18,"id":76,"displayname":"メタルブラザーズ","min":1,"max":4,"countrand":3},{"rand":25,"id":17,"displayname":"ベホイミスライム","min":1,"max":4,"countrand":3},{"rand":32,"id":19,"displayname":"ベホマスライム","min":1,"max":4,"countrand":3}]},"max":{"280":5},"nears":{"280":{"280\\/2\\/12\\/6\\/12":{"スライム":true,"キングスライム":true,"はぐれメタル":true,"メタルスライム":true,"ホイミスライム":true}}},"ennkaunnto":{"280":{"280\\/2\\/12\\/6\\/12\\/1\\/5":[{"tableid":280,"monsterId":1,"displayname":"スライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":5,"countrand":4,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/1\\/2":[{"tableid":280,"monsterId":179,"displayname":"キングスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/2\\/5":[{"tableid":280,"monsterId":27,"displayname":"はぐれメタル","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":2,"max":5,"countrand":3,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/3\\/5":[{"tableid":280,"monsterId":3,"displayname":"メタルスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":3,"max":5,"countrand":2,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/1\\/3":[{"tableid":280,"monsterId":15,"displayname":"ホイミスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":3,"countrand":2,"has3g":true,"name":"高台"}]}}}';
+    const json = '{"otomo":{"146":[{"rand":4,"id":44,"displayname":"Goodybag","min":1,"max":2,"countrand":1,"hp":126},{"rand":11,"id":172,"displayname":"Living statue","min":1,"max":1,"countrand":0,"hp":236},{"rand":18,"id":203,"displayname":"Sculpture vulture","min":1,"max":1,"countrand":0,"hp":153},{"rand":25,"id":192,"displayname":"Harmour","min":1,"max":2,"countrand":1,"hp":145},{"rand":26,"id":27,"displayname":"Liquid metal slime","min":1,"max":1,"countrand":0,"hp":8},{"rand":33,"id":212,"displayname":"Python priest","min":1,"max":2,"countrand":1,"hp":136}],"147":[{"rand":4,"id":44,"displayname":"Goodybag","min":1,"max":3,"countrand":2,"hp":126},{"rand":11,"id":172,"displayname":"Living statue","min":1,"max":2,"countrand":1,"hp":236},{"rand":18,"id":203,"displayname":"Sculpture vulture","min":1,"max":2,"countrand":1,"hp":153},{"rand":25,"id":192,"displayname":"Harmour","min":1,"max":2,"countrand":1,"hp":145},{"rand":26,"id":27,"displayname":"Liquid metal slime","min":1,"max":1,"countrand":0,"hp":8},{"rand":33,"id":212,"displayname":"Python priest","min":1,"max":2,"countrand":1,"hp":136}]},"max":{"146":3,"147":3},"nears":{"146":{"146\\/6\\/9\\/9\\/9":{"Sculpture vulture":true,"Drakularge":true,"Living statue":true},"146\\/6\\/8\\/8\\/8":{"Liquid metal slime":true},"146\\/7\\/7\\/7\\/7":{"Cannibox":true,"Mimic":true}},"147":{"147\\/6\\/9\\/9\\/9":{"Sculpture vulture":true,"Drakularge":true,"Living statue":true},"147\\/6\\/8\\/8\\/8":{"Liquid metal slime":true},"147\\/7\\/7\\/7\\/7":{"Mimic":true}}},"ennkaunnto":{"146":{"146\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":146,"monsterId":203,"displayname":"Sculpture vulture","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":153},{"tableid":146,"monsterId":174,"displayname":"Drakularge","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":286},{"tableid":146,"monsterId":172,"displayname":"Living statue","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":236}],"146\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":146,"monsterId":27,"displayname":"Liquid metal slime","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":8}],"146\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":146,"monsterId":38,"displayname":"Cannibox","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":187},{"tableid":146,"monsterId":39,"displayname":"Mimic","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B2F","hp":627}]},"147":{"147\\/6\\/9\\/9\\/9\\/1\\/2":[{"tableid":147,"monsterId":203,"displayname":"Sculpture vulture","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":2,"countrand":1,"has3g":false,"name":"bowhole B3F","hp":153}],"147\\/6\\/9\\/9\\/9\\/1\\/1":[{"tableid":147,"monsterId":174,"displayname":"Drakularge","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B3F","hp":286},{"tableid":147,"monsterId":172,"displayname":"Living statue","percent":"66.6667","data":{"2g":6,"max":9,"3g":9,"3gmax":9},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B3F","hp":236}],"147\\/6\\/8\\/8\\/8\\/1\\/1":[{"tableid":147,"monsterId":27,"displayname":"Liquid metal slime","percent":"75.0000","data":{"2g":6,"max":8,"3g":8,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B3F","hp":8}],"147\\/7\\/7\\/7\\/7\\/1\\/1":[{"tableid":147,"monsterId":39,"displayname":"Mimic","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":1,"countrand":0,"has3g":false,"name":"bowhole B3F","hp":627}]}}}'
     const data = JSON.parse(json);
-
 
     let encDataCache = [];
 
@@ -123,9 +124,9 @@
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", ウォルロ地方(高台)のエンカウントテーブル";
+                document.title = document.getElementById('seed').value + ", bowhole Encount Table";
             } else {
-                document.title = "ウォルロ地方(高台)のエンカウントテーブル";
+                document.title = "bowhole Encount Table";
             }
         }
         if (hasTableUpdate === true) {
@@ -176,8 +177,6 @@
         let queryParams = new URLSearchParams("");
 
 
-
-
         list.forEach(inputElement => {
             if (inputElement.value !== "") {
                 const inputId = inputElement.id;
@@ -190,11 +189,15 @@
             queryParams.set("fixedheader", "0");
         }
 
-        if (document.getElementById('flee').checked === true) {
-            queryParams.set("flee", "1");
+        if (document.getElementById('flee').checked === false) {
+            queryParams.set("flee", "0");
         }
-
-
+        if (document.getElementById('nextF').checked === false) {
+            queryParams.set("nextF", "0");
+        }
+        if (document.getElementById('hp').checked === false) {
+            queryParams.set("hp", "0");
+        }
 
         let newURL;
         if (queryParams.toString() !== "") {
@@ -233,8 +236,14 @@
         if (queryParams.get("fixedheader") === "0") {
             document.getElementById('fixedheader').checked = false;
         }
-        if (queryParams.get("flee") === "1") {
-            document.getElementById('flee').checked = true;
+        if (queryParams.get("flee") === "0") {
+            document.getElementById('flee').checked = false;
+        }
+        if (queryParams.get("nextF") === "0") {
+            document.getElementById('nextF').checked = false;
+        }
+        if (queryParams.get("hp") === "0") {
+            document.getElementById('hp').checked = false;
         }
 
 
@@ -317,15 +326,14 @@
                         continue;
                     }
                     let encData = encDataCache[item.value]
+                    let hpList = hps[item.value]
                     let tableId = encData["tableid"];
                     let countrand = encData["countrand"]
                     let percent1 = calculatePercentFloat(now)
                     let count1G = getRand(percent1, countrand + 1);
                     count1G += encData["min"]
-                    result[1] = [null, count1G]
-                    total += count1G
-                    if (percent1 < 25){
-                        output[currentF - start][1] = "逃"
+                    if (percent1 < 25) {
+                        output[currentF - start][1] = "flee"
                     }
 
                     //お供判定
@@ -338,6 +346,9 @@
                     let tmp2 = rand(now)
                     let percent2 = calculatePercentFloat(tmp2)
                     let rand2 = getRand(percent2, encMax) + 1
+
+                    result[1] = [null, count1G, NaN, tmp2]
+                    total += count1G
 
                     if (rand2 > enc2g) {
                         G = "2G"
@@ -354,7 +365,7 @@
                         let count2G = rand4 + selected2G["min"];
                         total += count2G
 
-                        result[2] = [selected2G["displayname"], count2G]
+                        result[2] = [selected2G["displayname"], count2G, selected2G["hp"], rand(tmp4)]
                         //console.log(selected2G, selected2G["displayname"])
                         if (encdata2["has3g"] === true) {
                             if (enc3g < rand2) {
@@ -370,7 +381,7 @@
                                 let rand6 = getRand(percent6, selected3G["countrand"] + 1)
                                 let count3G = rand6 + selected3G["min"];
                                 total += count3G
-                                result[3] = [selected3G["displayname"], count3G]
+                                result[3] = [selected3G["displayname"], count3G, selected3G["hp"], rand(tmp6)]
                             }
                         }
                     }
@@ -393,7 +404,7 @@
                             }
                             count -= backup - result[i][1];
                             ++i
-                            if (result[i] === undefined){
+                            if (result[i] === undefined) {
                                 i = 1
                             }
                             if (i === 4) {
@@ -414,23 +425,51 @@
                             result1 += item[0]
                         }
                         if (item[1] === 0) {
-                            result1 += "x0 "
+                            result1 += " x0 "
                             //result1 = '<p style=\"color: gray;\">'+result1+'</p>';
                         } else {
-                            result1 += "x" + item[1] + " "
+                            result1 += " x" + item[1] + " "
                         }
 
 
                     });
+                    let offset = 1
                     let base = 2;
                     if (G === "2G") {
+                        offset = 2
                         base = 5
                     } else if (G === "3G") {
+                        offset = 3
                         base = 7
                     }
+                    result1 = result1.trim()
+
+                    let hpRand = result[offset][3]
+
+                    if (document.getElementById('hp').checked === false) {
+                        result5 = []
+                        let counter = 0
+                        result.forEach(item => {
+                            for (let i = 1; i <= item[1]; i++) {
+                                hpRand = rand(hpRand)
+                                if (counter === 0) {
+                                    let test1 = []
+                                    hpList.forEach(key => {
+                                        test1.push(Math.round(key * (calculatePercentFloat(hpRand) * 0.01 * 0.2 + 0.8)))
+                                    });
+                                    result5.push(test1.join("/"));
+                                } else {
+                                    let hp = Math.round(item[2] * (calculatePercentFloat(hpRand) * 0.01 * 0.2 + 0.8))
+                                    result5.push(hp)
+                                }
+                            }
+                            counter++
+                        })
+                        result1 += "(" + result5.join(",") + ")"
+                    }
                     output[currentF - start][arraykey * 3 + 2] = result1
-                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total + 4) + ")"
-                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total + 4) + "f"
+                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total) + ")"
+                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total) + "f"
 
 
                     // let otomo = otomoCache[tableId][rand2]
@@ -440,7 +479,7 @@
         });
 
         //setTimeout(() => {
-            maketable(output);
+        maketable(output);
         //}, 100);
 
     }
@@ -481,7 +520,7 @@
             }
         }
 
-        if (document.getElementById('fixedheader').checked === true){
+        if (document.getElementById('fixedheader').checked === true) {
             tableOptions["fixedHeader"] = true
         }
 
@@ -490,10 +529,10 @@
         // Toggle the visibility
         let table1 = $('#table').DataTable();
 
-        if (document.getElementById('flee').checked === true){
+        if (document.getElementById('flee').checked === true) {
             let c3 = table1.column(1);
             c3.visible(false);
-        }else{
+        } else {
             let c3 = table1.column(1);
             c3.visible(true);
         }
@@ -503,14 +542,18 @@
             let c = table1.column(k++);
             let c1 = table1.column(k++);
             let c2 = table1.column(k++);
-            if (document.getElementById('select'+i).value === "noselect") {
+            if (document.getElementById('select' + i).value === "noselect") {
                 c.visible(false);
                 c1.visible(false);
                 c2.visible(false);
             } else {
                 c.visible(true);
                 c1.visible(true);
-                c2.visible(true);
+                if (document.getElementById('nextF').checked === false) {
+                    c2.visible(true);
+                } else {
+                    c2.visible(false);
+                }
             }
         }
 
@@ -542,6 +585,7 @@
     }
 
     let names = []
+    let hps = []
     window.addEventListener('load', () => {
         hash = window.location.hash;
 
@@ -559,15 +603,20 @@
                 encDataCache.push(encdata[0])
 
                 let data2 = encdata[0]["data"];
+                let field = encdata[0]["name"];
+                name += field + " "
                 let nears = {...data["nears"][key][encdata[0]["tableid"] + "/" + data2["2g"] + "/" + data2["max"] + "/" + data2["3g"] + "/" + data2["3gmax"]]} // copy
 
 
                 let max = encdata[0]["max"]
+                hps[count] = []
                 for (let id in encdata) {
                     const data2 = encdata[id]
                     name += data2["displayname"] + " ";
                     delete nears[data2["displayname"]]
+                    hps[count].push(data2["hp"])
                 }
+
                 if (Object.keys(nears).length !== 0) {    // Object.keys(dataList) は["apple","banana"]
                     name += "("
                     Object.keys(nears).forEach(arraykey => {
@@ -576,10 +625,11 @@
                     name = name.trim()
                     name += ")"
                 }
-                name += " x"+max
+                name += " x" + max
 
                 names[count] = name
-                selectData.push({id: count, label: encdata[0]["name"] + " " + name});
+
+                selectData.push({id: count, label: name});
                 ++count;
             }
         }
@@ -605,6 +655,8 @@
             document.getElementById('select4'),
             document.getElementById('fixedheader'),
             document.getElementById('flee'),
+            document.getElementById('nextF'),
+            document.getElementById('hp'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);

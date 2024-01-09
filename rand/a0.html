@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ウォルロ地方(高台)のエンカウントテーブル</title>
+    <title>竜のあきと地方のエンカウントテーブル</title>
     <script src="rand.js"></script>
     <script src="main.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -59,7 +59,7 @@
 </head>
 <body>
 <div class="container" id="container">
-    <h1>ウォルロ地方(高台)</h1>
+    <h1>竜のあきと地方</h1>
     <a href="index.html" target=”_blank”>乱数総当たりツールはこちら</a><br>
     <label for="seed">初期seed</label>
     <input type="text" id="seed" name="seed" class="input" value="0x327"><br>
@@ -81,8 +81,9 @@
     <label>ヘッダー追尾</label>
     <input type="checkbox" id="fixedheader" name="fixedheader" checked><br><br>
     <label>逃げ列を非表示にする</label>
-    <input type="checkbox" id="flee" name="flee"><br><br>
-    <p>地図法で使う事を想定して、消費数を+4しています</p><br>
+    <input type="checkbox" id="flee" name="flee" checked><br><br>
+    <label>次のF列を非表示にする</label>
+    <input type="checkbox" id="nextF" name="nextF" checked><br><br>
 </div>
 </div>
 <br>
@@ -112,7 +113,7 @@
     let hasUpdate = false;
     let hasTableUpdate = false;
     let hash = "";
-    const json = '{"otomo":{"280":[{"rand":7,"id":2,"displayname":"スライムベス","min":1,"max":4,"countrand":3},{"rand":14,"id":179,"displayname":"キングスライム","min":1,"max":2,"countrand":1},{"rand":16,"id":26,"displayname":"バブルスライム","min":1,"max":5,"countrand":4},{"rand":18,"id":76,"displayname":"メタルブラザーズ","min":1,"max":4,"countrand":3},{"rand":25,"id":17,"displayname":"ベホイミスライム","min":1,"max":4,"countrand":3},{"rand":32,"id":19,"displayname":"ベホマスライム","min":1,"max":4,"countrand":3}]},"max":{"280":5},"nears":{"280":{"280\\/2\\/12\\/6\\/12":{"スライム":true,"キングスライム":true,"はぐれメタル":true,"メタルスライム":true,"ホイミスライム":true}}},"ennkaunnto":{"280":{"280\\/2\\/12\\/6\\/12\\/1\\/5":[{"tableid":280,"monsterId":1,"displayname":"スライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":5,"countrand":4,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/1\\/2":[{"tableid":280,"monsterId":179,"displayname":"キングスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":2,"countrand":1,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/2\\/5":[{"tableid":280,"monsterId":27,"displayname":"はぐれメタル","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":2,"max":5,"countrand":3,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/3\\/5":[{"tableid":280,"monsterId":3,"displayname":"メタルスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":3,"max":5,"countrand":2,"has3g":true,"name":"高台"}],"280\\/2\\/12\\/6\\/12\\/1\\/3":[{"tableid":280,"monsterId":15,"displayname":"ホイミスライム","percent":"16.6667","data":{"2g":2,"max":12,"3g":6,"3gmax":12},"min":1,"max":3,"countrand":2,"has3g":true,"name":"高台"}]}}}';
+    const json = '{"otomo":{"160":[{"rand":6,"id":182,"displayname":"くもの大王","min":1,"max":1,"countrand":0},{"rand":9,"id":188,"displayname":"ゴーレム","min":1,"max":1,"countrand":0},{"rand":13,"id":217,"displayname":"サイクロプス","min":1,"max":1,"countrand":0},{"rand":17,"id":118,"displayname":"メガザルロック","min":1,"max":1,"countrand":0}],"161":[{"rand":3,"id":182,"displayname":"くもの大王","min":1,"max":1,"countrand":0},{"rand":6,"id":46,"displayname":"ヒートギズモ","min":1,"max":2,"countrand":1},{"rand":12,"id":188,"displayname":"ゴーレム","min":1,"max":2,"countrand":1},{"rand":16,"id":217,"displayname":"サイクロプス","min":1,"max":1,"countrand":0},{"rand":20,"id":118,"displayname":"メガザルロック","min":1,"max":2,"countrand":1}]},"max":{"160":4,"161":4},"nears":{"160":{"160\\/7\\/11\\/11\\/11":{"サイクロプス":true,"ゴーレム":true},"160\\/7\\/12\\/11\\/12":{"くもの大王":true},"160\\/7\\/7\\/7\\/7":{"ようがんピロー":true},"160\\/0\\/8\\/5\\/8":{"メガザルロック":true}},"161":{"161\\/7\\/11\\/11\\/11":{"サイクロプス":true,"ゴーレム":true},"161\\/7\\/12\\/11\\/12":{"くもの大王":true},"161\\/7\\/7\\/7\\/7":{"ようがんピロー":true},"161\\/0\\/8\\/5\\/8":{"メガザルロック":true}}},"ennkaunnto":{"160":{"160\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":160,"monsterId":217,"displayname":"サイクロプス","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":"竜のあきと地方  日中"},{"tableid":160,"monsterId":188,"displayname":"ゴーレム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":"竜のあきと地方  日中"}],"160\\/7\\/12\\/11\\/12\\/1\\/1":[{"tableid":160,"monsterId":182,"displayname":"くもの大王","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":1,"countrand":0,"has3g":true,"name":"竜のあきと地方  日中"}],"160\\/7\\/7\\/7\\/7\\/1\\/5":[{"tableid":160,"monsterId":64,"displayname":"ようがんピロー","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":5,"countrand":4,"has3g":false,"name":"竜のあきと地方  日中"}],"160\\/0\\/8\\/5\\/8\\/1\\/1":[{"tableid":160,"monsterId":118,"displayname":"メガザルロック","percent":"0.0000","data":{"2g":0,"max":8,"3g":5,"3gmax":8},"min":1,"max":1,"countrand":0,"has3g":true,"name":"竜のあきと地方  日中"}]},"161":{"161\\/7\\/11\\/11\\/11\\/1\\/1":[{"tableid":161,"monsterId":217,"displayname":"サイクロプス","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":"竜のあきと地方  夜"},{"tableid":161,"monsterId":188,"displayname":"ゴーレム","percent":"63.6364","data":{"2g":7,"max":11,"3g":11,"3gmax":11},"min":1,"max":1,"countrand":0,"has3g":false,"name":"竜のあきと地方  夜"}],"161\\/7\\/12\\/11\\/12\\/1\\/1":[{"tableid":161,"monsterId":182,"displayname":"くもの大王","percent":"58.3333","data":{"2g":7,"max":12,"3g":11,"3gmax":12},"min":1,"max":1,"countrand":0,"has3g":true,"name":"竜のあきと地方  夜"}],"161\\/7\\/7\\/7\\/7\\/1\\/5":[{"tableid":161,"monsterId":64,"displayname":"ようがんピロー","percent":"100.0000","data":{"2g":7,"max":7,"3g":7,"3gmax":7},"min":1,"max":5,"countrand":4,"has3g":false,"name":"竜のあきと地方  夜"}],"161\\/0\\/8\\/5\\/8\\/1\\/2":[{"tableid":161,"monsterId":118,"displayname":"メガザルロック","percent":"0.0000","data":{"2g":0,"max":8,"3g":5,"3gmax":8},"min":1,"max":2,"countrand":1,"has3g":true,"name":"竜のあきと地方  夜"}]}}}'
     const data = JSON.parse(json);
 
 
@@ -123,9 +124,9 @@
             hasUpdate = false;
             window.history.replaceState({}, '', URL);
             if (document.getElementById('seed').value !== "") {
-                document.title = document.getElementById('seed').value + ", ウォルロ地方(高台)のエンカウントテーブル";
+                document.title = document.getElementById('seed').value + ", 竜のあきと地方のエンカウントテーブル";
             } else {
-                document.title = "ウォルロ地方(高台)のエンカウントテーブル";
+                document.title = "竜のあきと地方のエンカウントテーブル";
             }
         }
         if (hasTableUpdate === true) {
@@ -190,9 +191,13 @@
             queryParams.set("fixedheader", "0");
         }
 
-        if (document.getElementById('flee').checked === true) {
-            queryParams.set("flee", "1");
+        if (document.getElementById('flee').checked === false) {
+            queryParams.set("flee", "0");
         }
+        if (document.getElementById('nextF').checked === false) {
+            queryParams.set("nextF", "0");
+        }
+
 
 
 
@@ -233,9 +238,13 @@
         if (queryParams.get("fixedheader") === "0") {
             document.getElementById('fixedheader').checked = false;
         }
-        if (queryParams.get("flee") === "1") {
-            document.getElementById('flee').checked = true;
+        if (queryParams.get("flee") === "0") {
+            document.getElementById('flee').checked = false;
         }
+        if (queryParams.get("nextF") === "0") {
+            document.getElementById('nextF').checked = false;
+        }
+
 
 
         if (bool) {
@@ -429,8 +438,8 @@
                         base = 7
                     }
                     output[currentF - start][arraykey * 3 + 2] = result1
-                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total + 4) + ")"
-                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total + 4) + "f"
+                    output[currentF - start][arraykey * 3 + 3] = G + "(" + (base + total) + ")"
+                    output[currentF - start][arraykey * 3 + 4] = (currentF + base + total) + "f"
 
 
                     // let otomo = otomoCache[tableId][rand2]
@@ -510,7 +519,11 @@
             } else {
                 c.visible(true);
                 c1.visible(true);
-                c2.visible(true);
+                if (document.getElementById('nextF').checked === false){
+                    c2.visible(true);
+                }else{
+                    c2.visible(false);
+                }
             }
         }
 
@@ -559,6 +572,9 @@
                 encDataCache.push(encdata[0])
 
                 let data2 = encdata[0]["data"];
+                let field = encdata[0]["name"];
+                name += field +  " "
+                console.log(field)
                 let nears = {...data["nears"][key][encdata[0]["tableid"] + "/" + data2["2g"] + "/" + data2["max"] + "/" + data2["3g"] + "/" + data2["3gmax"]]} // copy
 
 
@@ -579,7 +595,7 @@
                 name += " x"+max
 
                 names[count] = name
-                selectData.push({id: count, label: encdata[0]["name"] + " " + name});
+                selectData.push({id: count, label: name});
                 ++count;
             }
         }
@@ -605,6 +621,7 @@
             document.getElementById('select4'),
             document.getElementById('fixedheader'),
             document.getElementById('flee'),
+            document.getElementById('nextF'),
         ];
         list.forEach(inputElement => {
             inputElement.addEventListener('input', preUpdateTable);
