@@ -359,7 +359,7 @@
     function updateTable() {
         saveInputValuesToURL1();
         const inputElement = document.getElementById('seed');
-        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        const seedStart = inputElement.value.trim() !== '' ? add0xIfNeeded(inputElement.value) : null;
         if (seedStart === null) {
             maketable([]);
             return;
@@ -412,7 +412,13 @@
             decimal = 0
         }
         setDecimal(decimal)
-        let now = BigInt(seedStart);
+        let now
+        try {
+            now = BigInt(seedStart);
+        } catch (SyntaxError) {
+            maketable([]);
+            return;
+        }
         //0だけ特別に処理する
         if (start === 0) {
             do {

@@ -255,7 +255,7 @@
     function updateTable() {
         saveInputValuesToURL1();
         const inputElement = document.getElementById('seed');
-        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        const seedStart = inputElement.value.trim() !== '' ? add0xIfNeeded(inputElement.value) : null;
         if (seedStart === null) {
             maketable([]);
             return;
@@ -312,7 +312,13 @@
         const output = generateEmptyArray(end - start, 14, start);
         Object.keys(list).forEach(arraykey => {
             const item = list[arraykey]
-            let now = BigInt(seedStart)
+            let now
+            try {
+                now = BigInt(seedStart);
+            } catch (SyntaxError) {
+                maketable([]);
+                return;
+            }
 
             if (item.value !== "noselect") {
                 for (let currentF = 0; currentF < end; currentF++) {

@@ -351,7 +351,7 @@
     function updateTable() {
         saveInputValuesToURL1();
         const inputElement = document.getElementById('seed');
-        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        const seedStart = inputElement.value.trim() !== '' ? add0xIfNeeded(inputElement.value) : null;
         if (seedStart === null) {
             maketable([]);
             return;
@@ -395,7 +395,13 @@
         } else {
             document.getElementById('info').innerText = "フィルタ機能が無効化されています。";
         }
-        let now = BigInt(seedStart);
+        let now
+        try {
+            now = BigInt(seedStart);
+        } catch (SyntaxError) {
+            maketable([]);
+            return;
+        }
         //0だけ特別に処理する
         if (start === 0) {
             do {
@@ -566,7 +572,7 @@
             "砂",
         ];
         console.log(type)
-        document.getElementById('init1').innerHTML = "タイプ: " + obj1[type] + " ("+type+", 最速起動)";
+        document.getElementById('init1').innerHTML = "タイプ: " + obj1[type] + " (" + type + ", 最速起動)";
 
 
     }

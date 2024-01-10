@@ -210,7 +210,7 @@
     function updateTable() {
         saveInputValuesToURL1();
         const inputElement = document.getElementById('seed');
-        const seedStart = inputElement.value.trim() !== '' ? decodeHexValue(inputElement.value) : null;
+        const seedStart = inputElement.value.trim() !== '' ? add0xIfNeeded(inputElement.value) : null;
         if (seedStart === null) {
             maketable([]);
             return;
@@ -234,7 +234,13 @@
         let max = decode(document.getElementById('max').value);
         let checked = document.getElementById('filter').checked;
         let output = [];
-        let now = BigInt(seedStart);
+        let now
+        try {
+            now = BigInt(seedStart);
+        } catch (SyntaxError) {
+            maketable([]);
+            return;
+        }
         //0だけ特別に処理する
         let previous;
         if (start === 0) {

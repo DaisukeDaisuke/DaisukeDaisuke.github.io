@@ -214,3 +214,11 @@ function formatTime(seconds) {
         return result;
     }
 }
+
+function add0xIfNeeded(input) {
+    // 先頭が"0x"で始まっていない場合のみ追加
+    if (!/^0x/i.test(input)) {
+        input = "0x" + input;
+    }
+    return input;
+}
