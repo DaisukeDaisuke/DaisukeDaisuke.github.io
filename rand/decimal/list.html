@@ -434,7 +434,7 @@
                 let next3percent = calculatePercentFloat(tmp4);
                 let tmp5 = rand(tmp4);
                 let next4percent = calculatePercentFloat(tmp5);
-                let viewSeed = "0x" + seedStart.toString(16).toUpperCase();
+                let viewSeed = "0x"+seedStart.substring(2).toUpperCase();
                 if (hideseeds) {
                     viewSeed = "";
                 }
