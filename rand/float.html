@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Point Encoder/Decoder</title>
+    <style>
+        body {
+            text-align: center;
+            margin: 20px;
+        }
+
+        #container {
+            text-align: center;
+            display: inline-block;
+        }
+
+        textarea {
+            height: 150px;
+            max-height: 10em;
+        }
+
+        #output, #hexOutput {
+            white-space: pre-line;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <h1>Floating Point Encoder/Decoder</h1>
+    <label for="input">Enter Floats (Little Endian, separated by newlines):</label>
+    <br>
+    <textarea id="input" placeholder="e.g., 0x40000000&#10;0xC0000000"></textarea>
+    <br>
+    <label for="output">Decoded Floats:</label>
+    <div id="output"></div>
+    <br><br>
+    <label for="decimalInput">Enter Decimals (separated by newlines):</label>
+    <br>
+    <textarea id="decimalInput" placeholder="e.g., 2.0000&#10;3.1415"></textarea>
+    <br>
+    <label for="hexOutput">Encoded Floats (Little Endian):</label>
+    <div id="hexOutput"></div>
+    <br><br>
+    <button onclick="clearInputs()">Clear Inputs</button>
+    <div id="errorMessages" class="error"></div>
+</div>
+
+<script>
+    function processInput() {
+        try {
+            decodeFloats();
+            encodeFloats();
+            clearErrorMessages();
+        } catch (error) {
+            displayErrorMessages(error.message);
+        }
+    }
+
+    function decodeFloats() {
+        const inputElement = document.getElementById("input");
+        const outputElement = document.getElementById("output");
+
+        const hexValues = inputElement.value.trim().split(/\n/);
+        if (!hexValues[0]) {
+            outputElement.innerText = "No input provided.";
+            updateURL();
+            return;
+        }
+        const floatValues = hexValues.map(hexValue => {
+            const intValue = parseInt(hexValue, 16);
+            return new Float32Array(new Int32Array([intValue]).buffer)[0].toFixed(4);
+        });
+
+        outputElement.innerText = floatValues.join("\n");
+        updateURL();
+    }
+
+    function encodeFloats() {
+        const decimalInputElement = document.getElementById("decimalInput");
+        const hexOutputElement = document.getElementById("hexOutput");
+
+        const decimalValues = decimalInputElement.value.trim().split(/\n/);
+        console.log(decimalValues)
+        if (!decimalValues[0]) {
+            hexOutputElement.innerText = "No input provided.";
+            updateURL();
+            return;
+        }
+        const hexValues = decimalValues.map(decimalValue => {
+            const floatValue = parseFloat(decimalValue);
+            if (isNaN(floatValue)) {
+                return "Invalid input. Please enter valid numbers.";
+            }
+            if (floatValue < 0){
+                return "Minus is not supported.";
+            }
+            const intValue = new Int32Array(new Float32Array([floatValue]).buffer)[0];
+            return "0x" + intValue.toString(16).toUpperCase();
+        });
+
+        hexOutputElement.innerText = hexValues.join("\n");
+        updateURL();
+    }
+
+    function clearInputs() {
+        document.getElementById("input").value = "";
+        document.getElementById("decimalInput").value = "";
+        document.getElementById("output").innerText = "";
+        document.getElementById("hexOutput").innerText = "";
+        clearErrorMessages();
+        updateURL();
+    }
+
+    function updateURL() {
+        const input = document.getElementById("input").value.trim();
+        const decimals = document.getElementById("decimalInput").value.trim();
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (input === "") {
+            urlParams.delete("float");
+        } else {
+            urlParams.set("float", encodeURIComponent(input));
+        }
+
+        if (decimals === "") {
+            urlParams.delete("decimals");
+        } else {
+            urlParams.set("decimals", encodeURIComponent(decimals));
+        }
+
+        const url = `float.html${urlParams.toString() ? `?${urlParams.toString()}` : ""}`;
+        window.history.replaceState({}, document.title, url);
+    }
+
+    function displayErrorMessages(errorMessage) {
+        document.getElementById("errorMessages").innerText = errorMessage;
+    }
+
+    function clearErrorMessages() {
+        document.getElementById("errorMessages").innerText = "";
+    }
+
+    window.onload = function () {
+        const params = new URLSearchParams(window.location.search);
+        const floatInput = params.get('float');
+        const decimalsInput = params.get('decimals');
+
+        if (floatInput !== null) {
+            document.getElementById("input").value = decodeURIComponent(floatInput);
+        }
+
+        if (decimalsInput !== null) {
+            document.getElementById("decimalInput").value = decodeURIComponent(decimalsInput);
+        }
+
+        // Automatic processing on load
+        processInput();
+    };
+
+    // Automatic processing on input change
+    document.getElementById("input").addEventListener("input", processInput);
+    document.getElementById("decimalInput").addEventListener("input", processInput);
+</script>
+</body>
+</html>
