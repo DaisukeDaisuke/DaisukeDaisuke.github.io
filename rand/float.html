@@ -62,6 +62,19 @@
         }
     }
 
+    function parseNumber(input) {
+        // 0xで始まる場合
+        if (/^0x[0-9a-f]+$/i.test(input)) {
+            return parseInt(input, 16);
+        } else if (/[a-f]/i.test(input)) {
+            // a-fが含まれている場合は16進数として処理
+            return parseInt(input, 16);
+        } else {
+            // それ以外の場合は10進数として処理
+            return parseInt(input, 10);
+        }
+    }
+
     function decodeFloats() {
         const inputElement = document.getElementById("input");
         const outputElement = document.getElementById("output");
@@ -93,7 +106,7 @@
             return;
         }
         const hexValues = decimalValues.map(decimalValue => {
-            const floatValue = parseFloat(decimalValue);
+            const floatValue = parseNumber(decimalValue);
             if (isNaN(floatValue)) {
                 return "Invalid input. Please enter valid numbers.";
             }
