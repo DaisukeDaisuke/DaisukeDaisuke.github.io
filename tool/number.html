@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Converter</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    .input-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 50px;
+    }
+    input {
+        width: 300px;
+        padding: 10px;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+<h1>Number Converter Tool</h1>
+<div class="input-container">
+    <p>2進数</p>
+    <input type="text" id="binaryInput" oninput="convertNumber(this.value, 'binary')" placeholder="Enter binary number">
+</div>
+<div class="input-container">
+    <p>8進数</p>
+    <input type="text" id="octalInput" oninput="convertNumber(this.value, 'octal')" placeholder="Enter octal number">
+</div>
+<div class="input-container">
+    <p>10進数</p>
+    <input type="text" id="decimalInput" oninput="convertNumber(this.value, 'decimal')" placeholder="Enter decimal number">
+</div>
+<div class="input-container">
+    <p>16進数</p>
+    <input type="text" id="hexadecimalInput" oninput="convertNumber(this.value, 'hexadecimal')" placeholder="Enter hexadecimal number">
+</div>
+
+<script>
+    function convertNumber(value, type) {
+        // Ensure value is not empty
+        if (!value.trim()) {
+            clearOutputs();
+            return;
+        }
+
+        let decimalValue;
+        switch (type) {
+            case 'binary':
+                decimalValue = parseInt(value, 2);
+                document.getElementById('decimalInput').value = decimalValue;
+                document.getElementById('hexadecimalInput').value = decimalValue.toString(16).toUpperCase();
+                document.getElementById('octalInput').value = decimalValue.toString(8);
+                break;
+            case 'octal':
+                decimalValue = parseInt(value, 8);
+                document.getElementById('binaryInput').value = decimalValue.toString(2);
+                document.getElementById('decimalInput').value = decimalValue;
+                document.getElementById('hexadecimalInput').value = decimalValue.toString(16).toUpperCase();
+                break;
+            case 'decimal':
+                decimalValue = parseInt(value, 10);
+                document.getElementById('binaryInput').value = decimalValue.toString(2);
+                document.getElementById('octalInput').value = decimalValue.toString(8);
+                document.getElementById('hexadecimalInput').value = decimalValue.toString(16).toUpperCase();
+                break;
+            case 'hexadecimal':
+                decimalValue = parseInt(value, 16);
+                document.getElementById('binaryInput').value = decimalValue.toString(2);
+                document.getElementById('octalInput').value = decimalValue.toString(8);
+                document.getElementById('decimalInput').value = decimalValue;
+                break;
+            default:
+                console.error('Invalid type');
+                return;
+        }
+    }
+
+    function clearOutputs() {
+        document.getElementById('binaryInput').value = '';
+        document.getElementById('octalInput').value = '';
+        document.getElementById('decimalInput').value = '';
+        document.getElementById('hexadecimalInput').value = '';
+    }
+</script>
+</body>
+</html>
