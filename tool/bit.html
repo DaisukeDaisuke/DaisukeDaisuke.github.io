@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビットが立ってるか分かりやすくするツール</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    #input {
+        width: 500px; /* 大きい入力欄 */
+        margin: 0 auto; /* 中央に寄せる */
+    }
+    #result {
+        font-size: 1.2em;
+        margin-top: 20px;
+        text-align: left;
+        width: 300px;
+        margin: 0 auto; /* 中央に寄せる */
+    }
+</style>
+</head>
+<body>
+<h2>ビットが立ってるか分かりやすくするツール</h2>
+<div id="input">
+    <label for="inputBits">入力欄:</label>
+    <input type="text" id="inputBits" placeholder="32bit or 64bit を入力" oninput="showBits()">
+    <!-- oninput属性を使って、入力が変更されるたびにshowBits()関数を呼び出す -->
+</div>
+<div id="result"></div>
+
+<script>
+function showBits() {
+    var inputBits = document.getElementById("inputBits").value;
+    var resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = ""; // 結果表示エリアをクリア
+
+    // 入力が空の場合は何もしない
+    if (inputBits.trim() === "") {
+        return;
+    }
+
+    // 入力を数値に変換
+    var number = parseInt(inputBits, 16);
+
+    // ビット数を表示
+    var bitCount = inputBits.length;
+    resultDiv.innerHTML += "<div>ビット数: " + bitCount + "</div>";
+
+    // ビットごとにチェックして立っているかどうかを表示
+    for (var i = 0; i < inputBits.length * 4; i++) {
+        var bit = number & (1 << i);
+        if (bit !== 0) {
+            resultDiv.innerHTML += "<div>" + i + ": 1</div>";
+        } else {
+            resultDiv.innerHTML += "<div>" + i + ": 0</div>";
+        }
+    }
+}
+</script>
+</body>
+</html>
