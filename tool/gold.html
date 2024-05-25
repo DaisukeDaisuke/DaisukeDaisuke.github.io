@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>お金稼ぎ計算ツール</title>
+<style>
+  body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  input {
+    width: 200px;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #218838;
+  }
+</style>
+<script>
+  function calculate() {
+    let startGold = parseInt(document.getElementById('startGold').value);
+    let shapuCost = 970;
+    let goldMailCost = 4570;
+    let shapuSellPrice = 1200;
+    let goldMailSellPrice = 4900;
+
+    // ぬくもりのシャプカ
+    let shapuPurchaseCount = Math.min(Math.floor(startGold / shapuCost), 99);
+    let shapuProfit = shapuPurchaseCount * (shapuSellPrice - shapuCost);
+    let remainingGoldAfterShapu = startGold - shapuPurchaseCount * shapuCost;
+
+    // ゴールドメイル
+    let goldMailPurchaseCount = Math.min(Math.floor(remainingGoldAfterShapu / goldMailCost), 99);
+    let goldMailProfit = goldMailPurchaseCount * (goldMailSellPrice - goldMailCost);
+    let remainingGoldAfterGoldMail = remainingGoldAfterShapu - goldMailPurchaseCount * goldMailCost;
+
+    // 最終金額
+    let finalGold = remainingGoldAfterGoldMail + shapuPurchaseCount * shapuSellPrice + goldMailPurchaseCount * goldMailSellPrice;
+
+    // 結果を表示
+    document.getElementById('shapuPurchaseCount').textContent = shapuPurchaseCount;
+    document.getElementById('goldMailPurchaseCount').textContent = goldMailPurchaseCount;
+    document.getElementById('remainingGoldAfterShapu').textContent = remainingGoldAfterShapu;
+    document.getElementById('remainingGoldAfterGoldMail').textContent = remainingGoldAfterGoldMail;
+    document.getElementById('finalGold').textContent = finalGold;
+  }
+
+  function setFinalGoldAsStart() {
+    let finalGold = parseInt(document.getElementById('finalGold').textContent);
+    document.getElementById('startGold').value = finalGold;
+    calculate();
+  }
+</script>
+</head>
+<body>
+  <h1>お金稼ぎ計算ツール</h1>
+  <div>
+    開始G: <input type="number" id="startGold" oninput="calculate()">
+  </div>
+  <div>
+    <h2>ぬくもりのシャプカ</h2>
+    購入数: <span id="shapuPurchaseCount">0</span><br>
+    余り: <span id="remainingGoldAfterShapu">0</span>
+  </div>
+  <div>
+    <h2>ゴールドメイル</h2>
+    購入数: <span id="goldMailPurchaseCount">0</span><br>
+    余り: <span id="remainingGoldAfterGoldMail">0</span>
+  </div>
+  <div>
+    最終金額: <span id="finalGold">0</span>
+  </div>
+  <button onclick="setFinalGoldAsStart()">GO</button>
+</body>
+</html>
