@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HP計算ツール</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .calculator {
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 15px;
+            padding: 20px;
+            width: 300px;
+        }
+        .calculator input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 1.2em;
+        }
+        .calculator input[type="number"]::-webkit-outer-spin-button,
+        .calculator input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .calculator input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .result {
+            font-size: 1.5em;
+            margin-top: 10px;
+        }
+        .reset-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background-color: #f44336;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .reset-button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+    <script>
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(pair => {
+                const [key, value] = pair.split("=");
+                if (key && value) {
+                    params[decodeURIComponent(key)] = decodeURIComponent(value);
+                }
+            });
+            return params;
+        }
+
+        function updateURL(params) {
+            const queryString = new URLSearchParams(params).toString();
+            history.replaceState(null, null, "?" + queryString);
+        }
+
+        function calculateHP() {
+            const maxHP = parseFloat(document.getElementById('maxHP').value);
+            const percent = parseFloat(document.getElementById('percent').value);
+
+            if (!isNaN(maxHP) && !isNaN(percent)) {
+                const finalHP = Math.floor(maxHP * ((percent * 0.01 * 0.2) + 0.8));
+                document.getElementById('result').innerText = "結果: " + finalHP;
+                return finalHP;
+            } else {
+                document.getElementById('result').innerText = "";
+                return null;
+            }
+        }
+
+        function handleInput() {
+            const maxHPValue = document.getElementById('maxHP').value;
+            const percentValue = document.getElementById('percent').value;
+            const params = {};
+
+            if (maxHPValue) params.maxHP = maxHPValue;
+            if (percentValue) params.percent = percentValue;
+
+            updateURL(params);
+
+            if (!maxHPValue || !percentValue) {
+                document.getElementById('result').innerText = "";
+            } else {
+                calculateHP();
+            }
+        }
+
+        function reset() {
+            document.getElementById('maxHP').value = "";
+            document.getElementById('percent').value = "";
+            document.getElementById('result').innerText = "";
+            history.replaceState(null, null, window.location.pathname);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const params = getQueryParams();
+            if (params.maxHP) {
+                document.getElementById('maxHP').value = params.maxHP;
+            }
+            if (params.percent) {
+                document.getElementById('percent').value = params.percent;
+            }
+            if (params.maxHP && params.percent) {
+                calculateHP();
+            }
+
+            document.getElementById('maxHP').addEventListener('input', handleInput);
+            document.getElementById('percent').addEventListener('input', handleInput);
+            document.getElementById('reset').addEventListener('click', reset);
+        });
+    </script>
+</head>
+<body>
+    <div class="calculator">
+        <h1>HP計算ツール</h1>
+        <label for="maxHP">maxHP:</label>
+        <input id="maxHP" type="number" step="any">
+        <br>
+        <label for="percent">パーセント:</label>
+        <input id="percent" type="number" step="any">
+        <div id="result" class="result"></div>
+        <button id="reset" class="reset-button">リセット</button>
+    </div>
+</body>
+</html>
