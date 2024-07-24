@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時間計算ツール</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        textarea {
+            width: 100px;
+            height: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+    <script>
+        function calculateElapsedTime() {
+            // テキストエリアから時間を取得
+            const startTimeStr = document.getElementById("startTime").value;
+            const endTimeStr = document.getElementById("endTime").value;
+
+            // 時間をDateオブジェクトに変換
+            const [startHour, startMinute, startSecond] = startTimeStr.split(':').map(Number);
+            const [endHour, endMinute, endSecond] = endTimeStr.split(':').map(Number);
+            
+            const now = new Date();
+            const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, startSecond);
+            const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, endSecond);
+
+            // 日をまたぐ場合を考慮
+            if (endTime < startTime) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+
+            // 経過時間を計算
+            const elapsedTimeMs = endTime - startTime;
+            const elapsedTime = new Date(elapsedTimeMs);
+            const elapsedHours = String(elapsedTime.getUTCHours()).padStart(2, '0');
+            const elapsedMinutes = String(elapsedTime.getUTCMinutes()).padStart(2, '0');
+            const elapsedSeconds = String(elapsedTime.getUTCSeconds()).padStart(2, '0');
+
+            // 結果を表示
+            document.getElementById("result").innerText = `${elapsedHours}:${elapsedMinutes}:${elapsedSeconds}`;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>時間計算ツール</h1>
+        <label for="startTime">開始時間 (HH:MM:SS):</label><br>
+        <textarea id="startTime" rows="1" cols="10"></textarea><br><br>
+        <label for="endTime">終了時間 (HH:MM:SS):</label><br>
+        <textarea id="endTime" rows="1" cols="10"></textarea><br><br>
+        <button onclick="calculateElapsedTime()">計算する</button>
+        <h2>経過時間: <span id="result">00:00:00</span></h2>
+    </div>
+</body>
+</html>
