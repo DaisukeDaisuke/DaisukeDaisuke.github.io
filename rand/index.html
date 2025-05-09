@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>アクセス不可</title>
+  <style>
+    /* ページ全体を flex コンテナにして中央寄せ */
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      display: flex;
+      align-items: center;   /* 垂直方向中央揃え */
+      justify-content: center; /* 水平方向中央揃え */
+      background-color: #f5f5f5;
+      font-family: system-ui, sans-serif;
+      color: #333;
+      text-align: center;
+      padding: 1rem;
+    }
+    .message {
+      max-width: 90%;
+      line-height: 1.6;
+    }
+    a {
+      color: #0366d6;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="message">
+    <p>このページは現在諸事情によりアクセスできません。</p>
+    <p>ページのソースコードをリクエストするには、<br>
+       <a href="https://x.com/Daisuke76897125" target="_blank" rel="noopener">https://x.com/Daisuke76897125</a> までご連絡ください。</p>
+  </div>
+</body>
+</html>
