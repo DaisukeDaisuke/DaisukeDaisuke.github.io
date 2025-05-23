@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リトルエンディアンBigInt 16進→CP932→UTF-8変換ツール</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: sans-serif;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+    }
+    textarea, .output {
+      display: block;
+      margin: 12px auto;
+      width: 90vw;
+      max-width: 600px;
+      box-sizing: border-box;
+      font-size: 1em;
+    }
+    textarea {
+      height: 8em;
+      resize: vertical;
+      padding: 8px;
+    }
+    button {
+      display: block;
+      margin: 0 auto 16px auto;
+      font-size: 1.1em;
+      padding: 8px 24px;
+      cursor: pointer;
+    }
+    .output {
+      background: #fff;
+      border: 1px solid #ddd;
+      min-height: 1.5em;
+      padding: 8px;
+      margin-bottom: 12px;
+      text-align: center;
+      word-break: break-all;
+    }
+    label {
+      display: block;
+      text-align: center;
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>リトルエンディアンBigInt 16進→CP932→UTF-8変換</h1>
+  <label for="input">16進数(例: 0x1234567891233)を複数行で入力してください（改行ごとに個別変換）：</label>
+  <textarea id="input" placeholder="0x82A082A282A482A6&#10;1234567890abcdef"></textarea>
+  <button id="convertBtn">変換</button>
+  <div id="results"></div>
+
+  <!-- encoding.jsをCDNから読み込み（CP932デコード用） -->
+  <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@1.0.30/encoding.min.js"></script>
+  <script>
+    // URLパラメータ処理用
+    function getParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+    function setParam(name, value) {
+      const params = new URLSearchParams(window.location.search);
+      if (value === "" || value == null) {
+        params.delete(name);
+      } else {
+        params.set(name, value);
+      }
+      // 入力値をURLエンコードして履歴に反映（ハードリロードなし）
+      const newUrl = window.location.pathname + '?' + params.toString();
+      window.history.replaceState(null, '', newUrl);
+    }
+
+    function hexToBytesLE(hex, chunkSize = 16) {
+      hex = hex.trim().replace(/^0x/i, '').replace(/[^0-9a-fA-F]/g, '');
+      if (hex.length === 0) return [];
+      if (hex.length % chunkSize !== 0) {
+        hex = hex.padStart(Math.ceil(hex.length / chunkSize) * chunkSize, '0');
+      }
+      const bytes = [];
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+      }
+      const chunks = [];
+      for (let i = 0; i < bytes.length; i += 8) {
+        let chunk = bytes.slice(i, i + 8);
+        while(chunk.length < 8) chunk.push(0);
+        chunk.reverse();
+        chunks.push(chunk);
+      }
+      return chunks.flat();
+    }
+
+    function hexToCP932UTF8(hex) {
+      const leBytes = hexToBytesLE(hex);
+      if (leBytes.length === 0) return '';
+      const unicodeArr = Encoding.convert(leBytes, {
+        to: 'UNICODE',
+        from: 'SJIS',
+        type: 'array'
+      });
+      return Encoding.codeToString(unicodeArr);
+    }
+
+    function convertAll() {
+      const textarea = document.getElementById('input');
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+      const lines = textarea.value.split(/\r?\n/);
+      let anyInput = false;
+      lines.forEach((line, idx) => {
+        const cleanLine = line.trim();
+        if(cleanLine.length === 0) return;
+        anyInput = true;
+        let output;
+        try {
+          output = hexToCP932UTF8(cleanLine);
+        } catch(e) {
+          output = '[変換エラー]';
+        }
+        const div = document.createElement('div');
+        div.className = 'output';
+        div.textContent = output.length > 0 ? output : '[空の結果]';
+        results.appendChild(div);
+      });
+      if (!anyInput) {
+        results.innerHTML = '<div class="output">[入力を16進数で1行以上入力してください]</div>';
+      }
+    }
+
+    // 入力値のURL保存＆変換呼び出し
+    function handleInput() {
+      const textarea = document.getElementById('input');
+      setParam('input', encodeURIComponent(textarea.value));
+      convertAll();
+    }
+
+    document.getElementById('convertBtn').addEventListener('click', convertAll);
+    document.getElementById('input').addEventListener('input', handleInput);
+
+    // 初期表示時、URLから値がある場合はセット＆自動実行
+    window.addEventListener('DOMContentLoaded', function() {
+      const textarea = document.getElementById('input');
+      const param = getParam('input');
+      if(param !== null && param.length > 0) {
+        // decodeURIComponentで複数行復元
+        textarea.value = decodeURIComponent(param);
+      }
+      convertAll();
+    });
+  </script>
+</body>
+</html>
