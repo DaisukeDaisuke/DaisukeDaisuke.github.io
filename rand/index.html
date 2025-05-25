@@ -1,43 +1,666 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>アクセス不可</title>
-  <style>
-    /* ページ全体を flex コンテナにして中央寄せ */
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    body {
-      display: flex;
-      align-items: center;   /* 垂直方向中央揃え */
-      justify-content: center; /* 水平方向中央揃え */
-      background-color: #f5f5f5;
-      font-family: system-ui, sans-serif;
-      color: #333;
-      text-align: center;
-      padding: 1rem;
-    }
-    .message {
-      max-width: 90%;
-      line-height: 1.6;
-    }
-    a {
-      color: #0366d6;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>乱数総当たりツール</title>
+    <script src="rand.js"></script>
+    <script src="main.js"></script>
+    <style>
+        .container {
+            text-align: center;
+            margin: 20px auto;
+            max-width: 450px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px; /* 高さを増やす */
+            margin-bottom: 20px;
+        }
+
+        .blue-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        .red-button {
+            background-color: #F06060; /* 赤色の背景色 */
+            color: white; /* テキストの色 */
+            padding: 10px 20px; /* パディング */
+            border: none; /* ボーダーなし */
+            border-radius: 5px; /* 角丸 */
+            cursor: pointer; /* ホバー時のカーソルスタイル */
+        }
+
+        body {
+            margin-bottom: 800px; /* フッター部分の下側に20pxの余白を追加 */
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .box {
+            position: absolute;
+            top: 10px;
+            left: -30px; /* ドロップダウンの横に配置したい場所に調整 */
+        }
+    </style>
 </head>
 <body>
-  <div class="message">
-    <p>このページは現在諸事情によりアクセスできません。</p>
-    <p>ページのソースコードをリクエストするには、<br>
-       <a href="https://x.com/Daisuke76897125" target="_blank" rel="noopener">https://x.com/Daisuke76897125</a> までご連絡ください。</p>
-  </div>
+<div class="container">
+    <h1>乱数総当たりツール</h1>
+    <a href="list.html" target=”_blank”>簡易乱数表はこちら</a><br>
+    <span>1以上の乱数を総当たりします</span><br>
+    <!--form action="#" method="post"-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <label for="seedStart">開始seed</label>
+    <input type="text" id="seedStart" name="seedStart" value="0x32700">
+    <label for="end">終了seed</label>
+    <input type="text" id="seedEnd" name="seedEnd" value="0x327ff"><br>
+
+    <label>検索範囲指定ショートカット</label><br>
+    <select id="seedlist">
+        <option></option>
+        <option>700-7ff (実機, JP)</option>
+        <option>600-8ff (実機, JP)</option>
+        <option>31600-31fff (実機, EU)</option>
+        <option>31600-319ff (実機, NA)</option>
+        <option>28000-2ffff (DeSmuME)</option>
+        <option>3c000-3dfff (melonDS)</option>
+        <option>16000-19fff (No$GBA)</option>
+        <option>16000-3ffff (全て)</option>
+    </select>
+
+    <label for="end">1seed辺りの調査回数</label><br>
+    <span>(制限する時は現在F+入力個数以上にする必要があります。)</span><br>
+    <input type="number" id="end" name="end" value="1000"><br>
+    <label for="maxCount">表示上限</label>
+    <input type="number" id="maxCount" name="maxCount" value="1000"><br>
+    <span>消費数指定、未入力で乱数を特定するには20個以上の入力が必要です</span><br>
+    <label for="end">1つめの項目の消費数(任意、「0」は動きません！)</label>
+    <input type="number" id="nowCount" name="nowCount"><br>
+    <label for="end">最後の項目の消費数(任意、優先)</label>
+    <input type="number" id="nowCount1" name="nowCount1"><br>
+    <label for="seed1">初期シード指定(指定したシード値以外除外,例:0x3272f)</label>
+    <input type="text" id="seed1" name="seed1" placeholder="3272f"><br>
+    <label>初期シード指定ショートカット<br>(全ての乱数を総当たりする時は変更しないでください)</label><br>
+    <select id="shortcut">
+        <option></option>
+        <option>ここ, レオノ(0x32741)</option>
+        <option>よよ, ハイローズ(0x3276c)</option>
+        <option>こよこよ, りり(0x32763)</option>
+        <option>こよここ, レオノ(アローラ)(0x3275c)</option>
+    </select>
+    <p id="prediction1">1個に絞る為に必要な入力数(予測): N/A個</p>
+    <p id="prediction2">開始Fを指定した場合の予想入力数: N/A個</p>
+    <p id="prediction3">最低所要時間(予想): N/A秒</p>
+    <p>(減らすには1seed辺りの調査回数を少なくしてください)</p>
+    <p>(デフォルトは1000です。100にすると10倍早くなります。)</p><br>
+    <button class="red-button" type="submit" onclick="onReset1()">リセット</button>
+    <br>
+    <label for="end">この入力を共有</label>
+    <input type="text" id="share" name="share" onclick="this.select()" readonly="readonly"><br>
+    <label>これより下の入力変更時に自動で「開始」して1個以下で告知する(自動開始時限定)</label><br>
+    <input type="checkbox" id="autostart" name="autostart"><br><br>
+
+    <button class="blue-button" type="submit" onclick="onRun()">開始</button>
+    <br>
+
+    <span>よこ入力またはドロップダウンどちらかだけを使用してください。<br>両方使用した場合入力が消えます。</span><br>
+    <label>「よ」「こ」入力(モバイル用)</label>
+    <input type="text" id="yoko" name="yoko" placeholder="よこよここ"><br>
+    <label>選択してください(飛ばし不可)</label>
+    <div class="dropdown"></div>
+    <button class="blue-button" type="submit" onclick="onRun()">開始</button>
+    <table id="table">
+        <tr>
+            <th>seed</th>
+            <th>開始[F]</th>
+            <th>最終項目[F]</th>
+            <th>現在地[F]</th>
+            <th>リスト表示</th>
+        </tr>
+    </table>
+    <span id="error"></span><br>
+    <span id="info1"></span><br>
+    <span id="info"></span><br>
+
+    <button class="blue-button" type="submit" onclick="onRun()">開始</button>
+    <!--/form-->
+</div>
+<br>
+<br>
+<div>
+    <span>使い方</span><br>
+    <ul style="list-style: disc; padding-left: 40px; color: black;">
+        <li>起動時に、背景の天使界が夕方または夜の状態ではない事を確認してください。起動時のロゴを再表示した場合、本ツールは一致しません。</li>
+        <li>シンボルに接触し、戦闘に入ります</li>
+        <li>
+            戦闘開始時に「魔物たちはまだこちらに気づいていない」または「魔物たちはおどろきとまどっている」と表示(「[魔物名]があらわれた」以外)された場合、全員「ぼうぎょ」して1ターン待ちます。
+        </li>
+        <li>このツールを開き、「しらべる」コマンドで、</li>
+        <ul style="list-style: disc; padding-left: 40px; color: black;">
+            <li>「[魔物名]はこちらのようすをうかがっている！」と表示された場合「ようす」</li>
+            <li>「[魔物名]はこうげきにそなえている。」と表示された場合「こうげき」</li>
+        </ul>
+        <li>を「選択してください」付近のドロップダウンに入力します。</li>
+        <li>
+            ツールに23個程度入力した時点で、「開始」ボタンを押して、検索結果を確認します(候補が1つになるまで入力を繰り返してください)
+        </li>
+        <li>「一致なし」と表示された場合、入力ミスまたはフィルタ機能を無効にしてみてください</li>
+        <li>このツールは0fからではなく、1fから総当たりします。バグですが、0fで戦闘フェーズに入ることは不可能なので製作者は放置しています。</li>
+    </ul>
+</div>
+<div>
+    <span>How to use</span><br>
+    <ul style="list-style: disc; padding-left: 40px; color: black;">
+        <li>Please make sure that you did not start the adventure with the angel world in the background at dusk or at night when you started up. If the first screen (logo) is redisplayed, this tool will not match.</li>
+        <li>Touch the symbol to enter battle</li>
+        <li>
+            If you see "But the [enemy] doesn't notice the party's presence!" or "But the [enemy] are too stunned to move!" at the start of battle, everyone should "Defend" and wait 1 turn.
+        </li>
+        <li>Open this tool and run the "examine" command</li>
+        <li>Before entering, change the dropdown for "検索範囲指定ショートカット"(Search range specification shortcut) to "31600-31fff (実機(actual machine), EU)" to change from JP mode to EU mode.</li>
+        <ul style="list-style: disc; padding-left: 40px; color: black;">
+            <li>If "The enemy is sizing up the party." is displayed, "ようす"(situation or What's going on?)</li>
+            <li>If "The enemy is preparing to attack." is displayed, "こうげき"(attack or Kougeki)</li>
+        </ul>
+        <li>Select the dropdown near "選択してください"</li>
+        <li>
+            Once you have entered about 23 items into the tool, press the "開始"(start) button and check the search results (repeat until you have one candidate)
+        </li>
+        <li>If you see "一致なし"(No Match) try typing a typo or disabling the filter feature</li>
+        <li>This tool does brute force from 1f, not from 0f. Although it is a bug, it is impossible to enter the battle phase with 0f, so the creator has left it alone.</li>
+    </ul>
+</div>
+<div>
+<span>バグ修正履歴</span><br>
+    <ul style="list-style: disc; padding-left: 40px; color: black;">
+        <li>2023/9/26,16時: <a href="https://github.com/DaisukeDaisuke/DaisukeDaisuke.github.io/commit/d09fe3e5e2e2cd4d4403c373379b872de072a150">f20df61</a>が原因で動作しなかった問題を修正</li>
+    </ul>
+</div>
+<script>
+    let needTime = null
+    let needTimeFormat = null
+
+    const TYPE_SELECT_COUNT = 50;
+    let URL = "";
+    let hasUpdate = false;
+    let tableUpdate = false;
+    setInterval(function () {
+        if (hasUpdate && URL !== "") {
+            hasUpdate = false;
+            window.history.replaceState({}, '', URL);
+        }
+    }, 1000);
+    setInterval(function () {
+        if (tableUpdate&&document.getElementById('autostart').checked === true){
+            tableUpdate = false;
+            onRun(true);
+        }
+    }, 500);
+
+    for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
+        generateDropdown();
+    }
+
+    function onReset1() {
+        window.location.href = `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function yokoUpdate() {
+        tableUpdate = true;
+        let input = document.getElementById('yoko').value;
+        for (var i = 0; i < TYPE_SELECT_COUNT; i++) {
+            var character = input.charAt(i);
+            let tmp = "";
+            if (i <= input.length - 1) {
+                if (character === "よ") {
+                    tmp = "ようす";
+                } else if (character === "こ") {
+                    tmp = "こうげき";
+                }
+            }
+            document.getElementById("menu" + i).value = tmp;
+        }
+        saveInputValuesToURL();
+    }
+
+    function seedlist1() {
+        console.log();
+        let element = document.getElementById('seedlist').value;
+        let start = null;
+        let end = null;
+        if (element === "700-7ff (実機, JP)") {
+            start = "0x32700";
+            end = "0x327ff";
+        }
+        if (element === "600-8ff (実機, JP)") {
+            start = "0x32600";
+            end = "0x328ff";
+        }
+        if (element === "31600-31fff (実機, EU)") {
+            start = "0x31600";
+            end = "0x31fff";
+        }
+        if (element === "31600-319ff (実機, NA)") {
+            start = "0x31600";
+            end = "0x319ff";
+        }
+        if (element === "28000-2ffff (DeSmuME)") {
+            start = "0x28000";
+            end = "0x2ffff";
+        }
+        if (element === "3c000-3dfff (melonDS)") {
+            start = "0x3c000";
+            end = "0x3dfff";
+        }
+        if (element === "16000-19fff (No$GBA)") {
+            start = "0x16000";
+            end = "0x19fff";
+        }
+        if (element === "16000-3ffff (全て)") {
+            start = "0x16000";
+            end = "0x3ffff";
+        }
+
+        if (start !== null && end !== null) {
+            document.getElementById('seedStart').value = start;
+            document.getElementById('seedEnd').value = end;
+            saveInputValuesToURL();
+        }
+    }
+
+    function shortcutUpdate(){
+        let element = document.getElementById('shortcut').value;
+        let seed = null;
+        switch(element){
+            case "ここ, レオノ(0x32741)":
+                seed = "0x32741";
+                break;
+            case "よよ, ハイローズ(0x3276c)":
+                seed = "0x3276c";
+                break;
+            case "こよこよ, りり(0x32763)":
+                seed = "0x32763";
+                break;
+            case "こよここ, レオノ(アローラ)(0x3275c)":
+                seed = "0x3275c";
+                break;
+        }
+        if (seed !== null){
+            document.getElementById('seed1').value = seed;
+        }
+        saveInputValuesToURL();
+    }
+
+    function onTableUpdate(){
+        tableUpdate = true;
+        saveInputValuesToURL();
+    }
+
+    function saveInputValuesToURL() {
+
+
+        const seedStart = decodeHexValue(document.getElementById('seedStart').value);
+        const seedEnd = decodeHexValue(document.getElementById('seedEnd').value);
+        const end = parseInt(document.getElementById('end').value);
+        const total = seedEnd-seedStart;
+        const inputElement2 = document.getElementById('seed1');
+        const seed1 = inputElement2.value.trim() !== '' ? decodeHexValue(inputElement2.value) : null;
+        if (!Number.isNaN(seedStart)&&!Number.isNaN(seedEnd)&&!Number.isNaN(end)&&total > 0){
+            if (seed1 === null){
+                //通常
+                const count1 = Math.ceil(Math.log2(total*end));
+                const count2 = Math.ceil(Math.log2(total));
+                document.getElementById("prediction1").innerText = "1個に絞る為に必要な入力数(予測): "+count1+"個";
+                document.getElementById("prediction2").innerText = "開始Fを指定した場合の予想入力数: "+count2+"個";
+                const need = ((total*end) / 1000000 * 1.3);
+                needTime = need
+                needTimeFormat = formatTime(need);
+                document.getElementById("prediction3").innerText = "最低所要時間(予想): "+needTimeFormat
+            }else{
+                //調べる乱数を指定した場合
+                const count1 = Math.ceil(Math.log2(end));
+                document.getElementById("prediction1").innerText = "1個に絞る為に必要な入力数(予測): "+count1+"個";
+                document.getElementById("prediction2").innerText = "開始Fを指定した場合の予想入力数: "+count1+"個";
+                const need = (end / 1000000 * 1.3);
+                needTime = need
+                needTimeFormat = formatTime(need);
+                document.getElementById("prediction3").innerText = "最低所要時間(予想): "+needTimeFormat;
+            }
+        }else{
+            document.getElementById("prediction1").innerText = "";
+            document.getElementById("prediction2").innerText = "";
+            document.getElementById("prediction3").innerText = "";
+        }
+
+
+        let list = [];
+
+        if (document.getElementById('seedStart').value !== "0x32700") {
+            list.push(document.getElementById('seedStart'));
+        }
+        if (document.getElementById('seedEnd').value !== "0x327ff") {
+            list.push(document.getElementById('seedEnd'));
+        }
+        if (document.getElementById('end').value !== "1000") {
+            list.push(document.getElementById('end'));
+        }
+        if (document.getElementById('maxCount').value !== "1000") {
+            list.push(document.getElementById('maxCount'));
+        }
+        if (document.getElementById('nowCount').value !== "") {
+            list.push(document.getElementById('nowCount'));
+        }
+        if (document.getElementById('nowCount1').value !== "") {
+            list.push(document.getElementById('nowCount1'));
+        }
+        if (document.getElementById('seed1').value !== "") {
+            list.push(document.getElementById('seed1'));
+        }
+
+        let queryParams = new URLSearchParams("");
+
+        list.forEach(inputElement => {
+            if (inputElement.value !== "") {
+                const inputId = inputElement.id;
+                const inputValue = inputElement.value;
+                queryParams.set(inputId, inputValue);
+            }
+        });
+
+        if (document.getElementById('autostart').checked === true) {
+            queryParams.set("autostart", "1");
+        }
+
+        let str = "";
+        for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
+            let select = document.getElementById("menu" + i).value;
+            if (select === "") {
+                break;
+            }
+            if (select === "ようす") {
+                str += "0";
+            } else {
+                str += "1";
+            }
+        }
+
+        if (str !== "") {
+            queryParams.set("status", str);
+        }
+
+        // 現在のURLにクエリパラメータを設定
+        let newURL;
+        if (queryParams.toString() !== "") {
+            newURL = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+        } else {
+            newURL = `${window.location.origin}${window.location.pathname}`;
+        }
+        //window.history.replaceState({}, '', newURL);
+        document.getElementById('share').value = newURL;
+        URL = newURL;
+        hasUpdate = true;
+    }
+
+    function loadInputValuesFromURL() {
+        let list = [
+            document.getElementById('seedStart'),
+            document.getElementById('seedEnd'),
+            document.getElementById('end'),
+            document.getElementById('maxCount'),
+            document.getElementById('nowCount'),
+            document.getElementById('nowCount1'),
+            document.getElementById('seed1')
+        ];
+
+        let queryParams = new URLSearchParams(window.location.search);
+
+        list.forEach(inputElement => {
+            const inputId = inputElement.id;
+            const paramValue = queryParams.get(inputId);
+            if (paramValue !== null) {
+                inputElement.value = paramValue;
+            }
+        });
+
+        if (queryParams.get("autostart") === "1") {
+            document.getElementById('autostart').checked = true;
+        }
+
+        const input = queryParams.get("status");
+        if (input === null) {
+            return;
+        }
+        for (var i = 0; i < input.length; i++) {
+            let status = "こうげき";
+            if (input.charAt(i) === "0") {
+                status = "ようす";
+            }
+            document.getElementById("menu" + i).value = status;
+        }
+    }
+
+    // ページが読み込まれたら実行
+    window.addEventListener('load', () => {
+        loadInputValuesFromURL();
+        saveInputValuesToURL();
+        let yoko = "";
+        for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
+            let select = document.getElementById("menu" + i).value;
+            if (select === "") {
+                break;
+            }
+            if (select === "ようす") {
+                yoko += "よ";
+            } else {
+                yoko += "こ";
+            }
+        }
+        document.getElementById('yoko').value = yoko;
+        // 各 input 要素に変更リスナーを追加
+        let list = [
+            document.getElementById('seedStart'),
+            document.getElementById('seedEnd'),
+            document.getElementById('end'),
+            document.getElementById('maxCount'),
+            document.getElementById('nowCount'),
+            document.getElementById('nowCount1'),
+            document.getElementById('seed1'),
+            document.getElementById('autostart'),
+        ];
+
+        list.forEach(inputElement => {
+            inputElement.addEventListener('input', saveInputValuesToURL);
+        });
+        document.getElementById('seedlist').addEventListener('input', seedlist1);
+        document.getElementById('yoko').addEventListener('input', yokoUpdate);
+        document.getElementById('shortcut').addEventListener('input', shortcutUpdate)
+
+
+
+    });
+
+    function onRun(doNotice = false) {
+        if(needTime !== null&&needTimeFormat !== null&&needTime >= 300){
+            var confirmMessage = needTimeFormat+"かかりますよ！ほんとに実行しますか!?";
+            var userConfirmation = confirm(confirmMessage);
+            // ユーザーが「いいえ」を選択した場合の処理
+            if (!userConfirmation) {
+                // 処理を放棄する（return）
+                return;
+            }
+        }
+
+
+
+        const seedStart = decodeHexValue(document.getElementById('seedStart').value);
+        const seedEnd = decodeHexValue(document.getElementById('seedEnd').value);
+        const end = parseInt(document.getElementById('end').value);
+        const maxCount = parseInt(document.getElementById('maxCount').value);
+        let inputElement = document.getElementById('nowCount');
+        let nowCount = inputElement.value.trim() !== '' ? parseInt(inputElement.value) : null;
+        let inputElement1 = document.getElementById('nowCount1');
+        let nowCount1 = inputElement1.value.trim() !== '' ? parseInt(inputElement1.value) : null;
+        if (nowCount !== null && nowCount1 !== null) {
+            nowCount = null;
+        }
+        if (nowCount === 0){
+            window.alert("「1つめの項目の消費数」を0にする事はできません(絶対に一致しません。)、製作者が0fではなく1fから総当たりするバグを放置したためです。");
+        }
+        let inputElement2 = document.getElementById('seed1');
+        let seed1 = inputElement2.value.trim() !== '' ? decodeHexValue(inputElement2.value) : null;
+
+        if (seed1 !== null) {
+            if (seed1 >= seedStart && seed1 <= seedEnd) {
+                //nope
+            } else {
+                window.alert("エラー: 初期シード指定「0x" + (seed1.toString(16)) + "」は、検索範囲内の数値ではありません");
+            }
+        }
+
+        if (seedEnd - seedStart < 0) {
+            window.alert("開始seedと終了シードが不正です");
+            return;
+        }
+        if (end < 0) {
+            window.alert("終了seedドが不正です");
+            return;
+        }
+        let need = [];
+        for (let i = 0; i < TYPE_SELECT_COUNT; i++) {
+            let select = document.getElementById("menu" + i).value;
+            if (select === "") {
+                break;
+            }
+            need[i] = select;
+        }
+        // if (need.length === 0){
+        //     window.alert("乱数が未入力です");
+        //     return;
+        // }
+        document.getElementById('error').innerHTML = "";
+        document.getElementById('info').innerHTML = "";
+        document.getElementById('info1').innerHTML = "";
+
+        let search = "";
+        for (let m = 0; m <= need.length - 1; m++) {
+            if (need[m] === "ようす") {
+                search += "0";
+            } else {
+                search += "1";
+            }
+
+        }
+
+        // テーブル要素を取得
+        var table = document.getElementById("table");
+
+        // テーブルの行の数を取得
+        var rowCount = table.rows.length;
+
+        // 最初の行（ラベル行）を除いてすべての行を削除
+        for (var i = rowCount - 1; i > 0; i--) {
+            table.deleteRow(i);
+        }
+
+        let found = 0;
+        for (let initial = seedStart; initial <= seedEnd; initial++) {
+            if (seed1 !== null && initial !== seed1) {
+                continue;
+            }
+            let str = "";
+            let now = BigInt(initial);//0x3275c
+
+            for (let currentF = 1; currentF <= end; currentF++) {
+                now = rand(now); //乱数を更新
+                let percent = calculatePercent(rand(now)); //調べるは+1した乱数を参照するため
+                let status = (((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき");
+                if (status === "ようす") {
+                    str += "0";
+                } else {
+                    str += "1";
+                }
+                if (str.endsWith(search)) {
+                    let startF = currentF - need.length + 1;
+                    if (nowCount1 !== null && currentF !== nowCount1) {
+                        continue;
+                    } else if (nowCount !== null && startF !== nowCount) {
+                        continue;
+                    }
+                    ++found;
+                    let data = ["0x" + initial.toString(16), startF, currentF, currentF + 1, '<a href="list.html?seed=' + initial.toString(16) + '&start=' + (currentF + 1) + '&end=' + (startF + 500) + '#table" target=”_blank”>' + initial.toString(16) + '</a>'];
+                    var row = table.insertRow(-1); // テーブルの末尾に行を追加
+                    for (var j = 0; j < 5; j++) {
+                        var cell = row.insertCell(j);
+                        cell.innerHTML = data[j];
+                    }
+                }
+            }
+            if (found > maxCount) {
+                document.getElementById('error').innerHTML = "表示上限を超えた為停止しました。";
+                break;
+            }
+        }
+        if (seed1 !== null) {
+            document.getElementById('info1').innerHTML = "「初期シード = 0x" + seed1.toString(16) + "」でフィルターされています。";
+        }
+        if (nowCount !== null) {
+            document.getElementById('info').innerHTML = "「1つめの項目の消費数 = " + nowCount + "」でフィルターされています。";
+        }
+        if (nowCount1 !== null) {
+            document.getElementById('info').innerHTML = "「最後の項目の消費数 = " + nowCount1 + "」でフィルターされています。<br>この項目が正しくない場合、このツールは間違った初期シードを表示します";
+        }
+        if (found === 0) {
+            document.getElementById('error').innerHTML = "一致なし";
+        }
+
+        if (doNotice === true&&found <= 1){
+            if (found === 0){
+                window.alert("一致なし");
+            }else{
+                window.alert("1件見つかりました");
+            }
+            window.location.hash = "#table";
+        }
+
+        //}
+        //console.log(j+" => 0x"+now.toString(16)+" => "+percent.toString(10)+", "+(((percent % BigInt(2)).toString(10)) === "0" ? "ようす" : "こうげき"));
+    }
+
+    // const data = document.querySelectorAll('[data-new-notification-exists]')[0];
+    // var mo = new MutationObserver(function() {
+    //     alert('divの中身が変更されたよ');
+    // });
+    // var config = {
+    //     childList: true,
+    //     attributes: true,
+    //     characterData: true,
+    //     subtree: true,//孫以降のノードの変化も検出
+    //     attributeOldValue: true,//変化前の属性データを記録する
+    //     characterDataOldValue: true,//変化前のテキストノードを記録する
+    //     attributeFilter: [],//配列で記述した属性だけを見張る
+    // };
+    // mo.observe(data, config);
+
+
+</script>
 </body>
 </html>
