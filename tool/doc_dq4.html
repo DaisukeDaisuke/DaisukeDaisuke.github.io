@@ -87,11 +87,11 @@
         function encodeTime(hour, minute, second) {
             if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) return null;
             let encodedTime = 0;
-            if (hour <= 9) {
+            if (hour <= 11) {
                 hour = divDayAdjust(hour);
                 encodedTime |= hour;
-            } else if (hour <= 10) {
-                encodedTime |= (hour - 10 + 0x52);
+            } else if (hour <= 19) {
+                encodedTime |= (hour - 12 + 0x52);
             } else {
                 encodedTime |= (hour - 20 + 0x60);
             }
