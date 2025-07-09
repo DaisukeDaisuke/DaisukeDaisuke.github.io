@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Date Offset Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        input, button {
+            margin: 5px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .output {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Date Offset Calculator</h1>
+    <label for="baseValue">Base Value (Hex):</label>
+    <input type="text" id="baseValue" value="0x7e9056a0">
+    <label>Date (YYYY-MM-DD):</label>
+    <input type="date" id="date">
+    <label>Time (HH:MM):</label>
+    <input type="time" id="time">
+    <label>Seconds:</label>
+    <input type="number" id="seconds" value="10" min="0" max="59">
+    <button onclick="calculate()">Calculate</button>
+    <div class="output" id="output"></div>
+    <script>
+        // Load URL parameters on page load
+        window.onload = function () {
+            const params = new URLSearchParams(window.location.search);
+            const baseValue = params.get("baseValue");
+            const date = params.get("date");
+            const time = params.get("time");
+            const seconds = params.get("seconds");
+
+            if (baseValue) document.getElementById("baseValue").value = baseValue;
+            if (date) document.getElementById("date").value = date;
+            if (time) document.getElementById("time").value = time;
+            if (seconds) document.getElementById("seconds").value = seconds;
+
+            if (baseValue && date && time && seconds) calculate(); // Auto-calculate if parameters are provided
+        };
+
+        function divDayAdjust(value) {
+            return value + Math.floor(value / 0xA) * 6;
+        }
+
+        function encodeDate(year, month, day) {
+            if (year < 2000 || year > 2099) return null;
+
+            // 曜日の計算は変換前の日付で行う
+            const originalDate = new Date(year, month - 1, day);
+            if (isNaN(originalDate.getTime())) return null;
+
+            const weekday = originalDate.getDay(); // 0: 日曜日〜6: 土曜日
+
+            // 年、月、日の変換
+            const adjustedYear = divDayAdjust(year - 2000);
+            const adjustedMonth = divDayAdjust(month);
+            const adjustedDay = divDayAdjust(day);
+
+            // エンコード処理
+            return (
+                (adjustedYear & 0xff) |          // 年
+                ((adjustedMonth & 0xff) << 8) | // 月
+                ((adjustedDay & 0xff) << 16) |  // 日
+                ((weekday & 0xff) << 24)        // 曜日
+            );
+        }
+
+
+
+        function encodeTime(hour, minute, second) {
+            if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) return null;
+            let encodedTime = 0;
+            if (hour <= 9) {
+                hour = divDayAdjust(hour);
+                encodedTime |= hour;
+            } else if (hour <= 10) {
+                encodedTime |= (hour - 10 + 0x52);
+            } else {
+                encodedTime |= (hour - 20 + 0x60);
+            }
+            minute = divDayAdjust(minute);
+            second = divDayAdjust(second);
+            encodedTime |= (minute << 8) | (second << 16);
+            return encodedTime;
+        }
+
+        function calculate() {
+            const baseValue = parseInt(document.getElementById("baseValue").value, 16);
+            const dateInput = document.getElementById("date").value;
+            const timeInput = document.getElementById("time").value;
+            const secondsInput = parseInt(document.getElementById("seconds").value, 10);
+
+            const outputElement = document.getElementById("output");
+            outputElement.textContent = "";
+
+            if (isNaN(baseValue) || !dateInput || !timeInput || isNaN(secondsInput)) {
+                outputElement.textContent = "Error: Invalid input.";
+                return;
+            }
+
+            const dateParts = dateInput.split("-");
+            const timeParts = timeInput.split(":");
+
+            const year = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10);
+            const day = parseInt(dateParts[2], 10);
+            const hour = parseInt(timeParts[0], 10);
+            const minute = parseInt(timeParts[1], 10);
+            const second = secondsInput;
+
+            const encodedDate = encodeDate(year, month, day);
+            const encodedTime = encodeTime(hour, minute, second);
+
+            if (encodedDate === null || encodedTime === null) {
+                outputElement.textContent = "Error: Out-of-range date or time.";
+                return;
+            }
+
+            let result = "";
+            for (let i = 0; i < 10; i++) {
+                const currentDate = new Date(year, month - 1, day + i);
+                if (isNaN(currentDate.getTime())) {
+                    result += `Error: Invalid date for offset ${i}\n`;
+                    continue;
+                }
+
+                const currentYear = currentDate.getFullYear();
+                const currentMonth = currentDate.getMonth() + 1;
+                const currentDay = currentDate.getDate();
+
+                const encodedCurrentDate = encodeDate(currentYear, currentMonth, currentDay);
+                if (encodedCurrentDate === null) {
+                    result += `Error: Invalid date for offset ${i}\n`;
+                    continue;
+                }
+
+                const finalValue = baseValue + encodedCurrentDate + encodedTime;
+                result += `0x${finalValue.toString(16).toUpperCase()}, ${currentYear}/${currentMonth}/${currentDay}, ${hour}:${minute}:${second}, 0x${encodedCurrentDate.toString(16).toUpperCase()}, 0x${encodedTime.toString(16).toUpperCase()}\n`;
+            }
+
+            outputElement.textContent = result;
+
+            // Update URL with parameters
+            const params = new URLSearchParams({
+                baseValue: document.getElementById("baseValue").value,
+                date: dateInput,
+                time: timeInput,
+                seconds: secondsInput
+            });
+            history.replaceState(null, "", "?" + params.toString());
+        }
+
+    </script>
+</body>
+</html>
