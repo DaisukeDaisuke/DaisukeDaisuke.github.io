@@ -111,26 +111,6 @@
         return name || `Unknown_Name(${nameId})`;
     }
 
-    /**
-     * calculatePercent関数の定義（元コードから推測）
-     * @param {BigInt} seed - シード値
-     * @returns {BigInt} パーセント値
-     */
-    function calculatePercent(seed) {
-        // 実装は元のコードに依存します。ここは例として0-99の範囲を返す
-        return seed % 100n;
-    }
-
-    /**
-     * rand関数の定義（元コードから推測）
-     * @param {BigInt} seed - シード値
-     * @returns {BigInt} 次のシード値
-     */
-    function rand(seed) {
-        // 実装は元のコードに依存します。ここは例として線形合同法
-        return (seed * 1103515245n + 12345n) & 0x7FFFFFFFn;
-    }
-
     const CHARACTER_MASTER = {
         0: { name: "戦士(男)", job: "戦士", gender: "男" },
         1: { name: "戦士(女)", job: "戦士", gender: "女" },
