@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ツールスタンドアロン</title>
+</head>
+<body>
+<p>↓初期シードを入力してください(デフォルトで16進数)↓</p>
+<form id="FormAge" action="#">
+    <input type="text" id="input-message">
+    <input type="button" onclick="showMessage()" value="計算">
+</form>
+
+<p id="output-message1">1人目: </p>
+<p id="output-message2">2人目: </p>
+<p id="output-message3">3人目: </p>
+<p id="output-message4">初期消費: </p>
+
+<script>
+
+    /**
+     * 職業と性別のマスタデータ
+     * @typedef {Object} CharacterData
+     * @property {string} name - キャラクター名
+     * @property {string} job - 職業
+     * @property {string} gender - 性別
+     */
+
+    /**
+     * 名前生成結果
+     * @typedef {Object} NameGenerationResult
+     * @property {number} refId - 参照ID
+     * @property {number} initialCost - 初期消費
+     * @property {Array.<number>} memberIds - メンバーID配列
+     * @property {Array.<string>} memberNames - 実際の名前配列
+     * @property {Array.<CharacterData>} members - 詳細メンバー情報（実名付き）
+     */
+
+    /**
+     * パーティパターン定義
+     * @typedef {Object} PartyPattern
+     * @property {Array.<number>} middleRange - 2マス目の範囲 [min, max)
+     * @property {Array.<number>|null} endRange - 3マス目の範囲 [min, max) または null
+     * @property {number} refId - 参照ID
+     * @property {number} initialCost - 初期消費
+     * @property {Array.<number>} party - パーティメンバーのID配列
+     */
+
+    /**
+     * 1マス目範囲グループ
+     * @typedef {Object} FirstRangeGroup
+     * @property {Array.<number>} firstRange - 1マス目の範囲 [min, max)
+     * @property {Array.<PartyPattern>} patterns - パターン配列
+     */
+
+    /**
+     * ルックアップ結果
+     * @typedef {Object} LookupResult
+     * @property {number} refId - 参照ID
+     * @property {number} initialCost - 初期消費
+     * @property {Array.<number>} party - パーティメンバーのID配列
+     * @property {Object} debug - デバッグ情報
+     * @property {number} debug.first - 1マス目の値
+     * @property {number} debug.middle - 2マス目の値
+     * @property {number|null} debug.end - 3マス目の値
+     */
+
+// 名前マスタデータ（性別 × 職業 × 名前ID）
+    const NAME_MASTER = {
+        // 女性
+        "女": {
+            "戦士": ["カスティア", "キオリリ", "ズッチ", "レイ", "ミリア"],
+            "武闘家": ["リナータ", "アマティ", "ノスワン", "ミント", "ビビアン"],
+            "僧侶": ["モッチィ", "リョコ", "ニッキ", "アイヤイ", "マロン"],
+            "魔法": ["イクミン", "ユッカ", "プリッチ", "リリ", "メルティー"]
+        },
+        // 男性
+        "男": {
+            "戦士": ["エーデル", "グスフィ", "バンチョ", "マスカット", "リック"],
+            "武闘家": ["ブーショ", "アカメー", "マウヨリ", "サイトン", "マティカ"],
+            "僧侶": ["カーツ", "カティブ", "アーミッツ", "プラース", "ガトゥーザ"],
+            "魔法": ["ハイローズ", "トラジャ", "オマール", "ロッキャ", "レオノ"]
+        }
+    };
+
+    /**
+     * 職業と性別から実際の名前を取得する
+     * @param {string} job - 職業名
+     * @param {string} gender - 性別
+     * @param {number} nameId - 名前ID (0-4)
+     * @returns {string} 実際の名前
+     */
+    function getActualName(job, gender, nameId) {
+        const genderNames = NAME_MASTER[gender];
+        if (!genderNames) return `Unknown_Gender(${gender})`;
+
+        const jobNames = genderNames[job];
+        if (!jobNames) return `Unknown_Job(${job})`;
+
+        const name = jobNames[nameId];
+        return name || `Unknown_Name(${nameId})`;
+    }
+
+    /**
+     * calculatePercent関数の定義（元コードから推測）
+     * @param {BigInt} seed - シード値
+     * @returns {BigInt} パーセント値
+     */
+    function calculatePercent(seed) {
+        // 実装は元のコードに依存します。ここは例として0-99の範囲を返す
+        return seed % 100n;
+    }
+
+    /**
+     * rand関数の定義（元コードから推測）
+     * @param {BigInt} seed - シード値
+     * @returns {BigInt} 次のシード値
+     */
+    function rand(seed) {
+        // 実装は元のコードに依存します。ここは例として線形合同法
+        return (seed * 1103515245n + 12345n) & 0x7FFFFFFFn;
+    }
+
+    const CHARACTER_MASTER = {
+        0: { name: "戦士(男)", job: "戦士", gender: "男" },
+        1: { name: "戦士(女)", job: "戦士", gender: "女" },
+        2: { name: "武闘家(男)", job: "武闘家", gender: "男" },
+        3: { name: "武闘家(女)", job: "武闘家", gender: "女" },
+        4: { name: "僧侶(男)", job: "僧侶", gender: "男" },
+        5: { name: "僧侶(女)", job: "僧侶", gender: "女" },
+        6: { name: "魔法(男)", job: "魔法", gender: "男" },
+        7: { name: "魔法(女)", job: "魔法", gender: "女" }
+    };
+
+    /**
+     * チートシードのルックアップテーブル
+     * @type {Array.<FirstRangeGroup>}
+     */
+    const CHEAT_SEED_TABLE = [
+        // 1マス目: 0〜25
+        {
+            firstRange: [0, 25],
+            patterns: [
+                { middleRange: [0, 50], endRange: null, refId: 0, initialCost: 23, party: [0, 4, 7] },
+                { middleRange: [50, 100], endRange: [0, 50], refId: 2, initialCost: 24, party: [0, 5, 6] },
+                { middleRange: [50, 100], endRange: [50, 100], refId: 2, initialCost: 24, party: [0, 5, 7] }
+            ]
+        },
+        // 1マス目: 25〜50
+        {
+            firstRange: [25, 50],
+            patterns: [
+                { middleRange: [0, 50], endRange: [0, 50], refId: 2, initialCost: 24, party: [1, 4, 6] },
+                { middleRange: [0, 50], endRange: [50, 100], refId: 2, initialCost: 24, party: [1, 4, 7] },
+                { middleRange: [50, 100], endRange: null, refId: 1, initialCost: 23, party: [1, 5, 6] }
+            ]
+        },
+        // 1マス目: 50〜75
+        {
+            firstRange: [50, 75],
+            patterns: [
+                { middleRange: [0, 50], endRange: null, refId: 0, initialCost: 23, party: [2, 4, 7] },
+                { middleRange: [50, 100], endRange: [0, 50], refId: 2, initialCost: 24, party: [2, 5, 6] },
+                { middleRange: [50, 100], endRange: [50, 100], refId: 2, initialCost: 24, party: [2, 5, 7] }
+            ]
+        },
+        // 1マス目: 75〜100
+        {
+            firstRange: [75, 100],
+            patterns: [
+                { middleRange: [0, 50], endRange: [0, 50], refId: 2, initialCost: 24, party: [3, 4, 6] },
+                { middleRange: [0, 50], endRange: [50, 100], refId: 2, initialCost: 24, party: [3, 4, 7] },
+                { middleRange: [50, 100], endRange: null, refId: 1, initialCost: 23, party: [3, 5, 6] }
+            ]
+        }
+    ];
+
+    /**
+     * キャラクターIDから名前を取得する
+     * @param {number} id - キャラクターID
+     * @returns {string} キャラクター名
+     */
+    function getCharacterName(id) {
+        const char = CHARACTER_MASTER[id];
+        return char ? char.name : `Unknown(${id})`;
+    }
+
+    /**
+     * キャラクターIDから職業を取得する
+     * @param {number} id - キャラクターID
+     * @returns {string} 職業名
+     */
+    function getCharacterJob(id) {
+        const char = CHARACTER_MASTER[id];
+        return char ? char.job : "Unknown";
+    }
+
+    /**
+     * キャラクターIDから性別を取得する
+     * @param {number} id - キャラクターID
+     * @returns {string} 性別
+     */
+    function getCharacterGender(id) {
+        const char = CHARACTER_MASTER[id];
+        return char ? char.gender : "Unknown";
+    }
+
+    /**
+     * パーティIDの配列から名前の配列に変換する
+     * @param {Array.<number>} partyIds - パーティメンバーのID配列
+     * @returns {Array.<string>} パーティメンバーの名前配列
+     */
+    function getPartyNames(partyIds) {
+        return partyIds.map(id => getCharacterName(id));
+    }
+
+    /**
+     * チートシードをルックアップする
+     * @param {BigInt} f0 - 1マス目の値（既に25で割り済み）
+     * @param {BigInt} f1 - 2マス目の値（既に50で割り済み）
+     * @param {BigInt|null} f2 - 3マス目の値（既に50で割り済み）または null
+     * @returns {LookupResult|null} ルックアップ結果。該当なしの場合は null
+     */
+    function lookupCheatSeed(f0, f1, f2) {
+        // BigIntから通常の数値に変換
+        const first = Number(f0);
+        const middle = Number(f1);
+        const end = f2 !== null ? Number(f2) : null;
+
+        // 1マス目の範囲を特定
+        for (const group of CHEAT_SEED_TABLE) {
+            if (first >= group.firstRange[0] && first < group.firstRange[1]) {
+                // 該当する1マス目の範囲内でパターンを検索
+                for (const pattern of group.patterns) {
+                    // 2マス目の条件をチェック
+                    const middleMatch = middle >= pattern.middleRange[0] && middle < pattern.middleRange[1];
+
+                    // 3マス目の条件をチェック
+                    let endMatch = true;
+                    if (pattern.endRange === null) {
+                        endMatch = true; // 3マス目が不要
+                    } else if (end !== null) {
+                        endMatch = end >= pattern.endRange[0] && end < pattern.endRange[1];
+                    } else {
+                        endMatch = false; // 3マス目が必要だが提供されていない
+                    }
+
+                    if (middleMatch && endMatch) {
+                        return {
+                            refId: pattern.refId,
+                            initialCost: pattern.initialCost,
+                            party: pattern.party,
+                            debug: { first, middle, end }
+                        };
+                    }
+                }
+            }
+        }
+
+        return null; // 該当するパターンが見つからない
+    }
+
+    /**
+     * 完全なパーティ生成（職業・性別・実名すべて含む）
+     * @param {BigInt} initialSeed - 初期シード値
+     * @param {BigInt} f0 - 1マス目の値（既に25で割り済み）
+     * @param {BigInt} f1 - 2マス目の値（既に50で割り済み）
+     * @param {BigInt|null} f2 - 3マス目の値（既に50で割り済み）または null
+     * @returns {NameGenerationResult|null} 完全なパーティ情報。該当なしの場合は null
+     */
+    function generateFullParty(initialSeed, f0, f1, f2) {
+        // パーティの基本構成を取得
+        const partyResult = lookupCheatSeed(f0, f1, f2);
+        if (!partyResult) return null;
+
+        let seed = initialSeed;
+
+        // 初期消費が24の場合、1回余分に消費
+        if (partyResult.initialCost === 24) {
+            seed = rand(seed);
+        }
+
+        // 消費を6に合わせる（4回消費）
+        for (let i = 0; i < 4; i++) {
+            seed = rand(seed);
+        }
+
+        // 6f目の値を取得
+        const f6 = calculatePercent(seed);
+
+        // 7回消費
+        for (let i = 0; i < 7; i++) {
+            seed = rand(seed);
+        }
+
+        // 13f目の値を取得
+        const f13 = calculatePercent(seed);
+
+        // 7回消費
+        for (let i = 0; i < 7; i++) {
+            seed = rand(seed);
+        }
+
+        // 20f目の値を取得
+        const f20 = calculatePercent(seed);
+
+        // 名前IDを計算
+        const nameIds = [
+            Number(f6 / 20n),    // 1人目の名前ID (0-4)
+            Number(f13 / 20n),   // 2人目の名前ID (0-4)
+            Number(f20 / 20n)    // 3人目の名前ID (0-4)
+        ];
+
+        // 各メンバーの詳細情報と実名を生成
+        const members = partyResult.party.map((characterId, index) => {
+            const baseChar = CHARACTER_MASTER[characterId];
+            const actualName = getActualName(baseChar.job, baseChar.gender, nameIds[index]);
+
+            return {
+                name: actualName,
+                job: baseChar.job,
+                gender: baseChar.gender,
+                nameId: nameIds[index]
+            };
+        });
+
+        return {
+            refId: partyResult.refId,
+            initialCost: partyResult.initialCost,
+            memberIds: partyResult.party,
+            memberNames: members.map(m => m.name),
+            members: members,
+            debug: {
+                ...partyResult.debug,
+                seeds: { f6: Number(f6), f13: Number(f13), f20: Number(f20) },
+                nameIds: nameIds
+            }
+        };
+    }
+
+    function showMessage(){
+        const seedStart = document.getElementById("input-message");
+        var seed = seedStart.value;
+        console.log(seed);
+
+        if(seed === "" || Number.isNaN(seed)){
+            alert("正しい整数を入力してください");
+            return;
+        }
+
+        // 先頭が "0x" でなければ追加
+        if(!seed.startsWith("0x") && !seed.startsWith("0X")){
+            seed = "0x" + seed;
+        }
+
+        //0fを計算
+        seed = rand(BigInt(seed));
+        var f0 = calculatePercent(seed);
+
+        //1fを計算
+        seed =　rand(seed);
+        var f1 = calculatePercent(seed);
+
+        //2fを計算
+        seed = rand(seed);
+        var f2 = calculatePercent(seed);
+
+        //ルックアップテーブルから取得
+        const party = generateFullParty(seed, f0, f1, f2);
+        //console.log("テスト3:", result3);
+        // 結果を表示
+        document.getElementById("output-message1").innerText = `1人目: ${party.members[0].name}/${party.members[0].job}(${party.members[0].gender})`;
+        document.getElementById("output-message2").innerText = `2人目: ${party.members[1].name}/${party.members[1].job}(${party.members[1].gender})`;
+        document.getElementById("output-message3").innerText = `3人目: ${party.members[2].name}/${party.members[2].job}(${party.members[2].gender})`;
+        document.getElementById("output-message4").innerText = `初期消費: ${party.initialCost}`;
+
+    }
+
+
+
+    /**
+     * @param {BigInt} seed - input seed
+     * @returns {BigInt}
+     */
+    function rand(seed) {
+        seed = seed * BigInt("0x5d588b656c078965");
+        seed = seed + BigInt("0x269ec3");
+        seed = seed & BigInt("0xFFFFFFFFFFFFFFFF");
+        return seed;
+    }
+
+    /**
+     * @param {BigInt} input
+     * @returns {BigInt}
+     */
+    function calculatePercent(input) {
+        let output = input >> BigInt(32);
+        output = output * BigInt(100);
+        output = output / (BigInt(2) << BigInt(31));
+        return output;
+    }
+
+    /**
+     * @param {BigInt} input
+     * @returns Number
+     */
+    function calculatePercentFloat(input) {
+        let output = input >> BigInt(32);
+        output = output * BigInt(100);
+        let test = (BigInt(2) << BigInt(31));
+        //output = output / test;
+        output = division(output, test);
+        return output;
+    }
+
+    /**
+     * Thanks https://stackoverflow.com/questions/54409854/how-to-divide-two-native-javascript-bigints-and-get-a-decimal-result
+     *
+     * @param {BigInt} a
+     * @param {BigInt} b
+     * @returns Number
+     */
+    function division(a, b){
+        return Number(a * 10000n / b) / 10000;
+    }
+
+    /**
+     * @param {Number} nowPercent
+     * @param {Number} max
+     * @returns Number
+     */
+    function getRand(nowPercent, max){
+        let randomValue = nowPercent / 100 * max;
+        return Math.floor(randomValue);
+    }
+
+    /**
+     * @param {BigInt} seed - input seed
+     */
+    function ARand(seed){
+        let before = seed;
+        seed = seed * BigInt("0x41C64E6D");
+        seed = seed + BigInt("0x3039");
+        seed = seed & BigInt("0xFFFFFFFF");
+
+        let ret = BigInt("0x7FFF") & rightShift(seed,0x10);
+        return [seed, ret];
+    }
+
+    /**
+     * @param {BigInt} seed - input seed
+     * @return BigInt
+     */
+    function getType(seed){
+        let seed1 = rightShift(seed, 0x1f);
+        seed = ((leftShift(seed, 0x1d) & BigInt("0xFFFFFFFF"))) - seed1 & BigInt("0xFFFFFFFF");
+        if (seed < 0){
+            seed = BigInt("0xFFFFFFFF") - seed;
+        }
+        seed1 = seed1 + ror(seed, BigInt(0x1d));
+        seed1 = seed1 & BigInt(0xff);
+        return seed1;
+    }
+
+    /**
+     * @param {BigInt} input - input seed
+     * @param {BigInt} ror
+     * @return BigInt
+     */
+    function ror(input, ror){
+        return (rightShift(input, ror) | (leftShift(input, (BigInt(32) - ror)))) & BigInt(0xFFFFFFFF);
+    }
+
+    function leftShift(num, shift) { // <<
+        return num * (2n ** BigInt(shift));
+    }
+
+    function rightShift(num, shift) { // >>
+        return num / (2n ** BigInt(shift));
+    }
+
+    /**
+     * @param {BigInt} input - input seed
+     * @return BigInt
+     */
+    function calculateATablePercentFloat(input) {
+        let output = input * BigInt(100);
+        //output = output / test;
+        output = division(output, BigInt("0x7fff"));
+        return output;
+    }
+
+</script>
+</body>
+</html>
