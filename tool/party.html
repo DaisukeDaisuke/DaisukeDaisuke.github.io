@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ツールスタンドアロン</title>
+    <title>dq9初期パーティーの名前職業決定ツール</title>
 </head>
 <body>
 <p>↓初期シードを入力してください(デフォルトで16進数)↓</p>
@@ -367,12 +367,11 @@
 
         //ルックアップテーブルから取得
         const party = generateFullParty(seed, f0, f1, f2);
-        //console.log("テスト3:", result3);
         // 結果を表示
         document.getElementById("output-message1").innerText = `1人目: ${party.members[0].name}/${party.members[0].job}(${party.members[0].gender})`;
         document.getElementById("output-message2").innerText = `2人目: ${party.members[1].name}/${party.members[1].job}(${party.members[1].gender})`;
         document.getElementById("output-message3").innerText = `3人目: ${party.members[2].name}/${party.members[2].job}(${party.members[2].gender})`;
-        document.getElementById("output-message4").innerText = `初期消費: ${party.initialCost}`;
+        document.getElementById("output-message4").innerText = `初期消費: ${party.initialCost} (${party.initialCost + 1})`;
 
     }
 
