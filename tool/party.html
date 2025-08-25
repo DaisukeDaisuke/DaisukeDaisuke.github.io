@@ -18,6 +18,16 @@
 
 <script>
 
+    //インプットでエンターを押したときに実行するようにするコード
+    const input = document.querySelector("#FormAge input[type='text']");
+
+    input.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // ページリロード防止
+            showMessage();
+        }
+    });
+
     /**
      * 職業と性別のマスタデータ
      * @typedef {Object} CharacterData
