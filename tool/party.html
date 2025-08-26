@@ -3,22 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <title>dq9初期パーティーの名前職業決定ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .input-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .input-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #input-message {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        #input-message:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76,175,80,0.3);
+        }
+
+        .calc-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .calc-btn:hover {
+            background: #45a049;
+        }
+
+        .result-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .member-info {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        .member-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .appearance-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .image-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .image-btn:hover {
+            background: #1976D2;
+        }
+
+        .image-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .download-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: none;
+        }
+
+        .download-btn:hover {
+            background: #F57C00;
+        }
+
+        .image-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .character-image {
+            max-width: 200px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #f44336;
+            font-size: 14px;
+        }
+
+        .initial-cost {
+            background: #E8F5E8;
+            border: 1px solid #4CAF50;
+            border-radius: 6px;
+            padding: 10px;
+            font-weight: bold;
+            color: #2E7D32;
+        }
+    </style>
 </head>
 <body>
-<p>↓初期シードを入力してください(デフォルトで16進数)↓</p>
-<form id="FormAge" action="#">
-    <input type="text" id="input-message">
-    <input type="button" onclick="showMessage()" value="計算">
-</form>
+<div class="input-container">
+    <label for="input-message">初期シードを入力してください (16進数)</label>
+    <form id="FormAge" action="#">
+        <div class="input-group">
+            <input type="text" id="input-message" placeholder="例: 1A2B3C4D">
+            <input type="button" class="calc-btn" onclick="showMessage()" value="計算">
+        </div>
+    </form>
+</div>
 
-<p id="output-message1">1人目: </p>
-<p id="output-message2">2人目: </p>
-<p id="output-message3">3人目: </p>
-<p id="output-message4">初期消費: </p>
+<div class="result-container" id="result-container" style="display: none;">
+    <div class="member-info">
+        <h3>1人目</h3>
+        <p id="output-message1">1人目: </p>
+        <p id="output-message10">1人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-1" onclick="fetchImage(1)">画像を取得</button>
+            <button class="download-btn" id="download-btn-1" onclick="downloadImage(1)">ダウンロード</button>
+        </div>
+        <div class="image-container" id="image-container-1"></div>
+    </div>
+
+    <div class="member-info">
+        <h3>2人目</h3>
+        <p id="output-message2">2人目: </p>
+        <p id="output-message20">2人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-2" onclick="fetchImage(2)">画像を取得</button>
+            <button class="download-btn" id="download-btn-2" onclick="downloadImage(2)">ダウンロード</button>
+        </div>
+        <div class="image-container" id="image-container-2"></div>
+    </div>
+
+    <div class="member-info">
+        <h3>3人目</h3>
+        <p id="output-message3">3人目: </p>
+        <p id="output-message30">3人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-3" onclick="fetchImage(3)">画像を取得</button>
+            <button class="download-btn" id="download-btn-3" onclick="downloadImage(3)">ダウンロード</button>
+        </div>
+        <div class="image-container" id="image-container-3"></div>
+    </div>
+
+    <div class="initial-cost">
+        <p id="output-message4">初期消費: </p>
+    </div>
+</div>
 
 <script>
+    // グローバルキャッシュ
+    let imageCache = {};
+    let currentSeed = null;
+    let currentParty = null;
 
-    //インプットでエンターを押したときに実行するようにするコード
+    // インプットでエンターを押したときに実行するようにするコード
     const input = document.querySelector("#FormAge input[type='text']");
 
     input.addEventListener("keydown", function(event) {
@@ -37,6 +235,19 @@
      */
 
     /**
+     * 容形データ
+     * @typedef {Object} AppearanceData
+     * @property {number} skin_tone - はだのいろ
+     * @property {number} eye_color - めのいろ
+     * @property {number} hair_color - かみのいろ
+     * @property {number} body_type - 身長
+     * @property {number} face_style - かお
+     * @property {number} hair_style - かみがた
+     * @property {string} url - 容形表示URL
+     * @property {string} description - 人間が読める形式
+     */
+
+    /**
      * 名前生成結果
      * @typedef {Object} NameGenerationResult
      * @property {number} refId - 参照ID
@@ -44,6 +255,7 @@
      * @property {Array.<number>} memberIds - メンバーID配列
      * @property {Array.<string>} memberNames - 実際の名前配列
      * @property {Array.<CharacterData>} members - 詳細メンバー情報（実名付き）
+     * @property {Array.<AppearanceData>} appearances - 容形データ配列
      */
 
     /**
@@ -251,11 +463,145 @@
     }
 
     /**
-     * 完全なパーティ生成（職業・性別・実名すべて含む）
+     * 容形URLを生成する
+     * @param {string} gender - 性別
+     * @param {number} skin_tone - はだのいろ
+     * @param {number} hair_style - かみがた
+     * @param {number} hair_color - かみのいろ
+     * @param {number} face_style - かお（変換済み）
+     * @param {number} eye_color - めのいろ
+     * @returns {string} 容形表示URL
+     */
+    function generateAppearanceUrl(gender, skin_tone, hair_style, hair_color, face_style, eye_color) {
+        const baseUrl = "https://www.woodus.com/den/games/dq9ds/characreate/index.php";
+
+        const remapped_eyes_female = {
+            1: 1, 2: 2, 3: 3, 4: 12, 5: 13,
+            6: 14, 7: 15, 8: 16, 9: 17, 10: 20,
+        };
+
+        const remapped_eyes_male = {
+            1: 4, 2: 5, 3: 6, 4: 7, 5: 8,
+            6: 9, 7: 10, 8: 11, 9: 18, 10: 19,
+        };
+
+        let keys = {
+            headcolor: skin_tone,
+            hairnum: hair_style - 1,
+            haircolor: hair_color,
+            eyecolor: eye_color,
+        };
+
+        console.log(keys)
+
+        if (gender === "男") {
+            keys.hairnum += 10;
+            keys.eyesnum = remapped_eyes_male[face_style];
+        } else {
+            keys.eyesnum = remapped_eyes_female[face_style];
+        }
+
+        const params = new URLSearchParams(keys);
+        return `${baseUrl}?${params.toString()}`;
+    }
+
+    /**
+     * 容形の人間が読める説明文を生成する
+     * @param {string} gender - 性別
+     * @param {number} skin_tone - はだのいろ
+     * @param {number} hair_style - かみがた
+     * @param {number} hair_color - かみのいろ
+     * @param {number} face_style - かお
+     * @param {number} eye_color - めのいろ
+     * @param {number} body_type - 身長
+     * @returns {string} 人間が読める容形説明
+     */
+    function generateAppearanceDescription(gender, skin_tone, hair_style, hair_color, face_style, eye_color, body_type) {
+        return `たいけい: ${body_type} かみがた: ${hair_style} かみのいろ: ${hair_color} かお: ${face_style} はだのいろ: ${skin_tone} め: ${eye_color}`;
+    }
+
+    /**
+     * 1人分の容形データを生成する
+     * @param {BigInt} seed - 現在のシード値
+     * @param {string} gender - 性別
+     * @param {number} initialCost - 初期消費
+     * @param {BigInt} f2 - 3マス目の値
+     * @returns {Object} {seed: 更新されたシード, appearance: 容形データ}
+     */
+    function generateSingleAppearance(seed, gender, initialCost, f2) {
+        const remapped_face_female = {
+            0: 2, 1: 3, 2: 4, 3: 5, 4: 6,
+            5: 7, 6: 8, 7: 9, 8: 10, 9: 1,
+        };
+
+        const remapped_skin_female = {
+            1: 6, 2: 7, 3: 8, 4: 9, 5: 10,
+            6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
+        };
+
+        let f2_1 = f2;
+
+        // はだのいろ
+        if (initialCost === 24) {
+            seed = rand(seed);
+            f2_1 = getRand(Number(calculatePercent(seed)), 8);
+        } else {
+            f2_1 = getRand(Number(f2), 8);
+        }
+        var skin_tone = remapped_skin_female[f2_1];
+
+        // めのいろ
+        seed = rand(seed);
+        const f3 = getRand(Number(calculatePercent(seed)), 8);
+        var eye_color = f3 + 1;
+
+        // かみのいろ
+        seed = rand(seed);
+        const f4 = getRand(Number(calculatePercent(seed)), 10);
+        var hair_color = f4 + 1;
+
+        // 身長
+        seed = rand(seed);
+        const f5 = getRand(Number(calculatePercent(seed)), 5);
+        var body_type = 5 - f5;
+
+        // 名前（スキップ）
+        seed = rand(seed);
+
+        // かお
+        seed = rand(seed);
+        const f7 = getRand(Number(calculatePercent(seed)), 10);
+        var face_style = remapped_face_female[f7];
+
+        // かみがた
+        seed = rand(seed);
+        const f8 = getRand(Number(calculatePercent(seed)), 10);
+        var hair_style = f8 + 1;
+
+        const url = generateAppearanceUrl(gender, skin_tone, hair_style, hair_color, face_style, eye_color);
+        const description = generateAppearanceDescription(gender, skin_tone, hair_style, hair_color, face_style, eye_color, body_type);
+
+        return {
+            seed: seed,
+            appearance: {
+                skin_tone: skin_tone,
+                eye_color: eye_color,
+                hair_color: hair_color,
+                body_type: body_type,
+                face_style: face_style,
+                hair_style: hair_style,
+                url: url,
+                description: description
+            }
+        };
+    }
+
+    /**
+     * 完全なパーティ生成（職業・性別・実名・容形すべて含む）
      * @param {BigInt} initialSeed - 初期シード値
      * @param {BigInt} f0 - 1マス目の値（既に25で割り済み）
      * @param {BigInt} f1 - 2マス目の値（既に50で割り済み）
-     * @param {BigInt|null} f2 - 3マス目の値（既に50で割り済み）または null
+     * @param {BigInt} f2 - 3マス目の値（既に50で割り済み）または null
      * @returns {NameGenerationResult|null} 完全なパーティ情報。該当なしの場合は null
      */
     function generateFullParty(initialSeed, f0, f1, f2) {
@@ -265,40 +611,48 @@
 
         let seed = initialSeed;
 
-        // 初期消費が24の場合、1回余分に消費
+        // 3人分の容形データを生成
+        const appearances = [];
+
+        for (let i = 0; i < 3; i++) {
+            const characterId = partyResult.party[i];
+            const baseChar = CHARACTER_MASTER[characterId];
+
+            const result = generateSingleAppearance(seed, baseChar.gender, partyResult.initialCost, f2);
+            seed = result.seed;
+            appearances.push(result.appearance);
+        }
+
+        // 名前ID用のシード位置を取得（6f, 13f, 20f目）
+        let nameSeed = initialSeed;
+
+        // 1人目の容形生成後のシード位置から名前IDを取得
         if (partyResult.initialCost === 24) {
-            seed = rand(seed);
+            nameSeed = rand(nameSeed);
         }
-
-        // 消費を6に合わせる（4回消費）
         for (let i = 0; i < 4; i++) {
-            seed = rand(seed);
+            nameSeed = rand(nameSeed);
         }
 
-        // 6f目の値を取得
-        const f6 = calculatePercent(seed);
-
-        // 7回消費
-        for (let i = 0; i < 7; i++) {
-            seed = rand(seed);
-        }
+        const f6_2 = calculatePercent(nameSeed);
 
         // 13f目の値を取得
-        const f13 = calculatePercent(seed);
-
-        // 7回消費
         for (let i = 0; i < 7; i++) {
-            seed = rand(seed);
+            nameSeed = rand(nameSeed);
         }
+        const f13 = calculatePercent(nameSeed);
 
         // 20f目の値を取得
-        const f20 = calculatePercent(seed);
+        for (let i = 0; i < 7; i++) {
+            nameSeed = rand(nameSeed);
+        }
+        const f20 = calculatePercent(nameSeed);
 
         // 名前IDを計算
         const nameIds = [
-            Number(f6 / 20n),    // 1人目の名前ID (0-4)
-            Number(f13 / 20n),   // 2人目の名前ID (0-4)
-            Number(f20 / 20n)    // 3人目の名前ID (0-4)
+            Number(f6_2 / 20n),    // 1人目の名前ID (0-4)
+            Number(f13 / 20n),     // 2人目の名前ID (0-4)
+            Number(f20 / 20n)      // 3人目の名前ID (0-4)
         ];
 
         // 各メンバーの詳細情報と実名を生成
@@ -320,9 +674,10 @@
             memberIds: partyResult.party,
             memberNames: members.map(m => m.name),
             members: members,
+            appearances: appearances,
             debug: {
                 ...partyResult.debug,
-                seeds: { f6: Number(f6), f13: Number(f13), f20: Number(f20) },
+                seeds: { f6: Number(f6_2), f13: Number(f13), f20: Number(f20) },
                 nameIds: nameIds
             }
         };
@@ -343,12 +698,25 @@
             seed = "0x" + seed;
         }
 
+        // シードが変わった場合はキャッシュをクリア
+        if (currentSeed !== seed) {
+            imageCache = {};
+            currentSeed = seed;
+            // 画像表示をクリア
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`image-container-${i}`).innerHTML = '';
+                document.getElementById(`download-btn-${i}`).style.display = 'none';
+                document.getElementById(`image-btn-${i}`).disabled = false;
+                document.getElementById(`image-btn-${i}`).textContent = '画像を取得';
+            }
+        }
+
         //0fを計算
         seed = rand(BigInt(seed));
         var f0 = calculatePercent(seed);
 
         //1fを計算
-        seed =　rand(seed);
+        seed = rand(seed);
         var f1 = calculatePercent(seed);
 
         //2fを計算
@@ -357,15 +725,130 @@
 
         //ルックアップテーブルから取得
         const party = generateFullParty(seed, f0, f1, f2);
+        currentParty = party;
+
         // 結果を表示
         document.getElementById("output-message1").innerText = `1人目: ${party.members[0].name}/${party.members[0].job}(${party.members[0].gender})`;
+        document.getElementById("output-message10").innerText = `1人目容形: ${party.appearances[0].description}`;
         document.getElementById("output-message2").innerText = `2人目: ${party.members[1].name}/${party.members[1].job}(${party.members[1].gender})`;
+        document.getElementById("output-message20").innerText = `2人目容形: ${party.appearances[1].description}`;
         document.getElementById("output-message3").innerText = `3人目: ${party.members[2].name}/${party.members[2].job}(${party.members[2].gender})`;
+        document.getElementById("output-message30").innerText = `3人目容形: ${party.appearances[2].description}`;
         document.getElementById("output-message4").innerText = `初期消費: ${party.initialCost} (${party.initialCost + 1})`;
 
+        // 結果コンテナを表示
+        document.getElementById("result-container").style.display = "block";
+
+        // デバッグ用に容形URLをコンソールに出力
+        console.log("1人目容形URL:", party.appearances[0].url);
+        console.log("2人目容形URL:", party.appearances[1].url);
+        console.log("3人目容形URL:", party.appearances[2].url);
     }
 
+    /**
+     * 画像を取得する
+     * @param {number} memberIndex - メンバーインデックス (1-3)
+     */
+    async function fetchImage(memberIndex) {
+        if (!currentParty) {
+            alert('まずパーティを計算してください');
+            return;
+        }
 
+        const cacheKey = `${currentSeed}_${memberIndex}`;
+
+        // 既に取得済みの場合はスキップ
+        if (imageCache[cacheKey]) {
+            console.log(`メンバー${memberIndex}の画像は既に取得済みです`);
+            return;
+        }
+
+        const button = document.getElementById(`image-btn-${memberIndex}`);
+        const container = document.getElementById(`image-container-${memberIndex}`);
+        const downloadBtn = document.getElementById(`download-btn-${memberIndex}`);
+
+        // ボタンを無効化してローディング表示
+        button.disabled = true;
+        button.textContent = '取得中...';
+        container.innerHTML = '<div class="loading">画像を取得中...</div>';
+
+        try {
+            const appearance = currentParty.appearances[memberIndex - 1];
+            const imageUrl = appearance.url;
+
+            // CORS プロキシを使用して画像を取得
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+
+            const response = await fetch(proxyUrl);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const imageObjectURL = URL.createObjectURL(blob);
+
+            // 画像を表示
+            const img = document.createElement('img');
+            img.src = imageObjectURL;
+            img.alt = `${currentParty.members[memberIndex - 1].name}の容形`;
+            img.className = 'character-image';
+
+            img.onload = () => {
+                container.innerHTML = '';
+                container.appendChild(img);
+
+                // キャッシュに保存
+                imageCache[cacheKey] = {
+                    blob: blob,
+                    objectURL: imageObjectURL,
+                    memberName: currentParty.members[memberIndex - 1].name
+                };
+
+                // ダウンロードボタンを表示
+                downloadBtn.style.display = 'inline-block';
+                button.textContent = '取得済み';
+
+                console.log(`メンバー${memberIndex}の画像を取得しました`);
+            };
+
+            img.onerror = () => {
+                throw new Error('画像の読み込みに失敗しました');
+            };
+
+        } catch (error) {
+            console.error('画像取得エラー:', error);
+            container.innerHTML = `<div class="error">画像の取得に失敗しました: ${error.message}</div>`;
+            button.disabled = false;
+            button.textContent = '再試行';
+        }
+    }
+
+    /**
+     * 画像をダウンロードする
+     * @param {number} memberIndex - メンバーインデックス (1-3)
+     */
+    function downloadImage(memberIndex) {
+        const cacheKey = `${currentSeed}_${memberIndex}`;
+        const cachedData = imageCache[cacheKey];
+
+        if (!cachedData) {
+            alert('まず画像を取得してください');
+            return;
+        }
+
+        // ダウンロードリンクを作成
+        const link = document.createElement('a');
+        link.href = cachedData.objectURL;
+        link.download = `DQ9_${cachedData.memberName}_${currentSeed.replace('0x', '')}.png`;
+
+        // ダウンロードを実行
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log(`${cachedData.memberName}の画像をダウンロードしました`);
+    }
 
     /**
      * @param {BigInt} seed - input seed
@@ -478,7 +961,6 @@
         output = division(output, BigInt("0x7fff"));
         return output;
     }
-
 </script>
 </body>
 </html>
