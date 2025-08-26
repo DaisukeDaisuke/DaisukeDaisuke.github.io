@@ -844,21 +844,24 @@
             const appearance = currentParty.appearances[memberIndex - 1];
             const imageUrl = appearance.url;
 
-            // CORS プロキシを使用して画像を取得
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-
+            // allorigins の /get を利用
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(imageUrl)}`;
             const response = await fetch(proxyUrl);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const blob = await response.blob();
-            const imageObjectURL = URL.createObjectURL(blob);
+            const data = await response.json();
 
-            // 画像を表示
+            // data.contents は base64 ではなく「文字列化されたバイナリ」なので、
+            // 画像の場合は直接 <img src=...> に渡すのが安全
+            // → URL.createObjectURL(new Blob([data.contents])) は不可
+            // → 代わりに iframe 経由 or srcdoc を使う手もある
+
+            // 簡単に「外部URLを直接表示」で済むならこちら:
             const img = document.createElement('img');
-            img.src = imageObjectURL;
+            img.src = imageUrl; // プロキシ経由不要でブラウザが直接表示する
             img.alt = `${currentParty.members[memberIndex - 1].name}の容形`;
             img.className = 'character-image';
 
@@ -866,10 +869,9 @@
                 container.innerHTML = '';
                 container.appendChild(img);
 
-                // キャッシュに保存
+                // キャッシュに保存（objectURL は不要）
                 imageCache[cacheKey] = {
-                    blob: blob,
-                    objectURL: imageObjectURL,
+                    url: imageUrl,
                     memberName: currentParty.members[memberIndex - 1].name
                 };
 
@@ -891,6 +893,7 @@
             button.textContent = '再試行';
         }
     }
+
 
     /**
      * 画像をダウンロードする
