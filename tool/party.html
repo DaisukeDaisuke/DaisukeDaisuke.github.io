@@ -13,7 +13,7 @@
             background: #f5f5f5;
             box-sizing: border-box;
         }
-        
+
         .input-container {
             background: white;
             padding: 15px;
@@ -23,21 +23,21 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .input-container label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
             color: #333;
         }
-        
+
         .input-group {
             display: flex;
             gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-        
+
         #input-message {
             flex: 1;
             min-width: 200px;
@@ -49,13 +49,13 @@
             transition: border-color 0.3s;
             box-sizing: border-box;
         }
-        
+
         #input-message:focus {
             outline: none;
             border-color: #4CAF50;
             box-shadow: 0 0 5px rgba(76,175,80,0.3);
         }
-        
+
         .calc-btn {
             background: #4CAF50;
             color: white;
@@ -67,11 +67,11 @@
             transition: background-color 0.3s;
             white-space: nowrap;
         }
-        
+
         .calc-btn:hover {
             background: #45a049;
         }
-        
+
         .result-container {
             background: white;
             padding: 15px;
@@ -81,7 +81,7 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .member-info {
             border: 1px solid #e0e0e0;
             border-radius: 6px;
@@ -91,26 +91,26 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .member-info h3 {
             margin: 0 0 8px 0;
             color: #333;
             font-size: 16px;
         }
-        
+
         .member-info p {
             margin: 5px 0;
             font-size: 13px;
             line-height: 1.4;
         }
-        
+
         .appearance-controls {
             margin-top: 10px;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
-        
+
         .image-btn {
             background: #2196F3;
             color: white;
@@ -121,16 +121,16 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        
+
         .image-btn:hover {
             background: #1976D2;
         }
-        
+
         .image-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
-        
+
         .download-btn {
             background: #FF9800;
             color: white;
@@ -142,16 +142,16 @@
             transition: background-color 0.3s;
             display: none;
         }
-        
+
         .download-btn:hover {
             background: #F57C00;
         }
-        
+
         .image-container {
             margin-top: 10px;
             text-align: center;
         }
-        
+
         .character-image {
             max-width: 100%;
             height: auto;
@@ -159,17 +159,17 @@
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .loading {
             color: #666;
             font-style: italic;
         }
-        
+
         .error {
             color: #f44336;
             font-size: 14px;
         }
-        
+
         .initial-cost {
             background: #E8F5E8;
             border: 1px solid #4CAF50;
@@ -179,23 +179,23 @@
             color: #2E7D32;
             font-size: 14px;
         }
-        
+
         /* レスポンシブ対応 */
         @media (max-width: 480px) {
             .input-group {
                 flex-direction: column;
                 align-items: stretch;
             }
-            
+
             .calc-btn {
                 margin-top: 8px;
             }
-            
+
             .appearance-controls {
                 flex-direction: column;
                 align-items: stretch;
             }
-            
+
             .image-btn, .download-btn {
                 margin-bottom: 5px;
             }
@@ -203,54 +203,54 @@
     </style>
 </head>
 <body>
-    <div class="input-container">
-        <label for="input-message">初期シードを入力してください (16進数)</label>
-        <form id="FormAge" action="#">
-            <div class="input-group">
-                <input type="text" id="input-message" placeholder="例: 1A2B3C4D">
-                <input type="button" class="calc-btn" onclick="showMessage()" value="計算">
-            </div>
-        </form>
+<div class="input-container">
+    <label for="input-message">初期シードを入力してください (16進数)</label>
+    <form id="FormAge" action="#">
+        <div class="input-group">
+            <input type="text" id="input-message" placeholder="例: 1A2B3C4D">
+            <input type="button" class="calc-btn" onclick="showMessage()" value="計算">
+        </div>
+    </form>
+</div>
+
+<div class="result-container" id="result-container" style="display: none;">
+    <div class="member-info">
+        <h3>1人目</h3>
+        <p id="output-message1">1人目: </p>
+        <p id="output-message10">1人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-1" onclick="fetchImage(1)">画像を取得</button>
+            <button class="download-btn" id="download-btn-1" onclick="downloadImage(1)">ダウンロード</button>
+        </div>
+        <div class="image-container" id="image-container-1"></div>
     </div>
 
-    <div class="result-container" id="result-container" style="display: none;">
-        <div class="member-info">
-            <h3>1人目</h3>
-            <p id="output-message1">1人目: </p>
-            <p id="output-message10">1人目容形: </p>
-            <div class="appearance-controls">
-                <button class="image-btn" id="image-btn-1" onclick="fetchImage(1)">画像を取得</button>
-                <button class="download-btn" id="download-btn-1" onclick="downloadImage(1)">ダウンロード</button>
-            </div>
-            <div class="image-container" id="image-container-1"></div>
+    <div class="member-info">
+        <h3>2人目</h3>
+        <p id="output-message2">2人目: </p>
+        <p id="output-message20">2人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-2" onclick="fetchImage(2)">画像を取得</button>
+            <button class="download-btn" id="download-btn-2" onclick="downloadImage(2)">ダウンロード</button>
         </div>
-
-        <div class="member-info">
-            <h3>2人目</h3>
-            <p id="output-message2">2人目: </p>
-            <p id="output-message20">2人目容形: </p>
-            <div class="appearance-controls">
-                <button class="image-btn" id="image-btn-2" onclick="fetchImage(2)">画像を取得</button>
-                <button class="download-btn" id="download-btn-2" onclick="downloadImage(2)">ダウンロード</button>
-            </div>
-            <div class="image-container" id="image-container-2"></div>
-        </div>
-
-        <div class="member-info">
-            <h3>3人目</h3>
-            <p id="output-message3">3人目: </p>
-            <p id="output-message30">3人目容形: </p>
-            <div class="appearance-controls">
-                <button class="image-btn" id="image-btn-3" onclick="fetchImage(3)">画像を取得</button>
-                <button class="download-btn" id="download-btn-3" onclick="downloadImage(3)">ダウンロード</button>
-            </div>
-            <div class="image-container" id="image-container-3"></div>
-        </div>
-
-        <div class="initial-cost">
-            <p id="output-message4">初期消費: </p>
-        </div>
+        <div class="image-container" id="image-container-2"></div>
     </div>
+
+    <div class="member-info">
+        <h3>3人目</h3>
+        <p id="output-message3">3人目: </p>
+        <p id="output-message30">3人目容形: </p>
+        <div class="appearance-controls">
+            <button class="image-btn" id="image-btn-3" onclick="fetchImage(3)">画像を取得</button>
+            <button class="download-btn" id="download-btn-3" onclick="downloadImage(3)">ダウンロード</button>
+        </div>
+        <div class="image-container" id="image-container-3"></div>
+    </div>
+
+    <div class="initial-cost">
+        <p id="output-message4">初期消費: </p>
+    </div>
+</div>
 
 <script>
     // グローバルキャッシュ
@@ -580,6 +580,15 @@
             1: 6, 2: 7, 3: 8, 4: 9, 5: 10,
             6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
         };
+        const remapped_face_male = {
+            0: 1, 1: 2, 2: 3, 3: 4, 4: 5,
+            5: 6, 6: 7, 7: 8, 8: 9, 9: 10,
+        };
+
+        const remapped_skin_male = {
+            1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
+            6: 1, 7: 2, 8: 3, 9: 4, 10: 5,
+        };
 
         let f2_1 = f2;
 
@@ -590,7 +599,12 @@
         } else {
             f2_1 = getRand(Number(f2), 8);
         }
-        var skin_tone = remapped_skin_female[f2_1];
+        var skin_tone = f2_1;
+        if(gender === "女"){
+            skin_tone = remapped_skin_male[skin_tone];
+        }else{
+            skin_tone = remapped_skin_female[skin_tone];
+        }
 
         // めのいろ
         seed = rand(seed);
@@ -613,12 +627,24 @@
         // かお
         seed = rand(seed);
         const f7 = getRand(Number(calculatePercent(seed)), 10);
-        var face_style = remapped_face_female[f7];
+        var face_style = f7;
+        if(gender === "女"){
+            face_style = remapped_face_male[face_style];
+        }else{
+            face_style = remapped_face_female[face_style];
+        }
 
         // かみがた
         seed = rand(seed);
         const f8 = getRand(Number(calculatePercent(seed)), 10);
-        var hair_style = f8 + 1;
+        var hair_style = 0;
+        if(gender === "女") {
+            hair_style = (f8 + 2) % 11;
+        }else{
+            hair_style = f8 + 1;
+        }
+
+        console.log(f2, f3, f4, f5, f7, f8);
 
         const url = generateAppearanceUrl(gender, skin_tone, hair_style, hair_color, face_style, eye_color);
         const description = generateAppearanceDescription(gender, skin_tone, hair_style, hair_color, face_style, eye_color, body_type);
@@ -798,7 +824,7 @@
         }
 
         const cacheKey = `${currentSeed}_${memberIndex}`;
-        
+
         // 既に取得済みの場合はスキップ
         if (imageCache[cacheKey]) {
             console.log(`メンバー${memberIndex}の画像は既に取得済みです`);
@@ -808,7 +834,7 @@
         const button = document.getElementById(`image-btn-${memberIndex}`);
         const container = document.getElementById(`image-container-${memberIndex}`);
         const downloadBtn = document.getElementById(`download-btn-${memberIndex}`);
-        
+
         // ボタンを無効化してローディング表示
         button.disabled = true;
         button.textContent = '取得中...';
@@ -817,47 +843,47 @@
         try {
             const appearance = currentParty.appearances[memberIndex - 1];
             const imageUrl = appearance.url;
-            
+
             // CORS プロキシを使用して画像を取得
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-            
+
             const response = await fetch(proxyUrl);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const blob = await response.blob();
             const imageObjectURL = URL.createObjectURL(blob);
-            
+
             // 画像を表示
             const img = document.createElement('img');
             img.src = imageObjectURL;
             img.alt = `${currentParty.members[memberIndex - 1].name}の容形`;
             img.className = 'character-image';
-            
+
             img.onload = () => {
                 container.innerHTML = '';
                 container.appendChild(img);
-                
+
                 // キャッシュに保存
                 imageCache[cacheKey] = {
                     blob: blob,
                     objectURL: imageObjectURL,
                     memberName: currentParty.members[memberIndex - 1].name
                 };
-                
+
                 // ダウンロードボタンを表示
                 downloadBtn.style.display = 'inline-block';
                 button.textContent = '取得済み';
-                
+
                 console.log(`メンバー${memberIndex}の画像を取得しました`);
             };
-            
+
             img.onerror = () => {
                 throw new Error('画像の読み込みに失敗しました');
             };
-            
+
         } catch (error) {
             console.error('画像取得エラー:', error);
             container.innerHTML = `<div class="error">画像の取得に失敗しました: ${error.message}</div>`;
@@ -873,22 +899,22 @@
     function downloadImage(memberIndex) {
         const cacheKey = `${currentSeed}_${memberIndex}`;
         const cachedData = imageCache[cacheKey];
-        
+
         if (!cachedData) {
             alert('まず画像を取得してください');
             return;
         }
-        
+
         // ダウンロードリンクを作成
         const link = document.createElement('a');
         link.href = cachedData.objectURL;
         link.download = `DQ9_${cachedData.memberName}_${currentSeed.replace('0x', '')}.png`;
-        
+
         // ダウンロードを実行
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         console.log(`${cachedData.memberName}の画像をダウンロードしました`);
     }
 
