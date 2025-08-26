@@ -528,7 +528,7 @@
         };
 
         const remapped_hairnum_female = {
-            1: 1, 2: 2, 3: 3, 4: 3, 5: 5, // 1 = 0
+            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, // 1 = 0
             6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
         };
 
@@ -542,10 +542,10 @@
         console.log(keys)
 
         if (gender === "男") {
-            keys.hairnum = remapped_hairnum_male[face_style];
+            keys.hairnum = remapped_hairnum_male[hair_style];
             keys.eyesnum = remapped_eyes_male[face_style];
         } else {
-            keys.hairnum = remapped_hairnum_female[face_style];
+            keys.hairnum = remapped_hairnum_female[hair_style];
             keys.eyesnum = remapped_eyes_female[face_style];
         }
 
