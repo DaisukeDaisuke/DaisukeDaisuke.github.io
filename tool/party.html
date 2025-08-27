@@ -217,7 +217,7 @@
     <div class="member-info">
         <h3>1人目</h3>
         <p id="output-message1">1人目: </p>
-        <p id="output-message10">1人目容形: </p>
+        <p id="output-message10">1人目形容: </p>
         <div class="appearance-controls">
             <button class="image-btn" id="image-btn-1" onclick="fetchImage(1)">画像を取得</button>
         </div>
@@ -227,7 +227,7 @@
     <div class="member-info">
         <h3>2人目</h3>
         <p id="output-message2">2人目: </p>
-        <p id="output-message20">2人目容形: </p>
+        <p id="output-message20">2人目形容: </p>
         <div class="appearance-controls">
             <button class="image-btn" id="image-btn-2" onclick="fetchImage(2)">画像を取得</button>
         </div>
@@ -237,7 +237,7 @@
     <div class="member-info">
         <h3>3人目</h3>
         <p id="output-message3">3人目: </p>
-        <p id="output-message30">3人目容形: </p>
+        <p id="output-message30">3人目形容: </p>
         <div class="appearance-controls">
             <button class="image-btn" id="image-btn-3" onclick="fetchImage(3)">画像を取得</button>
         </div>
@@ -274,7 +274,7 @@
      */
 
     /**
-     * 容形データ
+     * 形容データ
      * @typedef {Object} AppearanceData
      * @property {number} skin_tone - はだのいろ
      * @property {number} eye_color - めのいろ
@@ -282,7 +282,7 @@
      * @property {number} body_type - 身長
      * @property {number} face_style - かお
      * @property {number} hair_style - かみがた
-     * @property {string} url - 容形表示URL
+     * @property {string} url - 形容表示URL
      * @property {string} description - 人間が読める形式
      */
 
@@ -294,7 +294,7 @@
      * @property {Array.<number>} memberIds - メンバーID配列
      * @property {Array.<string>} memberNames - 実際の名前配列
      * @property {Array.<CharacterData>} members - 詳細メンバー情報（実名付き）
-     * @property {Array.<AppearanceData>} appearances - 容形データ配列
+     * @property {Array.<AppearanceData>} appearances - 形容データ配列
      */
 
     /**
@@ -502,14 +502,14 @@
     }
 
     /**
-     * 容形URLを生成する
+     * 形容URLを生成する
      * @param {string} gender - 性別
      * @param {number} skin_tone - はだのいろ
      * @param {number} hair_style - かみがた
      * @param {number} hair_color - かみのいろ
      * @param {number} face_style - かお（変換済み）
      * @param {number} eye_color - めのいろ
-     * @returns {string} 容形表示URL
+     * @returns {string} 形容表示URL
      */
     function generateAppearanceUrl(gender, skin_tone, hair_style, hair_color, face_style, eye_color) {
         const baseUrl = "https://www.woodus.com/den/games/dq9ds/characreate/index.php";
@@ -554,7 +554,7 @@
     }
 
     /**
-     * 容形の人間が読める説明文を生成する
+     * 形容の人間が読める説明文を生成する
      * @param {string} gender - 性別
      * @param {number} skin_tone - はだのいろ
      * @param {number} hair_style - かみがた
@@ -562,19 +562,19 @@
      * @param {number} face_style - かお
      * @param {number} eye_color - めのいろ
      * @param {number} body_type - 身長
-     * @returns {string} 人間が読める容形説明
+     * @returns {string} 人間が読める形容説明
      */
     function generateAppearanceDescription(gender, skin_tone, hair_style, hair_color, face_style, eye_color, body_type) {
         return `たいけい: ${body_type} かみがた: ${hair_style} かみのいろ: ${hair_color} かお: ${face_style} はだのいろ: ${skin_tone} めのいろ: ${eye_color}`;
     }
 
     /**
-     * 1人分の容形データを生成する
+     * 1人分の形容データを生成する
      * @param {BigInt} seed - 現在のシード値
      * @param {string} gender - 性別
      * @param {number} initialCost - 初期消費
      * @param {number} f2 - 3マス目の値
-     * @returns {Object} {seed: 更新されたシード, appearance: 容形データ}
+     * @returns {Object} {seed: 更新されたシード, appearance: 形容データ}
      */
     function generateSingleAppearance(seed, gender, initialCost, f2) {
         const remapped_face_male = {
@@ -649,7 +649,7 @@
     }
 
     /**
-     * 完全なパーティ生成（職業・性別・実名・容形すべて含む）
+     * 完全なパーティ生成（職業・性別・実名・形容すべて含む）
      * @param {BigInt} initialSeed - 初期シード値
      * @param {BigInt} f0 - 1マス目の値（既に25で割り済み）
      * @param {BigInt} f1 - 2マス目の値（既に50で割り済み）
@@ -663,7 +663,7 @@
 
         let seed = initialSeed;
 
-        // 3人分の容形データを生成
+        // 3人分の形容データを生成
         const appearances = [];
 
         for (let i = 0; i < 3; i++) {
@@ -688,7 +688,7 @@
         // 名前ID用のシード位置を取得（6f, 13f, 20f目）
         let nameSeed = initialSeed;
 
-        // 1人目の容形生成後のシード位置から名前IDを取得
+        // 1人目の形容生成後のシード位置から名前IDを取得
         if (partyResult.initialCost === 24) {
             nameSeed = rand(nameSeed);
         }
@@ -791,20 +791,20 @@
 
         // 結果を表示
         document.getElementById("output-message1").innerText = `1人目: ${party.members[0].name}/${party.members[0].job}(${party.members[0].gender})`;
-        document.getElementById("output-message10").innerText = `1人目容形: ${party.appearances[0].description}`;
+        document.getElementById("output-message10").innerText = `1人目形容: ${party.appearances[0].description}`;
         document.getElementById("output-message2").innerText = `2人目: ${party.members[1].name}/${party.members[1].job}(${party.members[1].gender})`;
-        document.getElementById("output-message20").innerText = `2人目容形: ${party.appearances[1].description}`;
+        document.getElementById("output-message20").innerText = `2人目形容: ${party.appearances[1].description}`;
         document.getElementById("output-message3").innerText = `3人目: ${party.members[2].name}/${party.members[2].job}(${party.members[2].gender})`;
-        document.getElementById("output-message30").innerText = `3人目容形: ${party.appearances[2].description}`;
+        document.getElementById("output-message30").innerText = `3人目形容: ${party.appearances[2].description}`;
         document.getElementById("output-message4").innerText = `初期消費: ${party.initialCost} (${party.initialCost + 1})`;
 
         // 結果コンテナを表示
         document.getElementById("result-container").style.display = "block";
 
-        // デバッグ用に容形URLをコンソールに出力
-        console.log("1人目容形URL:", party.appearances[0].url);
-        console.log("2人目容形URL:", party.appearances[1].url);
-        console.log("3人目容形URL:", party.appearances[2].url);
+        // デバッグ用に形容URLをコンソールに出力
+        console.log("1人目形容URL:", party.appearances[0].url);
+        console.log("2人目形容URL:", party.appearances[1].url);
+        console.log("3人目形容URL:", party.appearances[2].url);
     }
 
     /**
@@ -841,7 +841,7 @@
             // 簡単に「外部URLを直接表示」で済むならこちら:
             const img = document.createElement('img');
             img.src = imageUrl; // プロキシ経由不要でブラウザが直接表示する
-            img.alt = `${currentParty.members[memberIndex - 1].name}の容形`;
+            img.alt = `${currentParty.members[memberIndex - 1].name}の形容`;
             img.className = 'character-image';
 
             img.onload = () => {
