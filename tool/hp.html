@@ -75,7 +75,7 @@
             const percent = parseFloat(document.getElementById('percent').value);
 
             if (!isNaN(maxHP) && !isNaN(percent)) {
-                const finalHP = Math.floor(maxHP * ((percent * 0.01 * 0.2) + 0.8));
+                const finalHP = Math.round(maxHP * ((percent * 0.01 * 0.2) + 0.8));
                 document.getElementById('result').innerText = "結果: " + finalHP;
                 return finalHP;
             } else {
