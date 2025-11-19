@@ -1,0 +1,772 @@
+// チェックリスト アプリ main (defer)
+// 要件: URL同期、ローカルストレージ保存、テーマ、WQHDで2カラム、インポート/エクスポート
+
+let initialLoad = () => null;
+
+(async function init() {
+  'use strict';
+
+  // ---------- Utilities ----------
+  const idle = window.requestIdleCallback || ((cb) => setTimeout(() => cb({ didTimeout:false, timeRemaining:()=>50 }), 1));
+  const on = (el, ev, fn, opts) => el.addEventListener(ev, fn, opts);
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const uuid4 = () => crypto.randomUUID();
+
+  const STORAGE = {
+    get(key, fallback=null) {
+      try { const v = localStorage.getItem(key); return v==null?fallback:JSON.parse(v); } catch(e){ return fallback; }
+    },
+    set(key, value) {
+      return new Promise(resolve => {
+        idle(() => {
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+          } catch(e) {
+            console.warn('LS set failed', e);
+          }
+          resolve();
+        });
+      });
+    },
+    remove(key) {
+      return new Promise(resolve => {
+        idle(() => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {}
+          resolve(); // 必ず完了通知
+        });
+      });
+    },
+  };
+
+  const KEY = {
+    theme: 'cl_theme_v1',
+    settings: 'cl_settings_v1',
+    index: 'cl_index_v1',
+    list: (id) => `cl_list_${id}_v1`,
+  };
+
+  const BC = ('BroadcastChannel' in window) ? new BroadcastChannel('cl_sync_v1') : null;
+  const bcPost = (type, payload) => { if (BC) { try { BC.postMessage({ type, payload, ts: Date.now() }); } catch(e){} } };
+
+  function encodeBase64(bytes) {
+    // Uint8Array -> base64 (RFC4648)
+    let bin = '';
+    const chunk = 0x8000;
+    for (let i=0; i<bytes.length; i+=chunk) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+    }
+    return btoa(bin);
+  }
+  function decodeBase64ToBytes(b64) {
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  const textEncoder = new TextEncoder();
+  const textDecoder = new TextDecoder();
+
+  async function tryLoadPako() {
+    // ESM優先 -> UMD fallback
+    try {
+      const mod = await import('https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.esm.mjs');
+      return mod;
+    } catch(e) {
+      // fallback to UMD
+      return new Promise((resolve) => {
+        const id = 'pako-umd';
+        if (document.getElementById(id)) return resolve(window.pako);
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';
+        s.async = true;
+        s.id = id;
+        s.onload = () => resolve(window.pako);
+        s.onerror = () => resolve(null);
+        document.head.appendChild(s);
+      });
+    }
+  }
+
+  // ---------- Data Model ----------
+  /** @typedef {{id:string,text:string,checked:boolean}} Item */
+  /** @typedef {{v:1,id:string,name:string,saveState:boolean,items:Item[],updatedAt:number}} Checklist */
+
+  function loadIndex() { return STORAGE.get(KEY.index, []); }
+  async function saveIndex(index) { await STORAGE.set(KEY.index, index); bcPost('index', null); }
+  function loadList(id) { return STORAGE.get(KEY.list(id), null); }
+  async function saveList(list) { list.updatedAt = Date.now(); await STORAGE.set(KEY.list(list.id), list); bcPost('list', list.id); }
+  function removeList(id) { STORAGE.remove(KEY.list(id)); bcPost('list-removed', id); }
+
+  async function ensureDefaultList() {
+    let idx = loadIndex();
+    if (!idx || idx.length === 0) {
+      const id = uuid4();
+      const list = /** @type {Checklist} */({ v:1, id, name: 'デフォルト', saveState: true, items: [], updatedAt: Date.now() });
+      await saveList(list);
+      idx = [{ id, name: list.name, createdAt: Date.now() }];
+      saveIndex(idx);
+    }
+    return idx;
+  }
+
+  // ---------- Elements ----------
+  const els = {
+    themeSelect: $('#themeSelect'),
+    sizeSelect: $('#sizeSelect'),
+    saveToggle: $('#saveToggle'),
+    listSelect: $('#listSelect'),
+    newListBtn: $('#newListBtn'),
+    renameListBtn: $('#renameListBtn'),
+    deleteListBtn: $('#deleteListBtn'),
+    exportBtn: $('#exportBtn'),
+    importBtn: $('#importBtn'),
+    bulkAddBtn: $('#bulkAddBtn'),
+    items: $('#items'),
+    mainListTitle: $('#mainListTitle'),
+    brandListName: $('#brandListName'),
+    newItemInput: $('#newItemInput'),
+    // secondary
+    secondaryListSelect: $('#secondaryListSelect'),
+    secondaryItems: $('#secondaryItems'),
+    // modals
+    exportBackdrop: $('#exportBackdrop'),
+    exportModal: $('#exportModal'),
+    exportUrlBox: $('#exportUrlBox'),
+    exportWarn: $('#exportWarn'),
+    exportWarnYes: $('#exportWarnYes'),
+    exportWarnNo: $('#exportWarnNo'),
+    copyExportBtn: $('#copyExportBtn'),
+    importBackdrop: $('#importBackdrop'),
+    importModal: $('#importModal'),
+    importSummary: $('#importSummary'),
+    importPreview: $('#importPreview'),
+    confirmImportBtn: $('#confirmImportBtn'),
+    importNameOverride: $('#importNameOverride'),
+    bulkBackdrop: $('#bulkBackdrop'),
+    bulkModal: $('#bulkModal'),
+    bulkText: $('#bulkText'),
+    bulkImportAddItemsBtn: $('#bulkImportAddItemsBtn'),
+    bulkCreateNewListBtn: $('#bulkCreateNewListBtn'),
+    bulkNameOverride: $('#bulkNameOverride'),
+    importUrlInput: $('#importUrlInput'),
+    openUrlBtn: $('#openUrlBtn'),
+    // nudge
+    importNudge: $('#importNudge'),
+    openImportConfirmBtn: $('#openImportConfirmBtn'),
+    // notfound
+    notFoundBackdrop: $('#notFoundBackdrop'),
+    notFoundModal: $('#notFoundModal'),
+  };
+
+  // ---------- State ----------
+  let currentListId = null;
+  let currentList = null; // Checklist
+  let secondaryListId = null;
+  let pendingImportPayload = null; // from URL
+
+  // ---------- Theme & Size Controls ----------
+  // init theme select
+  try {
+    const theme = localStorage.getItem(KEY.theme) || document.documentElement.getAttribute('data-theme') || 'light';
+    els.themeSelect.value = theme;
+  } catch {}
+  on(els.themeSelect, 'change', (e) => {
+    const theme = els.themeSelect.value;
+    const allowed = { light:1, lightgray:1, dark:1, deepdark:1 };
+    if (!allowed[theme]) return;
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem(KEY.theme, theme); } catch {}
+  });
+
+  const SIZE_MAP = { s: 22, m: 28, l: 36 };
+  // load saved size
+  const settings = STORAGE.get(KEY.settings, { size: 'm' });
+  if (settings.size && SIZE_MAP[settings.size]) {
+    els.sizeSelect.value = settings.size;
+    document.documentElement.style.setProperty('--checkbox-size', SIZE_MAP[settings.size] + 'px');
+  }
+  on(els.sizeSelect, 'change', () => {
+    const v = els.sizeSelect.value;
+    const px = SIZE_MAP[v] || 28;
+    document.documentElement.style.setProperty('--checkbox-size', px + 'px');
+    settings.size = v; STORAGE.set(KEY.settings, settings);
+  });
+
+  // ---------- Lists UI ----------
+  function populateListSelects() {
+    const idx = loadIndex();
+    let options = idx.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+    if (!idx.length) {
+      options = `<option value="">読み込むものはありません</option>`;
+    }
+    els.listSelect.innerHTML = options;
+    els.secondaryListSelect.innerHTML = '<option value="">(なし)</option>' + options;
+    if (currentListId && idx.find(x=>x.id===currentListId)) {
+      els.listSelect.value = currentListId;
+    } else if (idx[0]) {
+      els.listSelect.value = idx[0].id;
+    } else {
+      els.listSelect.value = '';
+    }
+    if (secondaryListId) els.secondaryListSelect.value = secondaryListId; else els.secondaryListSelect.value = '';
+  }
+
+  function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+  function selectList(listId) {
+    currentListId = listId;
+    const list = loadList(listId);
+    if (!list) return;
+    currentList = list;
+    els.saveToggle.checked = !!list.saveState;
+    els.mainListTitle.textContent = list.name;
+    if (els.brandListName) els.brandListName.textContent = list.name;
+    renderItems(list, els.items, true);
+    // URL反映
+    reflectListInUrl(listId);
+    populateListSelects();
+  }
+
+  function reflectListInUrl(id) {
+    const url = new URL(location.href);
+    url.searchParams.set('list', id);
+    url.searchParams.delete('import');
+    url.searchParams.delete('enc');
+    history.replaceState(null, '', url);
+  }
+
+  function renderItems(list, container, interactive) {
+    // Avoid heavy rAF; simple string template and one injection
+    const html = list.items.map((it, i) => {
+      const inputId = `${list.id}-${it.id}`;
+      const checked = it.checked ? 'checked' : '';
+      return `
+        <div class="item" data-id="${it.id}">
+          <button class="drag-handle" data-action="drag" title="並べ替え"><span class="bars"><span></span></span></button>
+          <div class="checkbox-wrap"><input ${interactive? '' : 'disabled'} type="checkbox" id="${inputId}" ${checked} aria-label="${escapeHtml(it.text)}"></div>
+          <label class="checkbox-label" for="${inputId}">${escapeHtml(it.text)}</label>
+          <button class="btn" data-action="edit">編集</button>
+          <button class="btn delete-btn" data-action="del">削除</button>
+        </div>`;
+    }).join('');
+    container.innerHTML = html;
+  }
+
+  async function updateIndexName(id, name) {
+    const idx = loadIndex();
+    const e = idx.find(x=>x.id===id);
+    if (e) { e.name = name; await saveIndex(idx); }
+  }
+
+  // ---------- Item interactions ----------
+  function getListForContainer(container) {
+    if (container === els.items) return currentListId ? loadList(currentListId) : null;
+    if (container === els.secondaryItems) return secondaryListId ? loadList(secondaryListId) : null;
+    return null;
+  }
+
+  async function handleCheckboxChange(ev, container) {
+    const t = ev.target;
+    if (!(t instanceof HTMLInputElement) || t.type !== 'checkbox') return;
+    const wrap = t.closest('.item');
+    const list = getListForContainer(container);
+    if (!wrap || !list) return;
+    const id = wrap.getAttribute('data-id');
+    const it = list.items.find(x=>x.id===id);
+    if (!it) return;
+    it.checked = !!t.checked;
+    if (list.saveState) await saveList(list); // 保存する場合のみ状態保存
+    if (container===els.items && list.id===currentListId) currentList = list;
+  }
+
+  async function handleItemClick(ev, container) {
+    const list = getListForContainer(container);
+    if (!list) return;
+    const delBtn = ev.target.closest('button[data-action="del"]');
+    const editBtn = ev.target.closest('button[data-action="edit"]');
+    const dragBtn = ev.target.closest('button[data-action="drag"]');
+    if (delBtn) {
+      const wrap = delBtn.closest('.item');
+      const id = wrap.getAttribute('data-id');
+      list.items = list.items.filter(x=>x.id!==id);
+      await saveList(list);
+      renderItems(list, container, true);
+      // リストセレクトをもれなく更新
+      populateListSelects();
+      if (container===els.items && list.id===currentListId) currentList = list;
+      return;
+    }
+    if (editBtn) {
+      const wrap = editBtn.closest('.item');
+      const id = wrap.getAttribute('data-id');
+      const it = list.items.find(x=>x.id===id);
+      if (!it) return;
+      const label = wrap.querySelector('.checkbox-label');
+      if (!label) return;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = it.text;
+      input.style.width = '100%';
+      label.replaceWith(input);
+      input.focus(); input.select();
+      const finish = (commit) => {
+        if (commit) { it.text = input.value.trim() || it.text; saveList(list); }
+        renderItems(list, container, true);
+        if (container===els.items && list.id===currentListId) currentList = list;
+      };
+      input.addEventListener('keydown', (e)=>{
+        if (e.key==='Enter') { e.preventDefault(); finish(true); }
+        if (e.key==='Escape') { e.preventDefault(); finish(false); }
+      });
+      input.addEventListener('blur', ()=>finish(true));
+      return;
+    }
+    if (dragBtn) return; // drag handled separately
+    // toggle by clicking item area (excluding buttons/inputs)
+    const wrap = ev.target.closest('.item');
+    if (!wrap) return;
+    if (ev.target.closest('button, input, textarea, select, a')) return;
+    const id = wrap.getAttribute('data-id');
+    const it = list.items.find(x=>x.id===id);
+    if (!it) return;
+    it.checked = !it.checked;
+    saveList(list);
+    renderItems(list, container, true);
+    if (container===els.items && list.id===currentListId) currentList = list;
+  }
+
+  on(els.items, 'change', (ev) => handleCheckboxChange(ev, els.items));
+  on(els.items, 'click', (ev) => handleItemClick(ev, els.items));
+  on(els.secondaryItems, 'change', (ev) => handleCheckboxChange(ev, els.secondaryItems));
+  on(els.secondaryItems, 'click', (ev) => handleItemClick(ev, els.secondaryItems));
+
+  on(els.newItemInput, 'keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      const text = els.newItemInput.value.trim();
+      if (!text || !currentList) return;
+      currentList.items.push({ id: uuid4(), text, checked: false });
+      els.newItemInput.value = '';
+      saveList(currentList);
+      renderItems(currentList, els.items, true);
+      populateListSelects(); // 追加時もセレクト更新（要件: もれなく更新）
+    }
+  });
+
+  // ---------- Save toggle ----------
+  on(els.saveToggle, 'change', () => {
+    if (!currentList) return;
+    currentList.saveState = !!els.saveToggle.checked;
+    saveList(currentList);
+  });
+
+  // ---------- List Controls ----------
+  on(els.listSelect, 'change', () => {
+    const id = els.listSelect.value;
+    if (!id) return; // 空プレースホルダ選択は無視
+    selectList(id);
+  });
+  on(els.secondaryListSelect, 'change', () => {
+    secondaryListId = els.secondaryListSelect.value || null;
+    if (secondaryListId) {
+      const l2 = loadList(secondaryListId);
+      if (l2) renderItems(l2, els.secondaryItems, true);
+    } else {
+      els.secondaryItems.innerHTML = '';
+    }
+  });
+  on(els.renameListBtn, 'click', async () => {
+    if (!currentList) return;
+    const name = prompt('新しいリスト名を入力', currentList.name || '');
+    if (name==null) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    currentList.name = trimmed;
+    await saveList(currentList);
+    await updateIndexName(currentList.id, trimmed);
+    selectList(currentList.id);
+  });
+  on(els.newListBtn, 'click', async () => {
+    const id = uuid4();
+    const name = `新規リスト`;
+    const list = { v:1, id, name, saveState: true, items: [], updatedAt: Date.now() };
+    await saveList(list);
+    const idx = loadIndex(); idx.push({ id, name, createdAt: Date.now() }); await saveIndex(idx);
+    selectList(id);
+    console.log(KEY.list(id));
+    //initialLoad();
+  });
+  on(els.deleteListBtn, 'click', async () => {
+    if (!currentList) return;
+    if (!confirm('このチェックリストを完全に削除しますか？この操作は元に戻せません。')) return;
+    const id = currentList.id;
+    removeList(id);
+    const idx = loadIndex().filter(x=>x.id!==id); await saveIndex(idx);
+    const next = idx[0]?.id;
+    if (next) selectList(next); else {
+      ensureDefaultList(); populateListSelects(); selectList(loadIndex()[0].id);
+    }
+    //initialLoad();
+  });
+
+  // ---------- Export ----------
+  on(els.exportBtn, 'click', async () => {
+    if (!currentList) return;
+    const listForExport = JSON.parse(JSON.stringify(currentList));
+    if (!listForExport.saveState) { listForExport.items.forEach(it=>{ it.checked = false; }); }
+    const payload = { v:1, id: listForExport.id, list: listForExport };
+    const jsonStr = JSON.stringify(payload);
+    const utf8 = textEncoder.encode(jsonStr);
+    let urlParam = '';
+    let encoding = '';
+    let pako = await tryLoadPako();
+    if (pako && (pako.deflate || pako.default?.deflate)) {
+      const deflate = pako.deflate || pako.default.deflate;
+      try {
+        const gz = deflate(utf8);
+        urlParam = encodeBase64(gz);
+        encoding = 'gz+b64';
+      } catch {}
+    }
+    if (!urlParam) { // fallback to plain b64
+      urlParam = encodeBase64(utf8);
+      encoding = 'b64';
+    }
+    const url = new URL(location.href);
+    url.searchParams.delete('list');
+    url.searchParams.set('import', urlParam);
+    url.searchParams.set('enc', encoding);
+    // 表示
+    openModal('export');
+    els.exportUrlBox.value = url.toString();
+    // 長さ警告
+    if (els.exportUrlBox.value.length >= 4096) {
+      els.exportWarn.style.display = '';
+    } else {
+      els.exportWarn.style.display = 'none';
+    }
+  });
+  on(els.copyExportBtn, 'click', async () => {
+    try { await navigator.clipboard.writeText(els.exportUrlBox.value); } catch(e) { /* ignore */ }
+  });
+  on(els.exportWarnYes, 'click', () => { els.exportWarn.style.display = 'none'; });
+  on(els.exportWarnNo, 'click', () => { closeModal('export'); });
+
+  // ---------- Import ----------
+  on(els.importBtn, 'click', () => {
+    // 手動インポートはバルクモーダルを活用 or 専用UIに誘導
+    // ここでは、URL貼り付けはエクスポートURLモーダルに貼ってもらう運用にせず、バルクを使う要件があるので、
+    // シンプルにバルクモーダルを開いてペーストしてもらう
+    openModal('bulk');
+  });
+
+  // URLインポート処理
+  async function handleImportFromUrl() {
+    const url = new URL(location.href);
+    const imp = url.searchParams.get('import');
+    if (!imp) return;
+    const enc = url.searchParams.get('enc') || 'gz+b64';
+    // デコード
+    let bytes;
+    try {
+      const b = decodeBase64ToBytes(imp);
+      if (enc === 'gz+b64') {
+        const pako = await tryLoadPako();
+        const inflate = pako?.inflate || pako?.default?.inflate;
+        if (!inflate) throw new Error('inflate not available');
+        const out = inflate(b);
+        bytes = out;
+      } else {
+        bytes = b;
+      }
+    } catch(e) {
+      console.warn('Import decode failed', e);
+      return;
+    }
+    let obj;
+    try { obj = JSON.parse(textDecoder.decode(bytes)); } catch(e) { return; }
+    if (!obj || obj.v!==1 || !obj.list) return;
+    pendingImportPayload = obj.list; // Checklist
+
+    const exists = !!loadList(obj.list.id);
+    // 右下ボタンではなく、全画面ポップアップで確認
+    hideNudge();
+    openImportConfirm(pendingImportPayload);
+    reflectListInUrl(obj.list.id)
+  }
+
+  function showNudge() { els.importNudge.style.display = 'block'; }
+  function hideNudge() { els.importNudge.style.display = 'none'; }
+  on(els.openImportConfirmBtn, 'click', () => {
+    if (!pendingImportPayload) return;
+    openImportConfirm(pendingImportPayload);
+  });
+
+  function openImportConfirm(list) {
+    els.importSummary.textContent = `あなたのチェックリストに「${list.name}」をインポートしようとしており、下記の要素が含まれます。よろしいですか？`;
+    const preview = list.items.map((it,i)=>`- [${it.checked?'x':' '}] ${it.text}`).join('\n');
+    els.importPreview.textContent = preview;
+    if (els.importNameOverride) els.importNameOverride.value = '';
+    openModal('import');
+  }
+
+  on(els.confirmImportBtn, 'click', async () => {
+    if (!pendingImportPayload) return;
+    const list = pendingImportPayload;
+    const nameOverride = els.importNameOverride?.value?.trim();
+    if (nameOverride) list.name = nameOverride;
+    await saveList(list);
+    const idx = loadIndex();
+    if (!idx.find(x=>x.id===list.id)) { idx.push({ id:list.id, name:list.name, createdAt: Date.now() }); await saveIndex(idx); }
+    populateListSelects();
+    selectList(list.id);
+    pendingImportPayload = null;
+    closeModal('import');
+    hideNudge();
+    //initialLoad();
+  });
+
+  // ---------- Bulk Add Modal ----------
+  on(els.bulkAddBtn, 'click', () => openModal('bulk'));
+  on(els.bulkImportAddItemsBtn, 'click', async () => {
+    if (!currentList) return;
+    const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    if (!lines.length) { closeModal('bulk'); return; }
+    for (const t of lines) currentList.items.push({ id: uuid4(), text: t, checked: false });
+    await saveList(currentList);
+    renderItems(currentList, els.items, true);
+    els.bulkText.value = '';
+    closeModal('bulk');
+    populateListSelects();
+    //initialLoad();
+  });
+  on(els.bulkCreateNewListBtn, 'click', async () => {
+    const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    if (!lines.length) { closeModal('bulk'); return; }
+    const id = uuid4();
+    const defaultName = `インポート ${new Date().toLocaleString()}`;
+    const ovName = (els.bulkNameOverride?.value || '').trim();
+    const list = { v:1, id, name: ovName || defaultName, saveState: true, items: lines.map(t=>({ id:uuid4(), text:t, checked:false })), updatedAt: Date.now() };
+    await saveList(list);
+    const idx = loadIndex(); idx.push({ id, name: list.name, createdAt: Date.now() }); await saveIndex(idx);
+    populateListSelects();
+    selectList(id);
+    els.bulkText.value = '';
+    if (els.bulkNameOverride) els.bulkNameOverride.value = '';
+    closeModal('bulk');
+    //initialLoad();
+  });
+
+  // 開くURL（http(s)/file:///）入力対応（先頭行のみ採用）
+  on(els.openUrlBtn, 'click', () => {
+    const raw = (els.importUrlInput?.value || '').split(/\r?\n/)[0].trim();
+    if (!raw) return;
+    if (/^(https?:\/\/|file:\/\/\/)/i.test(raw)) {
+      location.href = raw; // ユーザー操作により遷移
+    }
+  });
+
+  // ---------- Modals common ----------
+  function openModal(kind) {
+    if (kind==='export') { els.exportBackdrop.classList.add('show'); els.exportModal.classList.add('show'); }
+    if (kind==='import') { els.importBackdrop.classList.add('show'); els.importModal.classList.add('show'); }
+    if (kind==='bulk') { els.bulkBackdrop.classList.add('show'); els.bulkModal.classList.add('show'); }
+    if (kind==='notfound') { els.notFoundBackdrop.classList.add('show'); els.notFoundModal.classList.add('show'); }
+  }
+  function closeModal(kind) {
+    if (kind==='export') { els.exportBackdrop.classList.remove('show'); els.exportModal.classList.remove('show'); }
+    if (kind==='import') { els.importBackdrop.classList.remove('show'); els.importModal.classList.remove('show'); }
+    if (kind==='bulk') { els.bulkBackdrop.classList.remove('show'); els.bulkModal.classList.remove('show'); }
+    if (kind==='notfound') { els.notFoundBackdrop.classList.remove('show'); els.notFoundModal.classList.remove('show'); }
+  }
+  on(document.body, 'click', (e) => {
+    const close = e.target.closest('[data-close]');
+    if (close) { closeModal(close.getAttribute('data-close')); }
+  });
+  // backdropクリックで閉じる（インポートは仕様上「黒を押すと非表示」）
+  on(els.exportBackdrop, 'click', () => closeModal('export'));
+  on(els.importBackdrop, 'click', () => closeModal('import'));
+  on(els.bulkBackdrop, 'click', () => closeModal('bulk'));
+  if (els.notFoundBackdrop) on(els.notFoundBackdrop, 'click', () => closeModal('notfound'));
+
+  // ---------- Cross-window sync ----------
+  if (BC) {
+    BC.onmessage = (ev) => {
+      const { type, payload } = ev.data || {};
+      if (type === 'index') { populateListSelects(); }
+      if (type === 'list') {
+        if (payload === currentListId) { const l = loadList(currentListId); if (l) { currentList = l; renderItems(currentList, els.items, true); } }
+        if (payload === secondaryListId) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
+      }
+      if (type === 'list-removed') {
+        if (payload === currentListId) {
+          const idx = loadIndex();
+          populateListSelects();
+          if (idx[0]) selectList(idx[0].id);
+        }
+      }
+    };
+  }
+  window.addEventListener('storage', (e) => {
+    if (e.key === KEY.index) { populateListSelects(); }
+    if (e.key && currentListId && e.key === KEY.list(currentListId)) { const l = loadList(currentListId); if (l) { currentList = l; renderItems(currentList, els.items, true); } }
+    if (e.key && secondaryListId && e.key === KEY.list(secondaryListId)) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
+  });
+
+  let loaded = true;
+
+  // ---------- Initial Bootstrap ----------
+  initialLoad = async () => {
+    // 初期UIはすでにHTMLに存在。ここではデータを流し込むのみ。
+    const idx = await ensureDefaultList();
+    // URL ?list= を先に尊重
+    const url = new URL(location.href);
+    const urlList = url.searchParams.get('list');
+    let initialListId = null;
+    if (urlList) {
+      if (loadList(urlList)) {
+        initialListId = urlList;
+      } else {
+        // 見つからない場合は通知
+        initialListId = idx[0]?.id || null;
+        idle(()=>openModal('notfound'));
+      }
+    } else {
+      initialListId = idx[0].id;
+    }
+    if (initialListId) selectList(initialListId);
+
+
+    if(loaded){
+      // セカンダリ初期値なし
+      els.secondaryListSelect.value = '';
+
+      // URLインポート/バルク開き
+      handleImportFromUrl();
+      if (url.searchParams.get('bulk') === '1') openModal('bulk');
+    }
+    loaded = false;
+  };
+  await initialLoad();
+
+
+  // ---------- Drag & Drop order (with cross-panel in WQHD) ----------
+  let dragging = null; // {srcContainer, srcListId, itemId, draggedEl, placeholder}
+  function setupDnd(container) {
+    on(container, 'pointerdown', (ev) => {
+      const btn = ev.target.closest('button[data-action="drag"]');
+      if (!btn) return;
+      const item = btn.closest('.item');
+      if (!item) return;
+      if (dragging) return; // allow only one
+      const list = getListForContainer(container);
+      if (!list) return;
+      dragging = {
+        srcContainer: container,
+        srcListId: list.id,
+        itemId: item.getAttribute('data-id'),
+        draggedEl: item,
+        placeholder: null,
+      };
+      item.classList.add('dragging');
+      ev.preventDefault();
+      const ph = document.createElement('div');
+      ph.className = 'item placeholder';
+      ph.style.height = item.getBoundingClientRect().height + 'px';
+      dragging.placeholder = ph;
+      item.parentElement.insertBefore(ph, item.nextSibling);
+
+      const move = (e) => {
+        const pointY = e.clientY;
+        // decide target container
+        let targetContainer = container;
+        // cross-panel available if secondary panel visible
+        const other = (container===els.items)? els.secondaryItems : els.items;
+        if (other && other.offsetParent !== null) { // visible
+          const rect = other.getBoundingClientRect();
+          if (pointY >= rect.top - 20 && pointY <= rect.bottom + 20) {
+            targetContainer = other;
+          }
+        }
+        // find position in targetContainer
+        const siblings = Array.from(targetContainer.querySelectorAll('.item:not(.dragging)'));
+        let insertBefore = null;
+        for (const s of siblings) {
+          const r = s.getBoundingClientRect();
+          const mid = (r.top + r.bottom) / 2;
+          if (pointY < mid) { insertBefore = s; break; }
+        }
+        // move placeholder
+        if (!dragging.placeholder.parentElement || dragging.placeholder.parentElement !== targetContainer) {
+          dragging.placeholder.remove();
+          targetContainer.appendChild(dragging.placeholder);
+        }
+        if (insertBefore) targetContainer.insertBefore(dragging.placeholder, insertBefore); else targetContainer.appendChild(dragging.placeholder);
+      };
+      const up = async (e) => {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+
+
+        const src = dragging.srcContainer;
+        const targetContainer = dragging.placeholder.parentElement;
+        const targetIsPrimary = targetContainer === els.items;
+        const fromList = loadList(dragging.srcListId);
+        const toListId = targetIsPrimary ? currentListId : secondaryListId;
+        const toList = toListId ? loadList(toListId) : null;
+        // compute target index
+        let index = 0;
+        const nodes =  Array.from(targetContainer.querySelectorAll('.item:not(.placeholder):not(.dragging)'));
+
+        const beforeNode = dragging.placeholder.nextElementSibling; // first real item after placeholder
+        if (beforeNode && beforeNode.classList.contains('item')) {
+          index = nodes.findIndex(n=>n===beforeNode);
+        } else {
+          index = nodes.length; // append
+        }
+        // mutate lists
+        if (fromList) {
+          const i = fromList.items.findIndex(x=>x.id===dragging.itemId);
+          if (i>=0) {
+
+            if (toList) {
+              if (toList.id === fromList.id) {
+                // same list
+                const insertIndex = Math.min(index, toList.items.length);
+                const [moved] = toList.items.splice(i,1);
+                toList.items.splice(insertIndex, 0, moved);
+                await saveList(toList);//saveは同期で行う
+                if (toList.id===currentListId) { currentList = toList; renderItems(currentList, els.items, true); }
+                if (toListId && toListId===secondaryListId) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
+              } else {
+                const insertIndex = Math.min(index, toList.items.length);
+                const [moved] = fromList.items.splice(i,1);
+                toList.items.splice(insertIndex, 0, moved);
+                //saveは同期で行う
+                await saveList(fromList);
+                await saveList(toList);
+                if (fromList.id===currentListId) { currentList = fromList; renderItems(currentList, els.items, true); }
+                if (toList.id===currentListId) { currentList = toList; renderItems(currentList, els.items, true); }
+                if (secondaryListId) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
+              }
+            }
+          }
+
+        }
+        // cleanup
+        dragging.draggedEl.classList.remove('dragging');
+        dragging.placeholder.remove();
+        dragging = null;
+      };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up, { once: true });
+    });
+  }
+  setupDnd(els.items);
+  setupDnd(els.secondaryItems);
+
+})();

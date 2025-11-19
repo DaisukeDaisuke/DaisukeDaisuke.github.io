@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>チェックリスト (日本語/英語対応) - Modern</title>
+  <!-- テーマ適用: フリッカー防止のためインライン & ブロッキング -->
+  <script>
+    (function() {
+      try {
+        var LS_KEY = 'cl_theme_v1';
+        var theme = localStorage.getItem(LS_KEY) || 'light';
+        // 許可テーマのみ
+        var allowed = { light:1, lightgray:1, dark:1, deepdark:1 };
+        if (!allowed[theme]) theme = 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-elev: #fafafa;
+      --text: #111111;
+      --muted: #666666;
+      --border: #e2e2e2;
+      --accent: #0d6efd;
+      --accent-weak: #b3d3ff;
+      --outline: rgba(13,110,253,0.35);
+      --shadow: 0 6px 20px rgba(0,0,0,0.08);
+      --card-radius: 14px;
+      --gap: 14px;
+      --checkbox-size: 22px; /* 初期値: ドロップダウンで変更 */
+    }
+    html[data-theme="light"] {
+      --bg: #ffffff; --bg-elev:#fafafa; --text:#121212; --muted:#666; --border:#e6e6e6; --accent:#0d6efd; --accent-weak:#b3d3ff; --outline: rgba(13,110,253,0.35);
+    }
+    html[data-theme="lightgray"] {
+      --bg: #f3f4f6; --bg-elev:#ffffff; --text:#0f172a; --muted:#475569; --border:#e5e7eb; --accent:#2563eb; --accent-weak:#bfdbfe; --outline: rgba(37,99,235,0.3);
+    }
+    html[data-theme="dark"] {
+      --bg: #0f1115; --bg-elev:#171923; --text:#e5e7eb; --muted:#94a3b8; --border:#262b36; --accent:#60a5fa; --accent-weak:#1e3a8a; --outline: rgba(96,165,250,0.4);
+      color-scheme: dark;
+    }
+    html[data-theme="deepdark"] {
+      --bg: #0a0b0d; --bg-elev:#0f1115; --text:#f1f5f9; --muted:#9aa4b2; --border:#1b1f2a; --accent:#7dd3fc; --accent-weak:#083344; --outline: rgba(125,211,252,0.45);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+    }
+    a { color: var(--accent); }
+
+    header.topbar {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: saturate(180%) blur(10px);
+      background: color-mix(in oklab, var(--bg) 80%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-inner {
+      max-width: 1600px; margin: 0 auto; padding: 12px 16px;
+      display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center;
+    }
+    .brand { font-weight: 700; letter-spacing: .2px; display:flex; gap:8px; align-items:center; }
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .select, .btn, .switch {
+      background: var(--bg-elev);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+    .select:focus, .btn:focus, .switch:focus-within { outline: 3px solid var(--outline); outline-offset: 2px; }
+    .btn.primary { background: var(--accent); color: white; border-color: transparent; }
+    .btn.ghost { background: transparent; }
+
+    main#app {
+      max-width: 1400px; margin: 16px auto; padding: 16px;
+      min-height: 110vh; /* フリッカー抑止 */
+    }
+    .grid {
+      display: grid; gap: var(--gap);
+      grid-template-columns: 1fr; align-items: start;
+    }
+    @media (min-width: 2560px) { /* WQHD 2560px で2カラム */
+      .grid { grid-template-columns: 1fr 1fr; }
+      .sub-panel { display: block; }
+    }
+    .sub-panel { display: none; }
+
+    .panel {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .panel:hover { outline: 3px solid var(--outline); }
+    .panel-header { display:block; align-items:center; justify-content: space-between; gap:8px; margin-bottom: 8px; }
+    .panel-title { font-weight: 600; margin-bottom: 8px; }
+
+    .items { display: flex; flex-direction: column; gap: 8px; }
+    .item {
+      display: grid; grid-template-columns: auto auto 1fr auto auto; align-items: center;
+      gap: 12px; padding: 10px 12px; border: 1px dashed var(--border);
+      border-radius: 12px; background: color-mix(in oklab, var(--bg) 92%, transparent);
+      transition: transform 120ms ease;
+    }
+    .item:hover { outline: 2px solid var(--accent-weak); }
+    .item .delete-btn { margin-left: 24px; }
+
+    .drag-handle {
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg);
+      display: inline-flex; align-items:center; justify-content:center; cursor: grab;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-handle .bars { width: 14px; height: 14px; position: relative; }
+    .drag-handle .bars::before, .drag-handle .bars::after, .drag-handle .bars span {
+      content: ""; position: absolute; left:0; right:0; height:2px; background: var(--muted);
+      border-radius: 2px;
+    }
+    .drag-handle .bars::before { top:0; }
+    .drag-handle .bars span { top:6px; }
+    .drag-handle .bars::after { bottom:0; }
+    .item.dragging { opacity: .8; outline: 2px dashed var(--accent); }
+    .item.placeholder { background: transparent; border-style: solid; border-color: var(--accent-weak); min-height: 42px; }
+
+    /* 大きいチェックボックス */
+    .checkbox-wrap input[type="checkbox"] {
+      width: var(--checkbox-size); height: var(--checkbox-size);
+      accent-color: var(--accent);
+    }
+    .checkbox-label { cursor: pointer; user-select: none; }
+
+    .muted { color: var(--muted); font-size: 12px; }
+    .row { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; }
+    .row > .grow { flex: 1 1 auto; }
+    input[type="text"], textarea {
+      width: 100%; background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    }
+    textarea { min-height: 140px; }
+
+    /* モーダル(インポート/エクスポート/バルク追加) */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 50;
+    }
+    .modal-backdrop.show { display: block; }
+    .modal {
+      position: fixed; inset: 0; display: none; place-items: center; z-index: 60;
+    }
+    .modal.show { display: grid; }
+    .modal-card {
+      width: min(860px, 92vw); max-height: 86vh; overflow:auto; background: var(--bg-elev);
+      border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .warn { background: #fff4e5; color: #8a3b00; border: 1px solid #ffd9a8; padding: 10px 12px; border-radius: 12px; }
+    html[data-theme="dark"] .warn, html[data-theme="deepdark"] .warn {
+      background: #3b2f12; color: #fde68a; border-color:#a16207;
+    }
+
+    .loading { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <div class="brand">チェックリスト — <span id="brandListName" class="muted">準備中…</span></div>
+      <div class="controls" aria-label="テーマとサイズ">
+        <label class="switch" title="テーマ">
+          <span class="muted">テーマ</span>
+          <select id="themeSelect" class="select" aria-label="テーマ選択">
+            <option value="light">ライト</option>
+            <option value="lightgray">ライト(グレー)</option>
+            <option value="dark">ダーク</option>
+            <option value="deepdark">ディープダーク</option>
+          </select>
+        </label>
+        <label class="switch" title="チェックボックスの大きさ">
+          <span class="muted">チェックボックス</span>
+          <select id="sizeSelect" class="select" aria-label="チェックボックスの大きさ">
+            <option value="s">標準</option>
+            <option value="m" selected>大</option>
+            <option value="l">特大</option>
+          </select>
+        </label>
+      </div>
+      <div class="controls" aria-label="ストレージ設定">
+        <label class="switch" title="状態の保存">
+          <input id="saveToggle" type="checkbox" /> このチェック状況を保存
+        </label>
+      </div>
+      <div class="controls" aria-label="リスト操作">
+        <select id="listSelect" class="select" aria-label="チェックリストの選択"></select>
+        <button id="newListBtn" class="btn">新規リスト</button>
+        <button id="renameListBtn" class="btn">名称変更</button>
+        <button id="exportBtn" class="btn">エクスポート</button>
+        <button id="importBtn" class="btn">インポート</button>
+        <button id="bulkAddBtn" class="btn">バルク追加</button>
+        <button id="deleteListBtn" class="btn ghost">バルク削除</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" role="main">
+    <div class="grid">
+      <section class="panel" aria-label="メインチェックリスト">
+        <div class="panel-header">
+          <div class="panel-title" id="mainListTitle">リスト</div>
+          <div class="row">
+            <input id="newItemInput" type="text" placeholder="アイテムを入力して Enter で追加" />
+          </div>
+        </div>
+        <div id="items" class="items" aria-live="polite"></div>
+      </section>
+
+      <section class="panel sub-panel" aria-label="サブチェックリスト">
+        <div class="panel-header">
+          <div class="row grow">
+            <select id="secondaryListSelect" class="select grow" aria-label="サブ表示するリスト"></select>
+          </div>
+        </div>
+        <div id="secondaryItems" class="items" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- モーダル: エクスポートURL表示 -->
+  <div id="exportBackdrop" class="modal-backdrop" data-close="export"></div>
+  <div id="exportModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal-card">
+      <h3 id="exportTitle">エクスポートURL</h3>
+      <div id="exportWarn" class="warn" style="display:none">
+        URLが長すぎる可能性があります。4096文字以上のURLは一部ブラウザで使用できない場合があります。出力を続行しますか？
+        <div class="row" style="margin-top:8px">
+          <button id="exportWarnYes" class="btn">はい</button>
+          <button id="exportWarnNo" class="btn ghost">いいえ</button>
+        </div>
+      </div>
+      <div class="row">
+        <textarea id="exportUrlBox" readonly placeholder="ここにURLが表示されます"></textarea>
+      </div>
+      <div class="row">
+        <button id="copyExportBtn" class="btn primary">コピー</button>
+        <button data-close="export" class="btn ghost">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル: インポート確認 -->
+  <div id="importBackdrop" class="modal-backdrop" data-close="import"></div>
+  <div id="importModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal-card">
+      <h3 id="importTitle">インポート確認</h3>
+      <div id="importSummary" class="muted"></div>
+      <div class="row">
+        <input id="importNameOverride" type="text" placeholder="リスト名 (省略時はそのまま)" />
+      </div>
+      <pre id="importPreview" style="white-space:pre-wrap; max-height: 50vh; overflow:auto; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:12px;"></pre>
+      <div class="row">
+        <button id="confirmImportBtn" class="btn primary">インポート</button>
+        <button data-close="import" class="btn ghost">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル: バルク追加 -->
+  <div id="bulkBackdrop" class="modal-backdrop" data-close="bulk"></div>
+  <div id="bulkModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="bulkTitle">
+    <div class="modal-card">
+      <h3 id="bulkTitle">バルク追加 / インポート</h3>
+      <p class="muted">1行 = 1アイテムとして追加されます（LF/CRLF対応）。</p>
+      <div class="row">
+        <input id="bulkNameOverride" type="text" placeholder="新しいリスト名(任意)" />
+      </div>
+      <textarea id="bulkText" placeholder="追加したい項目を1行ずつ入力"></textarea>
+      <div class="row">
+        <button id="bulkImportAddItemsBtn" class="btn">インポート</button>
+        <button id="bulkCreateNewListBtn" class="btn">リストを追加してインポート</button>
+        <button data-close="bulk" class="btn ghost">閉じる</button>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);" />
+      <p class="muted">エクスポートURLを貼り付けて開く（先頭行のみ使用、http(s) または file:/// をサポート）。</p>
+      <div class="row">
+        <input id="importUrlInput" type="text" placeholder="URL を貼り付け" />
+        <button id="openUrlBtn" class="btn">URLを開く</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- インポート案内（URLによる場合のみ自動表示） -->
+  <div id="importNudge" style="position:fixed; right:16px; bottom:16px; display:none; z-index:40;">
+    <button id="openImportConfirmBtn" class="btn primary">インポートしますか？</button>
+  </div>
+
+  <!-- モーダル: リストが見つからない通知 -->
+  <div id="notFoundBackdrop" class="modal-backdrop" data-close="notfound"></div>
+  <div id="notFoundModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="nfTitle">
+    <div class="modal-card">
+      <h3 id="nfTitle">指定のリストは見つかりませんでした</h3>
+      <p class="muted">URLに指定されたlistのIDは存在しません。グレーの背景部分をクリックして閉じることができます。</p>
+      <div class="row">
+        <button data-close="notfound" class="btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="checkbox.js"></script>
+</body>
+</html>

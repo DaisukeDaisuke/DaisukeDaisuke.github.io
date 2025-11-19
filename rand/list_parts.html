@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乱数表ブログパーツ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+
+        .widget-container {
+            max-width: 100%;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            display: inline-block;
+            width: 80px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .input-group input, .input-group select {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .seed-input {
+            width: 120px;
+        }
+
+        .display-input {
+            width: 80px;
+        }
+
+        .percent-input {
+            width: 60px;
+        }
+
+        .location-buttons {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .location-buttons h4 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+        }
+
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+        }
+
+        .location-btn {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 12px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .location-btn:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .color-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .color-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+        }
+
+        .color-control input {
+            width: 50px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border: 1px solid #333;
+            border-radius: 2px;
+        }
+
+        .navigation-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .nav-btn:hover {
+            background: #e9e9e9;
+        }
+
+        .nav-btn:active {
+            background: #ddd;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 2px solid #333;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .row-header {
+            background: #f8f8f8;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .data-cell {
+            cursor: pointer;
+            transition: background-color 0.1s;
+            font-size: 16px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .data-cell:hover {
+            background: #e6f3ff;
+        }
+
+        .data-cell.cursor {
+            background: #ccc !important;
+        }
+
+        .encounter-area {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .encounter-area h4 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+        }
+
+        .encounter-text {
+            font-family: monospace;
+            font-size: 11px;
+            background: white;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 600px) {
+            .color-controls {
+                flex-direction: column;
+            }
+
+            .input-group label {
+                width: 60px;
+            }
+
+            .seed-input {
+                width: 100px;
+            }
+
+            .location-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            .data-cell {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="widget-container">
+    <div class="controls">
+        <div class="input-group">
+            <label>初期Seed:</label>
+            <input type="text" id="seed" class="seed-input" value="0x327" placeholder="例: 0x327">
+        </div>
+
+        <div class="input-group">
+            <label>表示数:</label>
+            <input type="text" id="displayCount" class="display-input" value="1000" placeholder="1000">
+        </div>
+
+        <div class="color-controls">
+            <div class="color-control">
+                <div class="color-box" style="background-color: #ffcccc;"></div>
+                <span>≤</span>
+                <input type="text" id="color1" class="percent-input" placeholder="0.50">
+                <span>%</span>
+            </div>
+            <div class="color-control">
+                <div class="color-box" style="background-color: #ccffcc;"></div>
+                <span>≤</span>
+                <input type="text" id="color2" class="percent-input" placeholder="2.50">
+                <span>%</span>
+            </div>
+            <div class="color-control">
+                <div class="color-box" style="background-color: #ccccff;"></div>
+                <span>≤</span>
+                <input type="text" id="color3" class="percent-input" placeholder="5.00">
+                <span>%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="location-buttons">
+        <h4>封印の祠 (クリックで将来のエンカウント処理に対応)</h4>
+        <div class="location-grid">
+            <div class="location-btn" onclick="selectLocation('sealed_shrine')">封印の祠</div>
+            <div class="location-btn" onclick="selectLocation('kisagona_entrance')">キサゴナ遺跡入口</div>
+            <div class="location-btn" onclick="selectLocation('kisagona_b1f')">キサゴナ遺跡b1f</div>
+            <div class="location-btn" onclick="selectLocation('kisagona_b2f')">キサゴナ遺跡b2f</div>
+            <div class="location-btn" onclick="selectLocation('sanmarou_north_b2f')">サンマロウ北の洞窟b2f</div>
+            <div class="location-btn" onclick="selectLocation('demon_cave_b2f')">魔獣の洞窟b2f</div>
+            <div class="location-btn" onclick="selectLocation('wolro_region')">ウォルロ地方</div>
+        </div>
+    </div>
+
+    <div id="navigationContainer">
+        <!-- ナビゲーションボタンは動的に生成 -->
+    </div>
+
+    <div class="table-container" id="tableContainer">
+        <!-- テーブルは動的に生成 -->
+    </div>
+
+    <div class="encounter-area">
+        <h4>エンカウント情報 (将来実装予定)</h4>
+        <div class="encounter-text" id="encounterText">
+            エンカウント情報がここに表示されます。
+            各場所での具体的なエンカウント処理は後で実装されます。
+
+            現在選択中: <span id="currentLocation">なし</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // グローバル変数
+    let currentCursor = { table: 0, row: 0, col: 0 }; // テーブル、行、列のカーソル位置
+    let currentLocation = '';
+
+    // 乱数計算関数群（修正版）
+    function rand(seed) {
+        seed = seed * BigInt("0x5d588b656c078965");
+        seed = seed + BigInt("0x269ec3");
+        seed = seed & BigInt("0xFFFFFFFFFFFFFFFF");
+        return seed;
+    }
+
+    function division(a, b) {
+        return Number(a * 10000n / b) / 10000;
+    }
+
+    function calculatePercentFloat(input) {
+        let output = input >> BigInt(32);
+        output = output * BigInt(100);
+        let test = (BigInt(2) << BigInt(31));
+        let result = division(output, test);
+        return Math.round(result * 100) / 100; // 小数点以下2桁で四捨五入
+    }
+
+    // Hex処理
+    function normalizeSeed(seedStr) {
+        if (!seedStr.startsWith('0x')) {
+            seedStr = '0x' + seedStr;
+        }
+        return seedStr;
+    }
+
+    // URLパラメータ関数
+    function saveStateToURL() {
+        const params = new URLSearchParams();
+        const seed = document.getElementById('seed').value;
+        const displayCount = document.getElementById('displayCount').value;
+        const color1 = document.getElementById('color1').value;
+        const color2 = document.getElementById('color2').value;
+        const color3 = document.getElementById('color3').value;
+
+        if (seed && seed !== '0x327') params.set('seed', seed);
+        if (displayCount && displayCount !== '1000') params.set('display', displayCount);
+        if (color1) params.set('c1', color1);
+        if (color2) params.set('c2', color2);
+        if (color3) params.set('c3', color3);
+        if (currentLocation) params.set('location', currentLocation);
+
+        // カーソル位置も保存
+        if (currentCursor.table !== 0 || currentCursor.row !== 0 || currentCursor.col !== 0) {
+            params.set('cursor', `${currentCursor.table},${currentCursor.row},${currentCursor.col}`);
+        }
+
+        const newURL = params.toString() ?
+            `${window.location.pathname}?${params.toString()}` :
+            window.location.pathname;
+        window.history.replaceState({}, '', newURL);
+    }
+
+    function loadStateFromURL() {
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.get('seed')) {
+            document.getElementById('seed').value = params.get('seed');
+        }
+        if (params.get('display')) {
+            document.getElementById('displayCount').value = params.get('display');
+        }
+        if (params.get('c1')) {
+            document.getElementById('color1').value = params.get('c1');
+        }
+        if (params.get('c2')) {
+            document.getElementById('color2').value = params.get('c2');
+        }
+        if (params.get('c3')) {
+            document.getElementById('color3').value = params.get('c3');
+        }
+        if (params.get('location')) {
+            currentLocation = params.get('location');
+        }
+        if (params.get('cursor')) {
+            const [table, row, col] = params.get('cursor').split(',').map(Number);
+            currentCursor = { table, row, col };
+        }
+    }
+
+    // 色付け判定
+    function getCellColor(percent) {
+        const color1 = parseFloat(document.getElementById('color1').value) || 0;
+        const color2 = parseFloat(document.getElementById('color2').value) || 0;
+        const color3 = parseFloat(document.getElementById('color3').value) || 0;
+
+        if (color1 > 0 && percent <= color1) return '#ffcccc';
+        if (color2 > 0 && percent <= color2) return '#ccffcc';
+        if (color3 > 0 && percent <= color3) return '#ccccff';
+        return '';
+    }
+
+    // カーソル移動
+    function moveCursor(deltaTable, deltaRow, deltaCol) {
+        const displayCount = parseInt(document.getElementById('displayCount').value) || 1000;
+        const tableCount = Math.ceil(displayCount / 100);
+        const maxRow = 9; // 0,10,20,...,90 = 10行
+        const maxCol = 9; // +1~+10 = 10列
+
+        let newTable = currentCursor.table + deltaTable;
+        let newRow = currentCursor.row + deltaRow;
+        let newCol = currentCursor.col + deltaCol;
+
+        // 境界チェック
+        if (newTable < 0) newTable = 0;
+        if (newTable >= tableCount) newTable = tableCount - 1;
+        if (newRow < 0) newRow = 0;
+        if (newRow > maxRow) newRow = maxRow;
+        if (newCol < 0) newCol = 0;
+        if (newCol > maxCol) newCol = maxCol;
+
+        currentCursor = { table: newTable, row: newRow, col: newCol };
+        updateCursorHighlight();
+        saveStateToURL();
+    }
+
+    // +ボタンでカーソル移動
+    function moveCursorBySteps(steps) {
+        // 現在のカーソル位置から steps 分進む
+        let totalSteps = currentCursor.table * 1000 + currentCursor.row * 100 + (currentCursor.col + 1) * 10 + steps;
+
+        // 新しい位置を計算
+        let newTable = Math.floor(totalSteps / 1000);
+        let remainder = totalSteps % 1000;
+        let newRow = Math.floor(remainder / 100);
+        remainder = remainder % 100;
+        let newCol = Math.floor(remainder / 10) - 1;
+
+        if (newCol < 0) {
+            newCol = 9;
+            newRow -= 1;
+            if (newRow < 0) {
+                newRow = 9;
+                newTable -= 1;
+            }
+        }
+
+        const displayCount = parseInt(document.getElementById('displayCount').value) || 1000;
+        const tableCount = Math.ceil(displayCount / 100);
+
+        if (newTable < 0) newTable = 0;
+        if (newTable >= tableCount) newTable = tableCount - 1;
+        if (newRow < 0) newRow = 0;
+        if (newRow > 9) newRow = 9;
+        if (newCol < 0) newCol = 0;
+        if (newCol > 9) newCol = 9;
+
+        currentCursor = { table: newTable, row: newRow, col: newCol };
+        updateCursorHighlight();
+        saveStateToURL();
+    }
+
+    // カーソルハイライト更新
+    function updateCursorHighlight() {
+        // 全てのセルからcursorクラスを削除
+        document.querySelectorAll('.data-cell').forEach(cell => {
+            cell.classList.remove('cursor');
+        });
+
+        // 現在のカーソル位置にハイライト
+        const targetCell = document.querySelector(
+            `[data-table="${currentCursor.table}"][data-row="${currentCursor.row}"][data-col="${currentCursor.col}"]`
+        );
+        if (targetCell) {
+            targetCell.classList.add('cursor');
+        }
+    }
+
+    // セルクリック処理
+    function onCellClick(table, row, col) {
+        currentCursor = { table, row, col };
+        updateCursorHighlight();
+        saveStateToURL();
+    }
+
+    // ナビゲーションボタン生成
+    function createNavigationButtons() {
+        const container = document.getElementById('navigationContainer');
+        const displayCount = parseInt(document.getElementById('displayCount').value) || 1000;
+        const tableCount = Math.ceil(displayCount / 100);
+
+        let html = '';
+
+        // 各テーブル用のナビゲーション
+        for (let t = 0; t < tableCount; t++) {
+            const startRange = t * 100;
+            const endRange = Math.min((t + 1) * 100 - 1, displayCount - 1);
+
+            html += `<div class="navigation-controls">`;
+            html += `<span style="margin-right: 10px; font-weight: bold;">消費${startRange}~${endRange}:</span>`;
+            html += `<button class="nav-btn" onclick="moveCursor(0, 0, -1)">←</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(1)">+1</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(2)">+2</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(3)">+3</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(4)">+4</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(5)">+5</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(6)">+6</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(7)">+7</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(8)">+8</button>`;
+            html += `<button class="nav-btn" onclick="moveCursorBySteps(9)">+9</button>`;
+            html += `<button class="nav-btn" onclick="moveCursor(0, 0, 1)">→</button>`;
+            html += `</div>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // テーブル更新
+    function updateTable() {
+        const seedInput = document.getElementById('seed').value;
+        const displayCount = parseInt(document.getElementById('displayCount').value) || 1000;
+        let seed;
+
+        try {
+            const normalizedSeed = normalizeSeed(seedInput);
+            seed = BigInt(normalizedSeed);
+        } catch (e) {
+            document.getElementById('tableContainer').innerHTML = '<p>無効なシード値です</p>';
+            return;
+        }
+
+        const container = document.getElementById('tableContainer');
+        const tableCount = Math.ceil(displayCount / 100);
+
+        let html = '';
+        let currentSeed = seed;
+
+        // 各100消費ごとのテーブルを生成
+        for (let tableIndex = 0; tableIndex < tableCount; tableIndex++) {
+            const startConsumption = tableIndex * 100;
+            const endConsumption = Math.min((tableIndex + 1) * 100 - 1, displayCount - 1);
+
+            html += `<table>`;
+            html += `<caption style="font-weight: bold; margin-bottom: 10px;">消費数 ${startConsumption} ~ ${endConsumption}</caption>`;
+            html += `<thead><tr><th>消費</th>`;
+            for (let i = 1; i <= 10; i++) {
+                html += `<th>+${i}</th>`;
+            }
+            html += `</tr></thead><tbody>`;
+
+            // テーブル開始時点まで進める
+            if (tableIndex > 0) {
+                for (let i = 0; i < 100; i++) {
+                    currentSeed = rand(currentSeed);
+                }
+            }
+
+            let tableSeed = currentSeed;
+
+            // 各行を生成
+            for (let rowIndex = 0; rowIndex <= 9; rowIndex++) {
+                const consumption = startConsumption + rowIndex * 10;
+                if (consumption > displayCount) break;
+
+                html += `<tr><td class="row-header">${consumption}</td>`;
+
+                let rowSeed = tableSeed;
+                if (rowIndex > 0) {
+                    for (let i = 0; i < 10; i++) {
+                        rowSeed = rand(rowSeed);
+                    }
+                }
+
+                // 各列を生成
+                for (let colIndex = 0; colIndex < 10; colIndex++) {
+                    rowSeed = rand(rowSeed);
+                    const percent = calculatePercentFloat(rowSeed);
+                    const color = getCellColor(percent);
+
+                    html += `<td class="data-cell"
+                            data-table="${tableIndex}"
+                            data-row="${rowIndex}"
+                            data-col="${colIndex}"
+                            onclick="onCellClick(${tableIndex}, ${rowIndex}, ${colIndex})"
+                            style="background-color: ${color}">${percent}</td>`;
+                }
+
+                html += `</tr>`;
+
+                // 次の行のために10消費進める
+                for (let i = 0; i < 10; i++) {
+                    tableSeed = rand(tableSeed);
+                }
+            }
+
+            html += `</tbody></table>`;
+        }
+
+        container.innerHTML = html;
+        createNavigationButtons();
+        updateCursorHighlight();
+        saveStateToURL();
+    }
+
+    // 場所選択
+    function selectLocation(location) {
+        currentLocation = location;
+        document.getElementById('currentLocation').textContent = getLocationName(location);
+        saveStateToURL();
+    }
+
+    function getLocationName(location) {
+        const names = {
+            'sealed_shrine': '封印の祠',
+            'kisagona_entrance': 'キサゴナ遺跡入口',
+            'kisagona_b1f': 'キサゴナ遺跡b1f',
+            'kisagona_b2f': 'キサゴナ遺跡b2f',
+            'sanmarou_north_b2f': 'サンマロウ北の洞窟b2f',
+            'demon_cave_b2f': '魔獣の洞窟b2f',
+            'wolro_region': 'ウォルロ地方'
+        };
+        return names[location] || 'なし';
+    }
+
+    // キーボードイベント
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+
+        switch(e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                moveCursor(0, 0, -1);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                moveCursor(0, 0, 1);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                moveCursor(0, -1, 0);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                moveCursor(0, 1, 0);
+                break;
+        }
+    });
+
+    // イベントリスナー設定
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStateFromURL();
+
+        // 入力変更時の更新
+        ['seed', 'displayCount', 'color1', 'color2', 'color3'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateTable);
+            document.getElementById(id).addEventListener('change', updateTable);
+        });
+
+        // 初期場所設定
+        if (currentLocation) {
+            document.getElementById('currentLocation').textContent = getLocationName(currentLocation);
+        }
+
+        // 初回テーブル生成
+        updateTable();
+    });
+</script>
+</body>
+</html>
