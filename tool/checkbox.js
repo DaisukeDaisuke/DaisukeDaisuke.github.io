@@ -668,7 +668,7 @@ let initialLoad = () => null;
       secondaryListId = visibleListIds[0] || null;
       if (secondaryListId) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
       // 追加のサブパネル描画
-      renderDynamicSubPanels();
+      //renderDynamicSubPanels();
 
       // URLインポート/バルク開き
       handleImportFromUrl();
@@ -814,7 +814,7 @@ let initialLoad = () => null;
     els.secondaryListSelect.value = visibleListIds[0] || '';
     secondaryListId = visibleListIds[0] || null;
     const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
-    renderDynamicSubPanels();
+    //renderDynamicSubPanels();
   });
 
   // 既存のsecondaryListSelect handlerの上書き: URLにも反映し、描画更新
@@ -824,37 +824,11 @@ let initialLoad = () => null;
     // visibleListIds 先頭がセカンダリ
     visibleListIds = [secondaryListId, ...visibleListIds.filter(id=>id && id!==secondaryListId)];
     const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
-    renderDynamicSubPanels();
+    //renderDynamicSubPanels();
     reflectListsInUrl();
   });
 
   // ---------- Dynamic sub-panels (3rd,4th,...) ----------
-  function renderDynamicSubPanels() {
-    if (!els.grid) return;
-    // remove existing dynamic panels
-    els.grid.querySelectorAll('.dynamic-sub').forEach(n=>n.remove());
-    const extraIds = visibleListIds.slice(1); // beyond secondary
-    for (const id of extraIds) {
-      const l = loadList(id); if (!l) continue;
-      const sec = document.createElement('section');
-      sec.className = 'panel sub-panel dynamic-sub';
-      sec.setAttribute('data-list-id', id);
-      sec.innerHTML = `
-        <div class="panel-header">
-          <div class="row grow">
-            <div class="muted">${escapeHtml(l.name)}</div>
-            <span class="grow"></span>
-            <button class="btn" data-action="make-main">メインにする</button>
-            <button class="btn" data-action="check-all">全チェック</button>
-            <button class="btn" data-action="uncheck-all">全外し</button>
-          </div>
-        </div>
-        <div class="items" aria-live="polite"></div>`;
-      els.grid.appendChild(sec);
-      const items = sec.querySelector('.items');
-      renderItems(l, items, true);
-    }
-  }
   // delegate actions within dynamic panels
   if (els.grid) on(els.grid, 'click', async (ev)=>{
     const sec = ev.target.closest('.dynamic-sub');
@@ -873,13 +847,10 @@ let initialLoad = () => null;
       els.secondaryListSelect.value = visibleListIds[0] || '';
       secondaryListId = visibleListIds[0] || null;
       const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
-      renderDynamicSubPanels();
     } else if (ev.target.closest('[data-action="check-all"]')) {
       await setAllChecked(l, true);
-      renderDynamicSubPanels();
     } else if (ev.target.closest('[data-action="uncheck-all"]')) {
       await setAllChecked(l, false);
-      renderDynamicSubPanels();
     }
     reflectListsInUrl();
   });
