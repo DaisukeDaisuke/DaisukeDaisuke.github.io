@@ -4,6 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>チェックリスト (日本語/英語対応) - Modern</title>
+  <meta name="description" content="ブラウザ上で機能するシンプルなチェックボックス(TODOリスト)です。データはブラウザに保存され、流出しません。バルクセットや一括削除、エクスポート、インポート、テーマなどの便利な機能があります。">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="シンプルチェックリスト(TODOリスト)">
+  <meta property="og:description" content="ブラウザ上で機能するシンプルなチェックボックス(TODOリスト)です。データはブラウザに保存され、流出しません。バルクセットや一括削除、エクスポート、インポート、テーマなどの便利な機能があります。">
+  <meta property="og:url" content="https://daisukedaisuke.github.io/tool/checkbox.html">
+  <meta property="og:site_name" content="DQVCアイテムリスト生成">
+  <meta property="og:locale" content="ja_JP">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="シンプルチェックリスト(TODOリスト)">
+  <meta name="twitter:description" content="ブラウザ上で機能するシンプルなチェックボックス(TODOリスト)です。データはブラウザに保存され、流出しません。バルクセットや一括削除、エクスポート、インポート、テーマなどの便利な機能があります。">
+  <meta name="twitter:url" content="https://daisukedaisuke.github.io/tool/checkbox.html">
+  <meta name="twitter:site" content="@Daisuke76897125">
+  <meta name="twitter:creator" content="@Daisuke76897125">
+
   <!-- テーマ適用: フリッカー防止のためインライン & ブロッキング -->
   <script>
     (function() {
@@ -92,8 +108,8 @@
       display: grid; gap: var(--gap);
       grid-template-columns: 1fr; align-items: start;
     }
-    @media (min-width: 2560px) { /* WQHD 2560px で2カラム */
-      .grid { grid-template-columns: 1fr 1fr; }
+    @media (min-width: 2560px) { /* WQHD 2560px でマルチカラム */
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .sub-panel { display: block; }
     }
     .sub-panel { display: none; }
@@ -125,6 +141,7 @@
       display: inline-flex; align-items:center; justify-content:center; cursor: grab;
     }
     .drag-handle:active { cursor: grabbing; }
+    body.grabbing { cursor: grabbing !important; }
     .drag-handle .bars { width: 14px; height: 14px; position: relative; }
     .drag-handle .bars::before, .drag-handle .bars::after, .drag-handle .bars span {
       content: ""; position: absolute; left:0; right:0; height:2px; background: var(--muted);
@@ -198,11 +215,6 @@
           </select>
         </label>
       </div>
-      <div class="controls" aria-label="ストレージ設定">
-        <label class="switch" title="状態の保存">
-          <input id="saveToggle" type="checkbox" /> このチェック状況を保存
-        </label>
-      </div>
       <div class="controls" aria-label="リスト操作">
         <select id="listSelect" class="select" aria-label="チェックリストの選択"></select>
         <button id="newListBtn" class="btn">新規リスト</button>
@@ -222,6 +234,8 @@
           <div class="panel-title" id="mainListTitle">リスト</div>
           <div class="row">
             <input id="newItemInput" type="text" placeholder="アイテムを入力して Enter で追加" />
+            <button id="mainCheckAllBtn" class="btn" title="すべてチェック">全チェック</button>
+            <button id="mainUncheckAllBtn" class="btn" title="すべて外す">全外し</button>
           </div>
         </div>
         <div id="items" class="items" aria-live="polite"></div>
@@ -231,6 +245,9 @@
         <div class="panel-header">
           <div class="row grow">
             <select id="secondaryListSelect" class="select grow" aria-label="サブ表示するリスト"></select>
+            <button id="secondaryMakeMainBtn" class="btn" title="このリストをメインにする">メインにする</button>
+            <button id="secondaryCheckAllBtn" class="btn" title="サブ: すべてチェック">全チェック</button>
+            <button id="secondaryUncheckAllBtn" class="btn" title="サブ: すべて外す">全外し</button>
           </div>
         </div>
         <div id="secondaryItems" class="items" aria-live="polite"></div>

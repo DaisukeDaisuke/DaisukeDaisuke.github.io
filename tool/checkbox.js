@@ -99,7 +99,7 @@ let initialLoad = () => null;
   async function saveIndex(index) { await STORAGE.set(KEY.index, index); bcPost('index', null); }
   function loadList(id) { return STORAGE.get(KEY.list(id), null); }
   async function saveList(list) { list.updatedAt = Date.now(); await STORAGE.set(KEY.list(list.id), list); bcPost('list', list.id); }
-  function removeList(id) { STORAGE.remove(KEY.list(id)); bcPost('list-removed', id); }
+  async function removeList(id) { await STORAGE.remove(KEY.list(id)); bcPost('list-removed', id); }
 
   async function ensureDefaultList() {
     let idx = loadIndex();
@@ -117,7 +117,6 @@ let initialLoad = () => null;
   const els = {
     themeSelect: $('#themeSelect'),
     sizeSelect: $('#sizeSelect'),
-    saveToggle: $('#saveToggle'),
     listSelect: $('#listSelect'),
     newListBtn: $('#newListBtn'),
     renameListBtn: $('#renameListBtn'),
@@ -129,9 +128,16 @@ let initialLoad = () => null;
     mainListTitle: $('#mainListTitle'),
     brandListName: $('#brandListName'),
     newItemInput: $('#newItemInput'),
+    // main bulk controls
+    mainCheckAllBtn: $('#mainCheckAllBtn'),
+    mainUncheckAllBtn: $('#mainUncheckAllBtn'),
+    grid: document.querySelector('.grid'),
     // secondary
     secondaryListSelect: $('#secondaryListSelect'),
     secondaryItems: $('#secondaryItems'),
+    secondaryMakeMainBtn: $('#secondaryMakeMainBtn'),
+    secondaryCheckAllBtn: $('#secondaryCheckAllBtn'),
+    secondaryUncheckAllBtn: $('#secondaryUncheckAllBtn'),
     // modals
     exportBackdrop: $('#exportBackdrop'),
     exportModal: $('#exportModal'),
@@ -166,6 +172,7 @@ let initialLoad = () => null;
   let currentListId = null;
   let currentList = null; // Checklist
   let secondaryListId = null;
+  let visibleListIds = []; // sub panels excluding currentListId (順序はURLで保持)
   let pendingImportPayload = null; // from URL
 
   // ---------- Theme & Size Controls ----------
@@ -222,18 +229,19 @@ let initialLoad = () => null;
     const list = loadList(listId);
     if (!list) return;
     currentList = list;
-    els.saveToggle.checked = !!list.saveState;
     els.mainListTitle.textContent = list.name;
     if (els.brandListName) els.brandListName.textContent = list.name;
     renderItems(list, els.items, true);
     // URL反映
-    reflectListInUrl(listId);
+    reflectListsInUrl();
     populateListSelects();
   }
 
-  function reflectListInUrl(id) {
+  function reflectListsInUrl() {
     const url = new URL(location.href);
-    url.searchParams.set('list', id);
+    const ordered = [currentListId, ...visibleListIds.filter(id=>id && id!==currentListId)];
+    url.searchParams.set('lists', ordered.join(','));
+    url.searchParams.delete('list');
     url.searchParams.delete('import');
     url.searchParams.delete('enc');
     history.replaceState(null, '', url);
@@ -279,7 +287,7 @@ let initialLoad = () => null;
     const it = list.items.find(x=>x.id===id);
     if (!it) return;
     it.checked = !!t.checked;
-    if (list.saveState) await saveList(list); // 保存する場合のみ状態保存
+    await saveList(list);
     if (container===els.items && list.id===currentListId) currentList = list;
   }
 
@@ -313,28 +321,29 @@ let initialLoad = () => null;
       input.style.width = '100%';
       label.replaceWith(input);
       input.focus(); input.select();
-      const finish = (commit) => {
-        if (commit) { it.text = input.value.trim() || it.text; saveList(list); }
+      const finish = async (commit) => {
+        if (commit) { it.text = input.value.trim() || it.text; await saveList(list); }
         renderItems(list, container, true);
         if (container===els.items && list.id===currentListId) currentList = list;
       };
-      input.addEventListener('keydown', (e)=>{
-        if (e.key==='Enter') { e.preventDefault(); finish(true); }
-        if (e.key==='Escape') { e.preventDefault(); finish(false); }
+      input.addEventListener('keydown', async (e)=>{
+        if (e.key==='Enter') { e.preventDefault(); await finish(true); }
+        if (e.key==='Escape') { e.preventDefault(); await finish(false); }
       });
-      input.addEventListener('blur', ()=>finish(true));
+      input.addEventListener('blur', async ()=> await finish(true));
       return;
     }
     if (dragBtn) return; // drag handled separately
     // toggle by clicking item area (excluding buttons/inputs)
     const wrap = ev.target.closest('.item');
     if (!wrap) return;
-    if (ev.target.closest('button, input, textarea, select, a')) return;
+    if (ev.target.closest('button, input, textarea, select, a, label')) return;
     const id = wrap.getAttribute('data-id');
     const it = list.items.find(x=>x.id===id);
     if (!it) return;
     it.checked = !it.checked;
-    saveList(list);
+    // 仕様: saveState=true の場合は保存しない
+    await saveList(list);
     renderItems(list, container, true);
     if (container===els.items && list.id===currentListId) currentList = list;
   }
@@ -344,24 +353,17 @@ let initialLoad = () => null;
   on(els.secondaryItems, 'change', (ev) => handleCheckboxChange(ev, els.secondaryItems));
   on(els.secondaryItems, 'click', (ev) => handleItemClick(ev, els.secondaryItems));
 
-  on(els.newItemInput, 'keydown', (ev) => {
+  on(els.newItemInput, 'keydown', async (ev) => {
     if (ev.key === 'Enter') {
       ev.preventDefault();
       const text = els.newItemInput.value.trim();
       if (!text || !currentList) return;
       currentList.items.push({ id: uuid4(), text, checked: false });
       els.newItemInput.value = '';
-      saveList(currentList);
+      await saveList(currentList);
       renderItems(currentList, els.items, true);
       populateListSelects(); // 追加時もセレクト更新（要件: もれなく更新）
     }
-  });
-
-  // ---------- Save toggle ----------
-  on(els.saveToggle, 'change', () => {
-    if (!currentList) return;
-    currentList.saveState = !!els.saveToggle.checked;
-    saveList(currentList);
   });
 
   // ---------- List Controls ----------
@@ -404,7 +406,7 @@ let initialLoad = () => null;
     if (!currentList) return;
     if (!confirm('このチェックリストを完全に削除しますか？この操作は元に戻せません。')) return;
     const id = currentList.id;
-    removeList(id);
+    await removeList(id);
     const idx = loadIndex().filter(x=>x.id!==id); await saveIndex(idx);
     const next = idx[0]?.id;
     if (next) selectList(next); else {
@@ -414,9 +416,8 @@ let initialLoad = () => null;
   });
 
   // ---------- Export ----------
-  on(els.exportBtn, 'click', async () => {
-    if (!currentList) return;
-    const listForExport = JSON.parse(JSON.stringify(currentList));
+  async function openExportForList(baseList) {
+    const listForExport = JSON.parse(JSON.stringify(baseList));
     if (!listForExport.saveState) { listForExport.items.forEach(it=>{ it.checked = false; }); }
     const payload = { v:1, id: listForExport.id, list: listForExport };
     const jsonStr = JSON.stringify(payload);
@@ -449,6 +450,10 @@ let initialLoad = () => null;
     } else {
       els.exportWarn.style.display = 'none';
     }
+  }
+  on(els.exportBtn, 'click', async () => {
+    if (!currentList) return;
+    await openExportForList(currentList);
   });
   on(els.copyExportBtn, 'click', async () => {
     try { await navigator.clipboard.writeText(els.exportUrlBox.value); } catch(e) { /* ignore */ }
@@ -496,7 +501,7 @@ let initialLoad = () => null;
     // 右下ボタンではなく、全画面ポップアップで確認
     hideNudge();
     openImportConfirm(pendingImportPayload);
-    reflectListInUrl(obj.list.id)
+    // 取り込みプレビュー時はURLのlistsは触らない
   }
 
   function showNudge() { els.importNudge.style.display = 'block'; }
@@ -623,27 +628,37 @@ let initialLoad = () => null;
   initialLoad = async () => {
     // 初期UIはすでにHTMLに存在。ここではデータを流し込むのみ。
     const idx = await ensureDefaultList();
-    // URL ?list= を先に尊重
+    // URL ?lists= (複数) を優先、なければ ?list=
     const url = new URL(location.href);
-    const urlList = url.searchParams.get('list');
-    let initialListId = null;
-    if (urlList) {
-      if (loadList(urlList)) {
-        initialListId = urlList;
-      } else {
-        // 見つからない場合は通知
-        initialListId = idx[0]?.id || null;
-        idle(()=>openModal('notfound'));
-      }
-    } else {
-      initialListId = idx[0].id;
+    const listsParam = url.searchParams.get('lists');
+    const singleList = url.searchParams.get('list');
+    let ids = [];
+    if (listsParam) {
+      ids = listsParam.split(',').map(s=>s.trim()).filter(Boolean);
+    } else if (singleList) {
+      ids = [singleList];
+    } else if (idx[0]) {
+      ids = [idx[0].id];
     }
-    if (initialListId) selectList(initialListId);
+    const exists = [];
+    let missing = false;
+    for (const id of ids) {
+      if (loadList(id)) exists.push(id); else missing = true;
+    }
+    if (!exists.length && idx[0]) exists.push(idx[0].id);
+    currentListId = exists[0] || null;
+    visibleListIds = exists.slice(1);
+    if (missing) idle(()=>openModal('notfound'));
+    if (currentListId) selectList(currentListId);
 
 
     if(loaded){
-      // セカンダリ初期値なし
-      els.secondaryListSelect.value = '';
+      // セカンダリ初期値
+      els.secondaryListSelect.value = visibleListIds[0] || '';
+      secondaryListId = visibleListIds[0] || null;
+      if (secondaryListId) { const l2 = loadList(secondaryListId); if (l2) renderItems(l2, els.secondaryItems, true); }
+      // 追加のサブパネル描画
+      renderDynamicSubPanels();
 
       // URLインポート/バルク開き
       handleImportFromUrl();
@@ -665,6 +680,7 @@ let initialLoad = () => null;
       if (dragging) return; // allow only one
       const list = getListForContainer(container);
       if (!list) return;
+      try { document.body.classList.add('grabbing'); } catch {}
       dragging = {
         srcContainer: container,
         srcListId: list.id,
@@ -710,6 +726,7 @@ let initialLoad = () => null;
       const up = async (e) => {
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
+        try { document.body.classList.remove('grabbing'); } catch {}
 
 
         const src = dragging.srcContainer;
@@ -768,5 +785,93 @@ let initialLoad = () => null;
   }
   setupDnd(els.items);
   setupDnd(els.secondaryItems);
+
+  // ---------- Bulk check/uncheck helpers ----------
+  async function setAllChecked(list, checked) {
+    list.items.forEach(it=>{ it.checked = !!checked; });
+    // Bulk操作は saveState を無視して保存する可能性がある → ここでは保存する
+    await saveList(list);
+  }
+  if (els.mainCheckAllBtn) on(els.mainCheckAllBtn, 'click', async ()=>{ if (!currentList) return; await setAllChecked(currentList, true); renderItems(currentList, els.items, true); });
+  if (els.mainUncheckAllBtn) on(els.mainUncheckAllBtn, 'click', async ()=>{ if (!currentList) return; await setAllChecked(currentList, false); renderItems(currentList, els.items, true); });
+  if (els.secondaryCheckAllBtn) on(els.secondaryCheckAllBtn, 'click', async ()=>{ if (!secondaryListId) return; const l=loadList(secondaryListId); if (!l) return; await setAllChecked(l, true); renderItems(l, els.secondaryItems, true); });
+  if (els.secondaryUncheckAllBtn) on(els.secondaryUncheckAllBtn, 'click', async ()=>{ if (!secondaryListId) return; const l=loadList(secondaryListId); if (!l) return; await setAllChecked(l, false); renderItems(l, els.secondaryItems, true); });
+  if (els.secondaryMakeMainBtn) on(els.secondaryMakeMainBtn, 'click', ()=>{ if (!secondaryListId) return; // swap main and secondary
+    const sid = secondaryListId; const arr = [currentListId, ...visibleListIds.filter(id=>id && id!==sid)];
+    currentListId = sid;
+    visibleListIds = arr;
+    selectList(currentListId);
+    els.secondaryListSelect.value = visibleListIds[0] || '';
+    secondaryListId = visibleListIds[0] || null;
+    const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
+    renderDynamicSubPanels();
+  });
+
+  // 既存のsecondaryListSelect handlerの上書き: URLにも反映し、描画更新
+  // まず既存のリスナーを追加している箇所を上書きする意図で、ここでも設定
+  on(els.secondaryListSelect, 'change', () => {
+    secondaryListId = els.secondaryListSelect.value || null;
+    // visibleListIds 先頭がセカンダリ
+    visibleListIds = [secondaryListId, ...visibleListIds.filter(id=>id && id!==secondaryListId)];
+    const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
+    renderDynamicSubPanels();
+    reflectListsInUrl();
+  });
+
+  // ---------- Dynamic sub-panels (3rd,4th,...) ----------
+  function renderDynamicSubPanels() {
+    if (!els.grid) return;
+    // remove existing dynamic panels
+    els.grid.querySelectorAll('.dynamic-sub').forEach(n=>n.remove());
+    const extraIds = visibleListIds.slice(1); // beyond secondary
+    for (const id of extraIds) {
+      const l = loadList(id); if (!l) continue;
+      const sec = document.createElement('section');
+      sec.className = 'panel sub-panel dynamic-sub';
+      sec.setAttribute('data-list-id', id);
+      sec.innerHTML = `
+        <div class="panel-header">
+          <div class="row grow">
+            <div class="muted">${escapeHtml(l.name)}</div>
+            <span class="grow"></span>
+            <button class="btn" data-action="make-main">メインにする</button>
+            <button class="btn" data-action="check-all">全チェック</button>
+            <button class="btn" data-action="uncheck-all">全外し</button>
+          </div>
+        </div>
+        <div class="items" aria-live="polite"></div>`;
+      els.grid.appendChild(sec);
+      const items = sec.querySelector('.items');
+      renderItems(l, items, true);
+    }
+  }
+  // delegate actions within dynamic panels
+  if (els.grid) on(els.grid, 'click', async (ev)=>{
+    const sec = ev.target.closest('.dynamic-sub');
+    if (!sec) return;
+    const id = sec.getAttribute('data-list-id');
+    if (!id) return;
+    const l = loadList(id); if (!l) return;
+    if (ev.target.closest('[data-action="make-main"]')) {
+      // move id to front
+      visibleListIds = [id, ...visibleListIds.filter(x=>x!==id)];
+      const oldMain = currentListId;
+      currentListId = id;
+      // place old main to list start
+      visibleListIds = [oldMain, ...visibleListIds.filter(x=>x!==oldMain)];
+      selectList(currentListId);
+      els.secondaryListSelect.value = visibleListIds[0] || '';
+      secondaryListId = visibleListIds[0] || null;
+      const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
+      renderDynamicSubPanels();
+    } else if (ev.target.closest('[data-action="check-all"]')) {
+      await setAllChecked(l, true);
+      renderDynamicSubPanels();
+    } else if (ev.target.closest('[data-action="uncheck-all"]')) {
+      await setAllChecked(l, false);
+      renderDynamicSubPanels();
+    }
+    reflectListsInUrl();
+  });
 
 })();
