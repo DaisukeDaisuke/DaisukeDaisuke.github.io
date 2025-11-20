@@ -207,28 +207,56 @@ let initialLoad = () => null;
 
   function populateListSelects() {
     const idx = loadIndex();
-    let options = idx.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
-    if (!idx.length) {
-      options = `<option value="">読み込むものはありません</option>`;
-    }
-    // メイン用セレクト
-    if (els.mainListSelect) els.mainListSelect.innerHTML = options;
-    // セカンダリは (なし) を先頭に付ける
-    if (els.secondaryListSelect) els.secondaryListSelect.innerHTML = '<option value="">(なし)</option>' + options;
 
-    // 値の復帰（存在チェック）
-    if (currentListId && idx.find(x=>x.id===currentListId)) {
+    // secondaryListId の現在値を取得（あなたのロジックをそのまま使用）
+    const secondaryListId = els.secondaryListSelect ? (els.secondaryListSelect.value || null) : null;
+
+    let idx2 = idx;
+
+    // ---------- メイン用オプション（secondary が選択されている場合は除外） ----------
+    let mainOptions = idx
+        .filter(e => !secondaryListId || e.id !== secondaryListId)
+        .map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`)
+        .join('');
+    if (!idx.length) {
+      mainOptions = `<option value="">読み込むものはありません</option>`;
+    }
+
+
+
+    // ---------- セカンダリ用オプション（currentListId を除外。ただし secondary 未選択なら全表示） ----------
+    let secondaryOptions = idx2
+        .filter(e => !currentListId || e.id !== currentListId)
+        .map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`)
+        .join('');
+    if (!idx.length) {
+      secondaryOptions = `<option value="">読み込むものはありません</option>`;
+    }
+
+    // ---------- DOM反映 ----------
+    if (els.mainListSelect) els.mainListSelect.innerHTML = mainOptions;
+    if (els.secondaryListSelect) {
+      els.secondaryListSelect.innerHTML = '<option value="">(なし)</option>' + secondaryOptions;
+    }
+
+    // ---------- 値の復帰 ----------
+    // main
+    if (currentListId && idx.find(x => x.id === currentListId)) {
       if (els.mainListSelect) els.mainListSelect.value = currentListId;
-    } else if (idx[0]) {if (els.mainListSelect) els.mainListSelect.value = idx[0].id;
+    } else if (idx[0]) {
+      if (els.mainListSelect) els.mainListSelect.value = idx[0].id;
     } else {
       if (els.mainListSelect) els.mainListSelect.value = '';
     }
+
+    // secondary
     if (secondaryListId) {
       if (els.secondaryListSelect) els.secondaryListSelect.value = secondaryListId;
     } else {
       if (els.secondaryListSelect) els.secondaryListSelect.value = '';
     }
   }
+
 
   function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 
@@ -250,8 +278,6 @@ let initialLoad = () => null;
     const ordered = [currentListId, ...visibleListIds.filter(id=>id && id!==currentListId)];
     url.searchParams.set('lists', ordered.join(','));
     url.searchParams.delete('list');
-    url.searchParams.delete('import');
-    url.searchParams.delete('enc');
     history.replaceState(null, '', url);
   }
 
@@ -509,9 +535,16 @@ let initialLoad = () => null;
     pendingImportPayload = obj.list; // Checklist
 
     const exists = !!loadList(obj.list.id);
-    // 右下ボタンではなく、全画面ポップアップで確認
+    if(!exists) {
+      // 右下ボタンではなく、全画面ポップアップで確認
+      openImportConfirm(pendingImportPayload);
+    }else{
+      const url1 = new URL(location.href);
+      url1.searchParams.delete('import');
+      url1.searchParams.delete('enc');
+      history.replaceState(null, '', url1);
+    }
     hideNudge();
-    openImportConfirm(pendingImportPayload);
     // 取り込みプレビュー時はURLのlistsは触らない
   }
 
@@ -543,6 +576,11 @@ let initialLoad = () => null;
     pendingImportPayload = null;
     closeModal('import');
     hideNudge();
+    const url1 = new URL(location.href);
+    url1.searchParams.delete('import');
+    url1.searchParams.delete('enc');
+    history.replaceState(null, '', url1);
+    populateListSelects();
     //initialLoad();
   });
 
@@ -671,6 +709,7 @@ let initialLoad = () => null;
       // 追加のサブパネル描画
       //renderDynamicSubPanels();
 
+      populateListSelects();
       // URLインポート/バルク開き
       handleImportFromUrl();
       if (url.searchParams.get('bulk') === '1') openModal('bulk');
@@ -692,6 +731,11 @@ let initialLoad = () => null;
       const list = getListForContainer(container);
       if (!list) return;
       try { document.body.classList.add('grabbing'); } catch {}
+
+      document.querySelectorAll(".item, .checkbox-label").forEach(el1 => {
+        el1.setAttribute("data-draggable", "true");
+      });
+
       dragging = {
         srcContainer: container,
         srcListId: list.id,
@@ -738,7 +782,6 @@ let initialLoad = () => null;
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
         try { document.body.classList.remove('grabbing'); } catch {}
-
 
         const src = dragging.srcContainer;
         const targetContainer = dragging.placeholder.parentElement;
@@ -787,6 +830,11 @@ let initialLoad = () => null;
         }
         // cleanup
         dragging.draggedEl.classList.remove('dragging');
+
+        document.querySelectorAll(".item, .checkbox-label").forEach(el1 => {
+          el1.removeAttribute("data-draggable");
+        });
+
         dragging.placeholder.remove();
         dragging = null;
       };
@@ -815,6 +863,7 @@ let initialLoad = () => null;
     els.secondaryListSelect.value = visibleListIds[0] || '';
     secondaryListId = visibleListIds[0] || null;
     const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
+    populateListSelects();
     //renderDynamicSubPanels();
   });
 
@@ -832,6 +881,7 @@ let initialLoad = () => null;
 
     const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
     //renderDynamicSubPanels();
+    populateListSelects();
     reflectListsInUrl();
   });
 
