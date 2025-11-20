@@ -122,6 +122,7 @@ let initialLoad = () => null;
     renameListBtn: $('#renameListBtn'),
     moveUpBtn: $('#moveUpBtn'),
     moveDownBtn: $('#moveDownBtn'),
+    swapBtn: $('#swapBtn'),
     deleteListBtn: $('#deleteListBtn'),
     exportBtn: $('#exportBtn'),
     importBtn: $('#importBtn'),
@@ -472,6 +473,19 @@ let initialLoad = () => null;
 
   if (els.moveUpBtn) on(els.moveUpBtn, 'click', async () => { await moveCurrentList(-1); });
   if (els.moveDownBtn) on(els.moveDownBtn, 'click', async () => { await moveCurrentList(1); });
+
+  // 現在のリストをインデックス内で上下に移動
+  async function swapbtn(direction) {
+    // direction: -1 (上へ) or +1 (下へ)
+    if (!currentListId) return;
+    let list = loadList(currentListId);
+    if(list.items.length===0) return;
+    list.items.forEach(it=>{ it.checked = !it.checked; });
+    await saveList(list);
+    selectList(currentListId);
+  }
+
+  if (els.swapBtn) on(els.swapBtn, 'click', async () => { await swapbtn(); });
 
   // ---------- Export ----------
   async function openExportForList(baseList) {
