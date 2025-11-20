@@ -449,6 +449,7 @@ let initialLoad = () => null;
     }
     const url = new URL(location.href);
     url.searchParams.delete('list');
+    url.searchParams.delete('lists');
     url.searchParams.set('import', urlParam);
     url.searchParams.set('enc', encoding);
     // 表示
