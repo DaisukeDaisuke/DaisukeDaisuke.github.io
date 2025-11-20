@@ -261,6 +261,7 @@
             <button id="mainCheckAllBtn" class="btn" title="すべてチェック">全チェック</button>
             <button id="mainUncheckAllBtn" class="btn" title="すべて外す">全外し</button>
             <button id="swapBtn" class="btn" title="全反転する">全反転</button>
+            <button id="openCsvBtn" class="btn" title="csv">csv</button>
             <span class="grow"></span>
             <!-- 新規アイテム入力 / 全チェック等はそのままメインパネル内に -->
             <input id="newItemInput" type="text" placeholder="アイテムを入力して Enter で追加" />
@@ -357,7 +358,7 @@
   <div id="notFoundModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="nfTitle">
     <div class="modal-card">
       <h3 id="nfTitle">指定のリストは見つかりませんでした</h3>
-      <p class="muted">URLに指定されたlistのIDは存在しません。グレーの背景部分をクリックして閉じることができます。</p>
+      <p class="muted">URLに指定されたlistのIDは存在しません。</p>
       <div class="row">
         <button data-close="notfound" class="btn">閉じる</button>
       </div>
@@ -380,6 +381,34 @@
     </div>
   </div>
 
-  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.1/tool/checkbox.min.js"></script>
+  <!-- モーダル: CSV 表示 / ダウンロード -->
+  <div id="csvBackdrop" class="modal-backdrop" data-close="csv"></div>
+  <div id="csvModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="csvTitle">
+    <div class="modal-card">
+      <h3 id="csvTitle">CSVエクスポート</h3>
+      <p class="muted">チェック状態の表現を選んでください。変更はリアルタイムにプレビューへ反映されます。</p>
+
+      <div class="row" style="align-items:center; gap:8px;">
+        <label class="muted">チェック状態:</label>
+        <select id="csvStateFormat" class="select" aria-label="CSV チェック表現">
+          <option value="name_only">名前のみ</option>
+          <option value="true_false" selected>true / false</option>
+          <option value="on_off">on / off</option>
+          <option value="checked_unchecked">checked / unchecked</option>
+        </select>
+        <span class="grow"></span>
+        <button id="copyBtn" class="btn ghost">コピー</button>
+        <button id="csvDownloadBtn" class="btn ghost">ダウンロード</button>
+        <button data-close="csv" class="btn ghost">閉じる</button>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <textarea id="csvPreview" readonly style="min-height:240px; width:100%; font-family:monospace; padding:10px; border-radius:8px; border:1px solid var(--border);"></textarea>
+      </div>
+    </div>
+  </div>
+
+
+  <script defer src="checkbox.js"></script>
 </body>
 </html>

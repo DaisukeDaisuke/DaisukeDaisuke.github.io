@@ -149,6 +149,7 @@ let initialLoad = () => null;
     exportWarnYes: $('#exportWarnYes'),
     exportWarnNo: $('#exportWarnNo'),
     copyExportBtn: $('#copyExportBtn'),
+    copyBtn: $('#copyBtn'),
     importBackdrop: $('#importBackdrop'),
     importModal: $('#importModal'),
     importSummary: $('#importSummary'),
@@ -617,17 +618,26 @@ let initialLoad = () => null;
     url1.searchParams.delete('enc');
     history.replaceState(null, '', url1);
     populateListSelects();
-    //initialLoad();
   });
 
   // ---------- Bulk Add Modal ----------
   on(els.bulkAddBtn, 'click', () => openModal('bulk'));
   on(els.bulkImportAddItemsBtn, 'click', async () => {
     if (!currentList) return;
-    const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    if (!lines.length) { closeModal('bulk'); return; }
-    for (const t of lines) currentList.items.push({ id: uuid4(), text: t, checked: false });
-    await saveList(currentList);
+    if(!els.bulkText.value.startsWith("name,checked")){
+      const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      if (!lines.length) { closeModal('bulk'); return; }
+      for (const t of lines) currentList.items.push({ id: uuid4(), text: t, checked: false });
+      await saveList(currentList);
+    }else{
+      //csv import
+      const csv = els.bulkText.value.trim();
+      const newItems = parseCsvToItems(csv);
+      if(!newItems.length){ closeModal('bulk'); return; }
+      for(const it of newItems) currentList.items.push(it);
+      await saveList(currentList);
+    }
+
     renderItems(currentList, els.items, true);
     els.bulkText.value = '';
     closeModal('bulk');
@@ -637,19 +647,56 @@ let initialLoad = () => null;
   on(els.bulkCreateNewListBtn, 'click', async () => {
     const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
     if (!lines.length) { closeModal('bulk'); return; }
-    const id = uuid4();
+
     const defaultName = `インポート ${new Date().toLocaleString()}`;
     const ovName = (els.bulkNameOverride?.value || '').trim();
-    const list = { v:1, id, name: ovName || defaultName, saveState: true, items: lines.map(t=>({ id:uuid4(), text:t, checked:false })), updatedAt: Date.now() };
-    await saveList(list);
-    const idx = loadIndex(); idx.push({ id, name: list.name, createdAt: Date.now() }); await saveIndex(idx);
+    const id = uuid4();
+    
+    if(!els.bulkText.value.startsWith("name,checked")){
+      const lines = els.bulkText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      const list = { v:1, id, name: ovName || defaultName, saveState: true, items: lines.map(t=>({ id:uuid4(), text:t, checked:false })), updatedAt: Date.now() };
+      await saveList(list);
+      const idx = loadIndex(); idx.push({ id, name: list.name, createdAt: Date.now() }); await saveIndex(idx);
+    }else{
+      let newItems = parseCsvToItems(els.bulkText.value);
+      if(!newItems.length){ closeModal('bulk'); return; }
+      const list = { v:1, id, name: ovName || defaultName, saveState: true, items: newItems, updatedAt: Date.now() };
+      await saveList(list);
+      const idx = loadIndex(); idx.push({ id, name: list.name, createdAt: Date.now() }); await saveIndex(idx);
+    }
+
     populateListSelects();
     selectList(id);
     els.bulkText.value = '';
     if (els.bulkNameOverride) els.bulkNameOverride.value = '';
     closeModal('bulk');
-    //initialLoad();
   });
+
+  function parseCsvToItems(csvText){
+    const lines = csvText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if(lines.length < 2) return [];
+
+    const items = [];
+    for(let i=1; i<lines.length; i++){
+      const row = lines[i].split(",");
+      const name = row[0] ?? "";
+      const checkedStr = row[1]?.toLowerCase() ?? "false";
+
+      const checked =
+          checkedStr === "true" ||
+          checkedStr === "1" ||
+          checkedStr === "on" ||
+          checkedStr === "yes";
+
+      items.push({
+        id: uuid4(),
+        text: name,
+        checked
+      });
+    }
+    return items;
+  }
+
 
   // 開くURL（http(s)/file:///）入力対応（先頭行のみ採用）
   on(els.openUrlBtn, 'click', () => {
@@ -1272,6 +1319,215 @@ let initialLoad = () => null;
         handleFileForImportAll(f);
       }
     }, { passive: false });
+
+  })();
+
+  /* ============================================================
+    CSV エクスポート（ナゲット + モーダル + リアルタイム更新）
+    追記: checkbox.js の末尾にそのまま追加してください
+    ============================================================ */
+  (function () {
+    'use strict';
+
+    function $id(id) { return document.getElementById(id); }
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function filenameForCsv() {
+      const d = new Date();
+      return `checkbox_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.csv`;
+    }
+
+    // loadList が Promise を返す場合も同期の場合も扱うユーティリティ
+    async function getCurrentList() {
+      if (typeof currentListId === 'undefined' || !currentListId) return null;
+      try {
+        const maybe = loadList(currentListId);
+        if (maybe && typeof maybe.then === 'function') {
+          return await maybe;
+        }
+        return maybe;
+      } catch (e) {
+        console.error('loadList error', e);
+        return null;
+      }
+    }
+
+    // CSV エスケープ（簡易）
+    function csvEscapeCell(s) {
+      if (s == null) return '';
+      const str = String(s);
+      if (str.indexOf('"') !== -1 || str.indexOf(',') !== -1 || str.indexOf('\n') !== -1) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }
+
+    // list オブジェクト -> CSV 文字列 を生成
+    // format: 'name_only' | 'true_false' | 'on_off' | 'checked_unchecked'
+    function generateCsvFromList(list, format) {
+      if (!list || !Array.isArray(list.items)) return '';
+      const rows = [];
+      // ヘッダ: 名前のみ または name,checked として出す
+      if (format === 'name_only') {
+        // header optional — 以下は名前のみでヘッダなしにする（ニーズに合わせて変更可）
+        // rows.push('name');
+        list.items.forEach(it => rows.push(csvEscapeCell(it.text)));
+      } else {
+        rows.push(['name','checked'].map(csvEscapeCell).join(','));
+        list.items.forEach(it => {
+          let state;
+          const checked = !!it.checked;
+          if (format === 'true_false') state = checked ? 'true' : 'false';
+          else if (format === 'on_off') state = checked ? 'on' : 'off';
+          else if (format === 'checked_unchecked') state = checked ? 'checked' : 'unchecked';
+          else state = checked ? 'true' : 'false';
+          rows.push([csvEscapeCell(it.text), csvEscapeCell(state)].join(','));
+        });
+      }
+      return rows.join('\n');
+    }
+
+    // Blob URL とダウンロードリンクを更新
+    function createCsvDownload(blobStr, filename) {
+      const blob = new Blob([blobStr], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      return { url, filename };
+    }
+
+    // UI 要素
+    const csvNudge = $id('csvNudge');
+    const openCsvBtn = $id('openCsvBtn');
+    const csvModal = $id('csvModal');
+    const csvBackdrop = $id('csvBackdrop');
+    const csvPreview = $id('csvPreview');
+    const csvStateFormat = $id('csvStateFormat');
+    const csvDownloadBtn = $id('csvDownloadBtn');
+
+    // 内部状態
+    let lastCsvBlobUrl = null;
+    let lastCsvFilename = null;
+    let lastGeneratedCsv = '';
+
+    function showCsvNudge() { if (csvNudge) csvNudge.style.display = 'block'; }
+    function hideCsvNudge() { if (csvNudge) csvNudge.style.display = 'none'; }
+
+    async function openCsvModal() {
+      if (csvModal) csvModal.classList.add('show');
+      if (csvBackdrop) csvBackdrop.classList.add('show');
+      await onCsvRequest()
+    }
+    function closeCsvModal() {
+      if (csvModal) csvModal.classList.remove('show');
+      if (csvBackdrop) csvBackdrop.classList.remove('show');
+    }
+
+    // モーダルの close ボタン（data-close="csv"）が押されたときに閉じる処理
+    document.addEventListener('click', function (e) {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-close') === 'csv') {
+        closeCsvModal();
+      }
+    });
+
+    on(els.copyBtn, 'click', async () => {
+      try { await navigator.clipboard.writeText(lastGeneratedCsv); } catch(e) { /* ignore */ }
+    })
+
+    // CSV を生成してナゲット表示（csvBtn 押下、非同期対応）
+    async function onCsvRequest() {
+      const list = await getCurrentList();
+      if (!list) {
+        alert('現在のリストが選択されていないか読み込めません。');
+        return;
+      }
+      const format = (csvStateFormat && csvStateFormat.value) ? csvStateFormat.value : 'true_false';
+      const csv = generateCsvFromList(list, format);
+      lastGeneratedCsv = csv;
+
+      // 既存 Blob URL があれば解放
+      if (lastCsvBlobUrl) {
+        try { URL.revokeObjectURL(lastCsvBlobUrl); } catch (e) {}
+        lastCsvBlobUrl = null;
+      }
+      const fn = filenameForCsv();
+      const info = createCsvDownload(csv, fn);
+      lastCsvBlobUrl = info.url;
+      lastCsvFilename = info.filename;
+
+      // プレビュー更新
+      if (csvPreview) csvPreview.value = csv;
+
+      // ダウンロードボタンを更新
+      if (csvDownloadBtn) {
+        csvDownloadBtn.onclick = function () {
+          // create anchor and click
+          const a = document.createElement('a');
+          a.href = lastCsvBlobUrl;
+          a.download = lastCsvFilename || fn;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        };
+      }
+
+      // ナゲット表示（ユーザー指定どおり）
+      showCsvNudge();
+    }
+
+    // モーダル内のフォーマット切替を監視（リアルタイム更新）
+    if (csvStateFormat) {
+      csvStateFormat.addEventListener('change', async function () {
+        // regenerate using the most recent list (or reload)
+        const list = await getCurrentList();
+        if (!list) return;
+        const csv = generateCsvFromList(list, csvStateFormat.value);
+        lastGeneratedCsv = csv;
+        if (csvPreview) csvPreview.value = csv;
+        // update blob URL and filename for download
+        if (lastCsvBlobUrl) { try { URL.revokeObjectURL(lastCsvBlobUrl); } catch(e) {} lastCsvBlobUrl = null; }
+        const info = createCsvDownload(csv, filenameForCsv());
+        lastCsvBlobUrl = info.url;
+        lastCsvFilename = info.filename;
+        // update download handler
+        if (csvDownloadBtn) {
+          csvDownloadBtn.onclick = function () {
+            const a = document.createElement('a');
+            a.href = lastCsvBlobUrl;
+            a.download = lastCsvFilename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          };
+        }
+      });
+    }
+
+    // csvNudge の「開く」ボタンを押すとモーダルを開く
+    if (openCsvBtn) openCsvBtn.addEventListener('click', function (e) {
+      e && e.preventDefault();
+      openCsvModal();
+    });
+
+    // モーダル外クリックで閉じる（backdrop）
+    if (csvBackdrop) csvBackdrop.addEventListener('click', function () {
+      closeCsvModal();
+    });
+
+    // ページ unload 前に Blob URL を解放
+    window.addEventListener('beforeunload', function () {
+      if (lastCsvBlobUrl) {
+        try { URL.revokeObjectURL(lastCsvBlobUrl); } catch (e) {}
+      }
+    });
+
+    // API（必要なら外部からも呼べる）
+    window.__checkbox_csv = {
+      generateCsvFromList,
+      onCsvRequest,
+      openCsvModal,
+      closeCsvModal,
+      showCsvNudge,
+      hideCsvNudge
+    };
 
   })();
 })();
