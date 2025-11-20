@@ -822,7 +822,13 @@ let initialLoad = () => null;
   on(els.secondaryListSelect, 'change', () => {
     secondaryListId = els.secondaryListSelect.value || null;
     // visibleListIds 先頭がセカンダリ
-    visibleListIds = [secondaryListId, ...visibleListIds.filter(id=>id && id!==secondaryListId)];
+    if(secondaryListId){
+      visibleListIds = [secondaryListId, ...visibleListIds.filter(id=>id && id!==secondaryListId)];
+    }else{
+      visibleListIds = [secondaryListId];
+      secondaryListId = null;
+    }
+
     const l2 = secondaryListId? loadList(secondaryListId):null; if (l2) renderItems(l2, els.secondaryItems, true); else els.secondaryItems.innerHTML='';
     //renderDynamicSubPanels();
     reflectListsInUrl();
