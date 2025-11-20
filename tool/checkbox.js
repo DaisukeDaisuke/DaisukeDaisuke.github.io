@@ -843,6 +843,24 @@ let initialLoad = () => null;
       dragging.placeholder = ph;
       item.parentElement.insertBefore(ph, item.nextSibling);
 
+// ダミーを作成
+      dragging.ghost = dragging.draggedEl.cloneNode(true);
+      dragging.ghost.classList.add('drag-ghost');
+      document.body.appendChild(dragging.ghost);
+
+      const rect = dragging.draggedEl.getBoundingClientRect();
+      dragging.ghost.style.position = 'fixed';
+      dragging.ghost.style.left = rect.left + 'px';
+      dragging.ghost.style.top = rect.top + 'px';
+      dragging.ghost.style.width = rect.width + 'px';
+
+      dragging.startX = ev.clientX;
+      dragging.startY = ev.clientY;
+
+// 本体は透明化
+      dragging.draggedEl.style.opacity = "0.3";
+
+
       const move = (e) => {
         const pointY = e.clientY;
         const pointX = e.clientX;
@@ -852,8 +870,7 @@ let initialLoad = () => null;
         // --- 追加: 相対位置でドラッグ要素を移動 ---
         const dx = pointX - dragging.startX - 30;
         const dy = pointY - dragging.startY;
-        dragging.draggedEl.style.transform = `translate(${dx}px, ${dy}px)`;
-
+        dragging.ghost.style.transform = `translate(${dx}px, ${dy}px)`;
 
         // --- パネル切り替えに pointX を使う ---
         let targetContainer = container;
@@ -874,13 +891,20 @@ let initialLoad = () => null;
           if (pointY < mid) { insertBefore = s; break; }
         }
         // move placeholder
-        if (!dragging.placeholder.parentElement || dragging.placeholder.parentElement !== targetContainer) {
+// 1. targetContainer が変わった場合だけ append（初期配置）
+        if (dragging.placeholder.parentElement !== targetContainer) {
           dragging.placeholder.remove();
           targetContainer.appendChild(dragging.placeholder);
         }
-        if (insertBefore) targetContainer.insertBefore(dragging.placeholder, insertBefore); else targetContainer.appendChild(dragging.placeholder);
+
+// 2. ポジション調整は insertBefore のみ
+        if (insertBefore) {
+          targetContainer.insertBefore(dragging.placeholder, insertBefore);
+        }
       };
       const up = async (e) => {
+        dragging.draggedEl.style.opacity = '';
+        try { dragging.ghost.remove(); }catch{}
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
         try { document.body.classList.remove('grabbing'); } catch {}
