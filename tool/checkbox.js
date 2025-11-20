@@ -1101,25 +1101,6 @@ let initialLoad = () => null;
     });
     document.body.appendChild(hiddenFileInput);
 
-    // Wire header buttons if exist
-    const exportBtn = $id('exportBtn');
-    const importBtn = $id('importBtn');
-
-    if (exportBtn) {
-      exportBtn.addEventListener('click', function (e) {
-        e && e.preventDefault();
-        exportLocalStorageAsFile();
-      });
-    }
-
-    if (importBtn) {
-      importBtn.addEventListener('click', function (e) {
-        e && e.preventDefault();
-        // open file selector
-        hiddenFileInput.click();
-      });
-    }
-
     // Drag & Drop: only handle file drops and only when body is NOT .grabbing
     // Also avoid interfering with site internal D&D by checking dataTransfer.types includes 'Files'
     function onDragOver(e) {
