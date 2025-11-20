@@ -102,7 +102,7 @@
     .btn.ghost { background: transparent; }
 
     main#app {
-      max-width: 1400px; margin: 16px auto; padding: 16px;
+      max-width: 1500px; margin: 16px auto; padding: 16px;
       min-height: 110vh; /* フリッカー抑止 */
     }
     .grid {
@@ -148,7 +148,7 @@
       display: inline-flex; align-items:center; justify-content:center; cursor: grab;
     }
     .drag-handle { cursor: grabbing; }
-    body.grabbing { cursor: grabbing !important; }
+    body.grabbing { cursor: grabbing }
     .drag-handle .bars { width: 14px; height: 14px; position: relative; }
     .drag-handle .bars::before, .drag-handle .bars::after, .drag-handle .bars span {
       content: ""; position: absolute; left:0; right:0; height:2px; background: var(--muted);
@@ -208,7 +208,7 @@
 
     .loading { font-size: 13px; color: var(--muted); }
 
-    .margins { @media (min-width: 2000px) { margin-bottom: 180px; } }
+    .margins { @media (min-width: 2000px) { margin-bottom: 135px; } }
 
     /* 先頭絵文字を大きく表示するスタイル */
     .item .emoji-first {
@@ -284,7 +284,7 @@
         <div id="items" class="items" aria-live="polite"></div>
       </section>
 
-      <section class="panel sub-panel" aria-label="サブチェックリスト">
+      <section class="panel sub-panel" aria-label="サブチェックリスト", id="sub_panel">
         <div class="panel-header">
           <div class="row grow">
             <select id="secondaryListSelect" class="select grow" aria-label="サブ表示するリスト"></select>
@@ -423,6 +423,7 @@
   </div>
 
 
-  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.4/tool/checkbox.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.5/tool/checkbox.min.js"></script>
+  <!--script defer src="checkbox.js"></script-->
 </body>
 </html>

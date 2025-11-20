@@ -170,6 +170,7 @@ let initialLoad = () => null;
     // notfound
     notFoundBackdrop: $('#notFoundBackdrop'),
     notFoundModal: $('#notFoundModal'),
+    sub_panel: $('#sub_panel'),
   };
 
   // ---------- State ----------
@@ -216,6 +217,14 @@ let initialLoad = () => null;
     const secondaryListId = els.secondaryListSelect ? (els.secondaryListSelect.value || null) : null;
 
     let idx2 = idx;
+
+    if(secondaryListId) {
+      els.sub_panel.style.removeProperty('cursor');
+      els.sub_panel.removeAttribute("title");
+    }else{
+      els.sub_panel.style.setProperty('cursor', 'not-allowed', 'important');
+      els.sub_panel.setAttribute("title", "このパネルは何もチェックボックスを読み込んでいません！");
+    }
 
     // ---------- メイン用オプション（secondary が選択されている場合は除外） ----------
     let mainOptions = idx
