@@ -117,7 +117,7 @@ let initialLoad = () => null;
   const els = {
     themeSelect: $('#themeSelect'),
     sizeSelect: $('#sizeSelect'),
-    listSelect: $('#listSelect'),
+    mainListSelect: $('#mainListSelect'), // moved into main panel header
     newListBtn: $('#newListBtn'),
     renameListBtn: $('#renameListBtn'),
     deleteListBtn: $('#deleteListBtn'),
@@ -204,22 +204,30 @@ let initialLoad = () => null;
   });
 
   // ---------- Lists UI ----------
+
   function populateListSelects() {
     const idx = loadIndex();
     let options = idx.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
     if (!idx.length) {
       options = `<option value="">読み込むものはありません</option>`;
     }
-    els.listSelect.innerHTML = options;
-    els.secondaryListSelect.innerHTML = '<option value="">(なし)</option>' + options;
+    // メイン用セレクト
+    if (els.mainListSelect) els.mainListSelect.innerHTML = options;
+    // セカンダリは (なし) を先頭に付ける
+    if (els.secondaryListSelect) els.secondaryListSelect.innerHTML = '<option value="">(なし)</option>' + options;
+
+    // 値の復帰（存在チェック）
     if (currentListId && idx.find(x=>x.id===currentListId)) {
-      els.listSelect.value = currentListId;
-    } else if (idx[0]) {
-      els.listSelect.value = idx[0].id;
+      if (els.mainListSelect) els.mainListSelect.value = currentListId;
+    } else if (idx[0]) {if (els.mainListSelect) els.mainListSelect.value = idx[0].id;
     } else {
-      els.listSelect.value = '';
+      if (els.mainListSelect) els.mainListSelect.value = '';
     }
-    if (secondaryListId) els.secondaryListSelect.value = secondaryListId; else els.secondaryListSelect.value = '';
+    if (secondaryListId) {
+      if (els.secondaryListSelect) els.secondaryListSelect.value = secondaryListId;
+    } else {
+      if (els.secondaryListSelect) els.secondaryListSelect.value = '';
+    }
   }
 
   function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
@@ -367,11 +375,13 @@ let initialLoad = () => null;
   });
 
   // ---------- List Controls ----------
-  on(els.listSelect, 'change', () => {
-    const id = els.listSelect.value;
-    if (!id) return; // 空プレースホルダ選択は無視
+    // メインパネル内のリスト切り替え
+  if (els.mainListSelect) on(els.mainListSelect, 'change', () => {
+    const id = els.mainListSelect.value;
+    if (!id) return;
     selectList(id);
   });
+
   on(els.secondaryListSelect, 'change', () => {
     secondaryListId = els.secondaryListSelect.value || null;
     if (secondaryListId) {

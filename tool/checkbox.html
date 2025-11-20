@@ -215,15 +215,7 @@
           </select>
         </label>
       </div>
-      <div class="controls" aria-label="リスト操作">
-        <select id="listSelect" class="select" aria-label="チェックリストの選択"></select>
-        <button id="newListBtn" class="btn">新規リスト</button>
-        <button id="renameListBtn" class="btn">名称変更</button>
-        <button id="exportBtn" class="btn">エクスポート</button>
-        <button id="importBtn" class="btn">インポート</button>
-        <button id="bulkAddBtn" class="btn">バルク追加</button>
-        <button id="deleteListBtn" class="btn ghost">バルク削除</button>
-      </div>
+      <!-- グローバルなリスト操作は廃止：各パネルに移動しました -->
     </div>
   </header>
 
@@ -232,7 +224,17 @@
       <section class="panel" aria-label="メインチェックリスト">
         <div class="panel-header">
           <div class="panel-title" id="mainListTitle">リスト</div>
-          <div class="row">
+          <div class="row" style="align-items:center;gap:8px;">
+            <!-- 各パネル固有のリスト選択と操作ボタン -->
+            <select id="mainListSelect" class="select" aria-label="メインのチェックリスト選択"></select>
+            <button id="newListBtn" class="btn">新規リスト</button>
+            <button id="renameListBtn" class="btn">名称変更</button>
+            <button id="exportBtn" class="btn">エクスポート</button>
+            <button id="importBtn" class="btn">インポート</button>
+            <button id="bulkAddBtn" class="btn">バルク追加</button>
+            <button id="deleteListBtn" class="btn ghost">削除</button>
+            <span class="grow"></span>
+            <!-- 新規アイテム入力 / 全チェック等はそのままメインパネル内に -->
             <input id="newItemInput" type="text" placeholder="アイテムを入力して Enter で追加" />
             <button id="mainCheckAllBtn" class="btn" title="すべてチェック">全チェック</button>
             <button id="mainUncheckAllBtn" class="btn" title="すべて外す">全外し</button>
