@@ -732,7 +732,7 @@ let initialLoad = () => null;
       if (!list) return;
       try { document.body.classList.add('grabbing'); } catch {}
 
-      document.querySelectorAll(".item, .checkbox-label").forEach(el1 => {
+      document.querySelectorAll(".item, .checkbox-label, .drag-handle").forEach(el1 => {
         el1.setAttribute("data-draggable", "true");
       });
 
@@ -831,7 +831,7 @@ let initialLoad = () => null;
         // cleanup
         dragging.draggedEl.classList.remove('dragging');
 
-        document.querySelectorAll(".item, .checkbox-label").forEach(el1 => {
+        document.querySelectorAll(".item, .checkbox-label .drag-handle").forEach(el1 => {
           el1.removeAttribute("data-draggable");
         });
 

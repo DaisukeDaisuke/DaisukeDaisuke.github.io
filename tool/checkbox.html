@@ -146,7 +146,7 @@
       border: 1px solid var(--border); background: var(--bg);
       display: inline-flex; align-items:center; justify-content:center; cursor: grab;
     }
-    .drag-handle:active { cursor: grabbing; }
+    .drag-handle { cursor: grabbing; }
     body.grabbing { cursor: grabbing !important; }
     .drag-handle .bars { width: 14px; height: 14px; position: relative; }
     .drag-handle .bars::before, .drag-handle .bars::after, .drag-handle .bars span {
@@ -158,6 +158,11 @@
     .drag-handle .bars::after { bottom:0; }
     .item.dragging { opacity: .8; outline: 2px dashed var(--accent); }
     .item.placeholder { background: transparent; border-style: solid; border-color: var(--accent-weak); min-height: 42px; cursor: grabbing; }
+
+    /* それ以外 (属性なし or 値が true 以外) は cursor を消す */
+    .drag-handle:not([data-draggable="true"]) {
+      cursor: grab; /* または none や default など必要に応じて */
+    }
 
     /* 大きいチェックボックス */
     .checkbox-wrap input[type="checkbox"] {
