@@ -832,6 +832,8 @@ let initialLoad = () => null;
         itemId: item.getAttribute('data-id'),
         draggedEl: item,
         placeholder: null,
+        startX: ev.clientX,
+        startY: ev.clientY,
       };
       item.classList.add('dragging');
       ev.preventDefault();
@@ -843,16 +845,26 @@ let initialLoad = () => null;
 
       const move = (e) => {
         const pointY = e.clientY;
-        // decide target container
+        const pointX = e.clientX;
+
+        if(!dragging){ return; }
+
+        // --- 追加: 相対位置でドラッグ要素を移動 ---
+        const dx = pointX - dragging.startX - 30;
+        const dy = pointY - dragging.startY;
+        dragging.draggedEl.style.transform = `translate(${dx}px, ${dy}px)`;
+
+
+        // --- パネル切り替えに pointX を使う ---
         let targetContainer = container;
-        // cross-panel available if secondary panel visible
-        const other = (container===els.items)? els.secondaryItems : els.items;
-        if (other && other.offsetParent !== null) { // visible
+        const other = (container === els.items) ? els.secondaryItems : els.items;
+        if (other && other.offsetParent !== null) {
           const rect = other.getBoundingClientRect();
-          if (pointY >= rect.top - 20 && pointY <= rect.bottom + 20) {
-            targetContainer = other;
-          }
+          const inX = pointX >= rect.left - 40 && pointX <= rect.right + 40;
+          const inY = pointY >= rect.top - 20 && pointY <= rect.bottom + 20;
+          if (inX && inY) targetContainer = other;
         }
+
         // find position in targetContainer
         const siblings = Array.from(targetContainer.querySelectorAll('.item:not(.dragging)'));
         let insertBefore = null;
@@ -928,7 +940,20 @@ let initialLoad = () => null;
         dragging.placeholder.remove();
         dragging = null;
       };
-      document.addEventListener('pointermove', move);
+
+      function throttle(fn, wait) {
+        let lastTime = 0;
+        return function (...args) {
+          const now = Date.now();
+          if (now - lastTime >= wait) {
+            lastTime = now;
+            fn.apply(this, args);
+          }
+        };
+      }
+
+      const throttledMove = throttle(move, 200); // 0.2秒に1回
+      document.addEventListener('pointermove', throttledMove);
       document.addEventListener('pointerup', up, { once: true });
     });
   }

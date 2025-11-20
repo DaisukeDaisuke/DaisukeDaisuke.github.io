@@ -109,7 +109,7 @@
       display: grid; gap: var(--gap);
       grid-template-columns: 1fr; align-items: start;
     }
-    @media (min-width: 2560px) { /* WQHD 2560px でマルチカラム */
+    @media (min-width: 2000px) { /* WQHD 2560px でマルチカラム */
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .sub-panel { display: block; }
     }
@@ -208,7 +208,7 @@
 
     .loading { font-size: 13px; color: var(--muted); }
 
-    .margins { @media (min-width: 2560px) { margin-bottom: 180px; } }
+    .margins { @media (min-width: 2000px) { margin-bottom: 180px; } }
 
     /* 先頭絵文字を大きく表示するスタイル */
     .item .emoji-first {
@@ -423,6 +423,6 @@
   </div>
 
 
-  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.3/tool/checkbox.min.js"></script>
+  <script defer src="checkbox.js"></script>
 </body>
 </html>
