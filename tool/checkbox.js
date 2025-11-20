@@ -290,11 +290,20 @@ let initialLoad = () => null;
     const html = list.items.map((it, i) => {
       const inputId = `${list.id}-${it.id}`;
       const checked = it.checked ? 'checked' : '';
+      const leading = extractLeadingEmoji(it.text || '');
+      let namePart = escapeHtml(it.text || '');
+      if (leading) {
+        // 先頭絵文字を切り出す（最初の絵文字だけ）
+        const rest = (it.text || '').slice(leading.length).trim();
+        namePart = `<span class="emoji-first" data-native="${escapeHtml(leading)}">${escapeHtml(leading)}</span><span class="item-text">${escapeHtml(rest)}</span>`;
+      } else {
+        namePart = `<span class="item-text">${escapeHtml(it.text || '')}</span>`;
+      }
       return `
-        <div class="item" data-id="${it.id}">
+        <div class="item" data-id="${escapeHtml(it.id)}">
           <button class="drag-handle" data-action="drag" title="並べ替え"><span class="bars"><span></span></span></button>
-          <div class="checkbox-wrap"><input ${interactive? '' : 'disabled'} type="checkbox" id="${inputId}" ${checked} aria-label="${escapeHtml(it.text)}"></div>
-          <label class="checkbox-label" for="${inputId}">${escapeHtml(it.text)}</label>
+          <div class="checkbox-wrap"><input ${interactive? '' : 'disabled'} type="checkbox" id="${escapeHtml(inputId)}" ${checked} aria-label="${escapeHtml(it.text)}"></div>
+          <label class="checkbox-label" for="${escapeHtml(inputId)}">${namePart}</label>
           <button class="btn" data-action="edit">編集</button>
           <button class="btn delete-btn" data-action="del">削除</button>
         </div>`;
@@ -995,6 +1004,18 @@ let initialLoad = () => null;
     reflectListsInUrl();
   });
 
+  // 先頭文字が絵文字か判定（Unicode の Extended_Pictographic を使用）
+  function extractLeadingEmoji(text) {
+    if (!text) return null;
+    try {
+      const m = text.match(/^\p{Extended_Pictographic}+/u);
+      return m ? m[0] : null;
+    } catch(e) {
+      // 古い環境で \p{} が使えない場合の簡易判定（絵文字範囲の目安）
+      const m2 = text.match(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+      return m2 ? m2[0] : null;
+    }
+  }
 
   /* ===================================================================
    File Import / Export + D&D support

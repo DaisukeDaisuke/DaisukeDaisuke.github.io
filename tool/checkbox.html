@@ -209,6 +209,20 @@
     .loading { font-size: 13px; color: var(--muted); }
 
     .margins { @media (min-width: 2560px) { margin-bottom: 180px; } }
+
+    /* 先頭絵文字を大きく表示するスタイル */
+    .item .emoji-first {
+      font-size: 28px;
+      line-height: 1;
+      margin-right: 8px;
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+    }
+
+    /* item のテキスト部分 */
+    .item .item-text { display: inline; }
+
   </style>
 </head>
 <body>
@@ -409,6 +423,6 @@
   </div>
 
 
-  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.2/tool/checkbox.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.3/tool/checkbox.min.js"></script>
 </body>
 </html>
