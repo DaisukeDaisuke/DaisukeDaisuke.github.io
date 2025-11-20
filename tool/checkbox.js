@@ -877,7 +877,7 @@ let initialLoad = () => null;
         if(!dragging){ return; }
 
         // --- 追加: 相対位置でドラッグ要素を移動 ---
-        const dx = pointX - dragging.startX - 30;
+        const dx = pointX - dragging.startX;
         const dy = pointY - dragging.startY;
         dragging.ghost.style.transform = `translate(${dx}px, ${dy}px)`;
 
