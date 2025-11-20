@@ -232,6 +232,10 @@
             <option value="l">特大</option>
           </select>
         </label>
+        <div class="controls" aria-label="全体バックアップ">
+          <button id="exportAllBtn" class="btn">全エクスポート</button>
+          <button id="importAllBtn" class="btn">全インポート</button>
+        </div>
       </div>
       <!-- グローバルなリスト操作は廃止：各パネルに移動しました -->
     </div>
@@ -352,6 +356,22 @@
       <p class="muted">URLに指定されたlistのIDは存在しません。グレーの背景部分をクリックして閉じることができます。</p>
       <div class="row">
         <button data-close="notfound" class="btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル: 全インポート確認（新規） -->
+  <div id="importAllBackdrop" class="modal-backdrop"></div>
+  <div id="importAllModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="importAllTitle">
+    <div class="modal-card">
+      <h3 id="importAllTitle">全インポート確認</h3>
+      <p class="muted">このファイルをインポートすると、localStorage すべてが完全に上書きされます。その後、再読み込みします。</p>
+      <pre id="importAllPreview"
+           style="white-space:pre-wrap; max-height:50vh; overflow:auto; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:12px;">
+    </pre>
+      <div class="row">
+        <button id="confirmImportAllBtn" class="btn primary">上書きする</button>
+        <button id="cancelImportAllBtn" class="btn ghost">キャンセル</button>
       </div>
     </div>
   </div>

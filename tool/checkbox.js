@@ -912,4 +912,349 @@ let initialLoad = () => null;
     reflectListsInUrl();
   });
 
+
+  /* ===================================================================
+   File Import / Export + D&D support
+   - Export: immediate uncompressed JSON of localStorage
+   - Import: drag-and-drop or file select; shows existing import modal for confirmation
+   - D&D will be ignored when document.body.classList.contains('grabbing')
+   =================================================================== */
+  (function () {
+    'use strict';
+
+    // helper
+    function $id(id) { return document.getElementById(id); }
+    function fmtFilenameDate(d) {
+      const z = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
+    }
+    function safeJsonStringify(v) {
+      try { return JSON.stringify(v, null, 2); } catch (e) { return String(v); }
+    }
+
+    // Export localStorage -> download
+    function exportLocalStorageAsFile() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        // preserve exact stored string
+        data[k] = localStorage.getItem(k);
+      }
+      const out = { exportedAt: new Date().toISOString(), data: data };
+      const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
+      const fn = 'checkbox_' + fmtFilenameDate(new Date()) + '.json';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fn;
+      // append to body so click works in Firefox
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // cleanup
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    // Show existing import modal with parsed data and wire confirm to actually import
+    function showImportConfirmation(parsedObject) {
+      // Expect either { exportedAt: ..., data: { ... } } or plain object mapping
+      const modal = $id('importModal');
+      const backdrop = $id('importBackdrop');
+      const preview = $id('importPreview');
+      const summary = $id('importSummary');
+      const nameOverride = $id('importNameOverride');
+      const confirmBtn = $id('confirmImportBtn');
+
+      if (!modal || !backdrop || !preview || !summary || !confirmBtn) {
+        alert('インポート用モーダル要素が見つかりません。');
+        return;
+      }
+
+      // determine data object
+      const payload = (parsedObject && typeof parsedObject === 'object' && parsedObject.data && typeof parsedObject.data === 'object')
+          ? parsedObject.data
+          : (parsedObject && typeof parsedObject === 'object' ? parsedObject : null);
+
+      if (!payload) {
+        preview.textContent = 'ファイルの形式が認識できません。オブジェクト形式（JSON）が必要です。';
+        summary.textContent = 'インポートできません。';
+        // show modal briefly
+        modal.classList.add('show');
+        backdrop.classList.add('show');
+        return;
+      }
+
+      // prepare preview & summary
+      const keys = Object.keys(payload);
+      summary.textContent = `このファイルをインポートすると、現在の localStorage を全て上書きします。キー数: ${keys.length}`;
+      // show limited-size preview (but allow scroll)
+      try {
+        preview.textContent = safeJsonStringify(parsedObject).slice(0, 100000);
+      } catch (e) {
+        preview.textContent = '(プレビューを生成できません)';
+      }
+      if (nameOverride) nameOverride.value = ''; // default empty
+
+      // show modal
+      modal.classList.add('show');
+      backdrop.classList.add('show');
+
+      // on confirm: perform full import (clear localStorage then set)
+      function onConfirmOnce(ev) {
+        ev && ev.preventDefault();
+        try {
+          // fully replace localStorage
+          localStorage.clear();
+          for (const k of keys) {
+            // store value as-is (string). If original export stored non-string values you may need to stringify here,
+            // but typical export stored strings (because they came from localStorage.getItem).
+            const v = payload[k];
+            // ensure value is string
+            localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+          }
+        } catch (e) {
+          console.error('Import failed', e);
+          alert('インポートに失敗しました。コンソールを確認してください。');
+          hideImportModal();
+          return;
+        }
+        hideImportModal();
+        // Reload as requested
+        location.href = location.href;
+      }
+
+      // attach listener once
+      confirmBtn.addEventListener('click', onConfirmOnce, { once: true });
+    }
+
+    function hideImportModal() {
+      const modal = $id('importModal');
+      const backdrop = $id('importBackdrop');
+      if (modal) modal.classList.remove('show');
+      if (backdrop) backdrop.classList.remove('show');
+    }
+
+    // Read a File object (assume JSON) and parse, then show confirmation modal
+    function handleFileForImport(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        let txt = e.target.result;
+        try {
+          const parsed = JSON.parse(txt);
+          showImportConfirmation(parsed);
+        } catch (err) {
+          alert('JSON の解析に失敗しました: ' + err.message);
+        }
+      };
+      reader.onerror = function () {
+        alert('ファイルの読み込みに失敗しました。');
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // Create hidden file input for manual selection (reused)
+    const hiddenFileInput = document.createElement('input');
+    hiddenFileInput.type = 'file';
+    hiddenFileInput.accept = 'application/json,application/*,text/*';
+    hiddenFileInput.style.display = 'none';
+    hiddenFileInput.addEventListener('change', function (e) {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleFileForImport(f);
+      hiddenFileInput.value = '';
+    });
+    document.body.appendChild(hiddenFileInput);
+
+    // Wire header buttons if exist
+    const exportBtn = $id('exportBtn');
+    const importBtn = $id('importBtn');
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function (e) {
+        e && e.preventDefault();
+        exportLocalStorageAsFile();
+      });
+    }
+
+    if (importBtn) {
+      importBtn.addEventListener('click', function (e) {
+        e && e.preventDefault();
+        // open file selector
+        hiddenFileInput.click();
+      });
+    }
+
+    // Drag & Drop: only handle file drops and only when body is NOT .grabbing
+    // Also avoid interfering with site internal D&D by checking dataTransfer.types includes 'Files'
+    function onDragOver(e) {
+      if (!e.dataTransfer) return;
+      // if site dragging (body.grabbing) then ignore
+      if (document.body.classList.contains('grabbing')) return;
+      const types = e.dataTransfer.types ? Array.from(e.dataTransfer.types) : [];
+      if (types.indexOf && types.indexOf('Files') !== -1) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    }
+
+    function onDrop(e) {
+      if (!e.dataTransfer) return;
+      if (document.body.classList.contains('grabbing')) return;
+      const files = e.dataTransfer.files;
+      if (files && files.length) {
+        e.preventDefault();
+        // take first file
+        const f = files[0];
+        handleFileForImport(f);
+      }
+    }
+
+    document.addEventListener('dragover', onDragOver, { passive: false });
+    document.addEventListener('drop', onDrop, { passive: false });
+
+    // Also add a visible small hint area (optional) — commented out by default.
+    // If you want a visible drop target, uncomment the following block.
+    /*
+    const dropHint = document.createElement('div');
+    dropHint.textContent = 'ここに JSON ファイルをドロップしてインポート';
+    dropHint.style.position = 'fixed';
+    dropHint.style.right = '16px';
+    dropHint.style.bottom = '80px';
+    dropHint.style.padding = '8px 12px';
+    dropHint.style.borderRadius = '8px';
+    dropHint.style.background = 'rgba(0,0,0,0.6)';
+    dropHint.style.color = 'white';
+    dropHint.style.fontSize = '13px';
+    dropHint.style.zIndex = 1000;
+    document.body.appendChild(dropHint);
+    */
+
+    // Provide an API if other scripts need to call export/import
+    window.__checkbox_fileio = {
+      exportLocalStorageAsFile,
+      handleFileForImport,
+      showImportConfirmation,
+      hideImportModal
+    };
+
+  })();
+
+
+  /* ===============================================================
+   全バックアップ / 全復元 (個別インポートと競合しない独立モジュール)
+   =============================================================== */
+ (function () {
+    'use strict';
+
+    function $id(id) { return document.getElementById(id); }
+
+    // ---------- 書き出し ----------
+    function exportAll() {
+      const obj = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        obj[k] = localStorage.getItem(k);
+      }
+      const wrap = { exportedAt: new Date().toISOString(), data: obj };
+      const blob = new Blob([JSON.stringify(wrap, null, 2)], { type: 'application/json' });
+      const d = new Date();
+      const fn = `checkbox_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}.json`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // ---------- 読み込み処理 ----------
+    function handleFileForImportAll(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        let parsed;
+        try {
+          parsed = JSON.parse(e.target.result);
+        } catch (err) {
+          alert('JSONとして読み込めません。');
+          return;
+        }
+        showImportAllModal(parsed);
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // ---------- モーダル表示 ----------
+    function showImportAllModal(parsed) {
+      const modal = $id('importAllModal');
+      const backdrop = $id('importAllBackdrop');
+      const preview = $id('importAllPreview');
+      const confirmBtn = $id('confirmImportAllBtn');
+      const cancelBtn = $id('cancelImportAllBtn');
+
+      preview.textContent = JSON.stringify(parsed, null, 2).slice(0, 50000);
+
+      modal.classList.add('show');
+      backdrop.classList.add('show');
+
+      cancelBtn.onclick = () => hide();
+
+      confirmBtn.onclick = () => {
+        hide();
+        localStorage.clear();
+        const data = parsed.data || parsed;
+        for (const k in data) {
+          localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k]));
+        }
+
+        const url = new URL(location.href);
+        url.searchParams.delete('list');
+        url.searchParams.delete('lists');
+        history.replaceState(null, '', url);
+
+        location.href = location.href;
+      };
+
+      function hide() {
+        modal.classList.remove('show');
+        backdrop.classList.remove('show');
+      }
+    }
+
+    // ---------- ヘッダーボタン ----------
+    const exportBtn = $id('exportAllBtn');
+    const importBtn = $id('importAllBtn');
+
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'file';
+    hiddenInput.accept = 'application/json';
+    hiddenInput.style.display = 'none';
+    document.body.appendChild(hiddenInput);
+    hiddenInput.onchange = e => {
+      const f = e.target.files[0];
+      if (f) handleFileForImportAll(f);
+      hiddenInput.value = '';
+    };
+
+    if (exportBtn) exportBtn.onclick = () => exportAll();
+    if (importBtn) importBtn.onclick = () => hiddenInput.click();
+
+    // ---------- Drag & Drop（body.grabbing のときは無効） ----------
+    document.addEventListener('dragover', e => {
+      if (document.body.classList.contains('grabbing')) return;
+      if (e.dataTransfer.types && [...e.dataTransfer.types].includes('Files')) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('drop', e => {
+      if (document.body.classList.contains('grabbing')) return;
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) {
+        e.preventDefault();
+        handleFileForImportAll(f);
+      }
+    }, { passive: false });
+
+  })();
 })();
