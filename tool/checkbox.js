@@ -120,6 +120,8 @@ let initialLoad = () => null;
     mainListSelect: $('#mainListSelect'), // moved into main panel header
     newListBtn: $('#newListBtn'),
     renameListBtn: $('#renameListBtn'),
+    moveUpBtn: $('#moveUpBtn'),
+    moveDownBtn: $('#moveDownBtn'),
     deleteListBtn: $('#deleteListBtn'),
     exportBtn: $('#exportBtn'),
     importBtn: $('#importBtn'),
@@ -450,6 +452,26 @@ let initialLoad = () => null;
     }
     //initialLoad();
   });
+
+  // 現在のリストをインデックス内で上下に移動
+  async function moveCurrentList(direction) {
+    // direction: -1 (上へ) or +1 (下へ)
+    if (!currentListId) return;
+    const idx = loadIndex() || [];
+    const pos = idx.findIndex(x => x.id === currentListId);
+    if (pos < 0) return;
+    const target = pos + direction;
+    if (target < 0 || target >= idx.length) return; // 範囲外は何もしない
+    const [moved] = idx.splice(pos, 1);
+    idx.splice(target, 0, moved);
+    await saveIndex(idx); // 必ず await
+    // UI更新: 同じリストを選び直してセレクト/URL/タイトルを更新
+    selectList(currentListId);
+    populateListSelects();
+  }
+
+  if (els.moveUpBtn) on(els.moveUpBtn, 'click', async () => { await moveCurrentList(-1); });
+  if (els.moveDownBtn) on(els.moveDownBtn, 'click', async () => { await moveCurrentList(1); });
 
   // ---------- Export ----------
   async function openExportForList(baseList) {
