@@ -226,8 +226,6 @@ let initialLoad = () => null;
       mainOptions = `<option value="">読み込むものはありません</option>`;
     }
 
-
-
     // ---------- セカンダリ用オプション（currentListId を除外。ただし secondary 未選択なら全表示） ----------
     let secondaryOptions = idx2
         .filter(e => !currentListId || e.id !== currentListId)
