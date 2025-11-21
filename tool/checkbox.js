@@ -6,6 +6,49 @@ let initialLoad = () => null;
 (async function init() {
   'use strict';
 
+  let becameActive = false;      // マウスが外にいた後、戻ってきた直後
+  let movementTimer = null;      // 安全化タイマー
+  const SAFE_TIME = 1500;        // マウス操作1.5秒で安全化
+
+  function setMovementTimerOnce() {
+    if (movementTimer !== null) return;
+
+    movementTimer = setTimeout(() => {
+      becameActive = false;
+      movementTimer = null;
+    }, SAFE_TIME);
+  }
+
+  // throttle 関数
+  function throttle(fn, wait) {
+    let lastTime = 0;
+    return function (...args) {
+      const now = Date.now();
+      if (now - lastTime >= wait) {
+        lastTime = now;
+        fn.apply(this, args);
+      }
+    };
+  }
+
+  // movement 処理（throttle）
+  function move() {
+    if (!becameActive) return;
+    setMovementTimerOnce();
+  }
+
+  const throttledMove = throttle(move, 200);
+  window.addEventListener("mousemove", throttledMove);
+
+  document.addEventListener("mouseenter", () => {
+    // カーソルが戻ってきた瞬間に危険状態扱い
+    // カーソルがブラウザ外へ出た
+    becameActive = true;
+    movementTimer = null;  // リセット
+    setMovementTimerOnce();
+  });
+
+
   // ---------- Utilities ----------
   const idle = window.requestIdleCallback || ((cb) => setTimeout(() => cb({ didTimeout:false, timeRemaining:()=>50 }), 1));
   const on = (el, ev, fn, opts) => el.addEventListener(ev, fn, opts);
@@ -45,6 +88,8 @@ let initialLoad = () => null;
     theme: 'cl_theme_v1',
     settings: 'cl_settings_v1',
     index: 'cl_index_v1',
+    action: 'cl_action_v1',
+    lastOpen: 'cl_lastOpen_v1',
     list: (id) => `cl_list_${id}_v1`,
   };
 
@@ -171,6 +216,8 @@ let initialLoad = () => null;
     notFoundBackdrop: $('#notFoundBackdrop'),
     notFoundModal: $('#notFoundModal'),
     sub_panel: $('#sub_panel'),
+    splitOverride: $('#splitOverride'),
+    defaultAction: $('#defaultAction'),
   };
 
   // ---------- State ----------
@@ -207,6 +254,16 @@ let initialLoad = () => null;
     document.documentElement.style.setProperty('--checkbox-size', px + 'px');
     settings.size = v; STORAGE.set(KEY.settings, settings);
   });
+
+
+  // load saved size
+  const settings1 = STORAGE.get(KEY.action, { action: 'LastOpen' });
+  els.defaultAction.value = settings1.action;
+
+  on(els.defaultAction, 'change', () => {
+    settings1.action = els.defaultAction.value;
+    STORAGE.set(KEY.action, settings1);
+  })
 
   // ---------- Lists UI ----------
 
@@ -290,6 +347,8 @@ let initialLoad = () => null;
     url.searchParams.set('lists', ordered.join(','));
     url.searchParams.delete('list');
     history.replaceState(null, '', url);
+
+    STORAGE.set(KEY.lastOpen, { lastOpen: ordered });
   }
 
   function renderItems(list, container, interactive) {
@@ -352,6 +411,17 @@ let initialLoad = () => null;
     const editBtn = ev.target.closest('button[data-action="edit"]');
     const dragBtn = ev.target.closest('button[data-action="drag"]');
     if (delBtn) {
+      if (becameActive) {
+        becameActive = false;
+        if (movementTimer) {
+          clearTimeout(movementTimer);
+          movementTimer = null;
+        }
+
+        const ok = confirm("誤操作の可能性があります！本当に削除しますか？\nThere is a possibility of incorrect operation!\nAre you sure you want to delete it?");
+        if (!ok) return;
+      }
+
       const wrap = delBtn.closest('.item');
       const id = wrap.getAttribute('data-id');
       list.items = list.items.filter(x=>x.id!==id);
@@ -449,6 +519,18 @@ let initialLoad = () => null;
     selectList(currentList.id);
   });
   on(els.newListBtn, 'click', async () => {
+
+    if (becameActive) {
+      becameActive = false;
+      if (movementTimer) {
+        clearTimeout(movementTimer);
+        movementTimer = null;
+      }
+
+      const ok = confirm("誤操作の可能性があります！本当に新規リストを作成しますか？\nThis may have been a mistake!\nDo you really want to create a new list?");
+      if (!ok) return;
+    }
+
     const id = uuid4();
     const name = `新規リスト`;
     const list = { v:1, id, name, saveState: true, items: [], updatedAt: Date.now() };
@@ -596,6 +678,7 @@ let initialLoad = () => null;
       url1.searchParams.delete('import');
       url1.searchParams.delete('enc');
       history.replaceState(null, '', url1);
+      selectList(obj.list.id)
     }
     hideNudge();
     // 取り込みプレビュー時はURLのlistsは触らない
@@ -785,6 +868,20 @@ let initialLoad = () => null;
       ids = listsParam.split(',').map(s=>s.trim()).filter(Boolean);
     } else if (singleList) {
       ids = [singleList];
+    } else if (els.defaultAction.value === 'LastOpen') {
+      if(idx[0].id) {
+        let tmp = STORAGE.get(KEY.lastOpen, {lastOpen: [idx[0].id]})
+        ids = tmp.lastOpen;
+      }else{
+        ids = STORAGE.get(KEY.lastOpen,  [])
+      }
+    } else if(els.defaultAction.value === 'Bottom') {
+      let ind = loadIndex();
+      ind = ind.map(x=>x.id).reverse();
+      ids = [ind[0]];
+    }else if(els.defaultAction.value === 'Random') {
+      let ind = loadIndex();
+      ids = [ind[Math.floor(Math.random()*ind.length)].id];
     } else if (idx[0]) {
       ids = [idx[0].id];
     }
@@ -831,9 +928,9 @@ let initialLoad = () => null;
       if (!list) return;
       try { document.body.classList.add('grabbing'); } catch {}
 
-      document.querySelectorAll(".item, .checkbox-label, .drag-handle").forEach(el1 => {
+      document.querySelectorAll(".item, .checkbox-label, .drag-handle, .panel").forEach(el1 => {
         el1.setAttribute("data-draggable", "true");
-      });
+      })
 
       dragging = {
         srcContainer: container,
@@ -906,9 +1003,19 @@ let initialLoad = () => null;
           targetContainer.appendChild(dragging.placeholder);
         }
 
-// 2. ポジション調整は insertBefore のみ
+// 2. ポジション調整
         if (insertBefore) {
           targetContainer.insertBefore(dragging.placeholder, insertBefore);
+        } else {
+          // ★ ここを追加：insertBefore が無い場合は必ず末尾へ
+          if (dragging.placeholder.parentElement !== targetContainer) {
+            // 親が違う場合は上で append されるが、同じ場合はここで append
+            dragging.placeholder.remove();
+            targetContainer.appendChild(dragging.placeholder);
+          } else {
+            // 親が同じならそのまま末尾へ送る
+            targetContainer.appendChild(dragging.placeholder);
+          }
         }
       };
       const up = async (e) => {
@@ -966,7 +1073,7 @@ let initialLoad = () => null;
         // cleanup
         dragging.draggedEl.classList.remove('dragging');
 
-        document.querySelectorAll(".item, .checkbox-label .drag-handle").forEach(el1 => {
+        document.querySelectorAll(".item, .checkbox-label .drag-handle, .panel").forEach(el1 => {
           el1.removeAttribute("data-draggable");
         });
 
@@ -1448,7 +1555,7 @@ let initialLoad = () => null;
         // rows.push('name');
         list.items.forEach(it => rows.push(csvEscapeCell(it.text)));
       } else {
-        rows.push(['name','checked'].map(csvEscapeCell).join(','));
+        rows.push(['name','checked'].map(csvEscapeCell).join(els.splitOverride.value || ','));
         list.items.forEach(it => {
           let state;
           const checked = !!it.checked;
@@ -1456,7 +1563,7 @@ let initialLoad = () => null;
           else if (format === 'on_off') state = checked ? 'on' : 'off';
           else if (format === 'checked_unchecked') state = checked ? 'checked' : 'unchecked';
           else state = checked ? 'true' : 'false';
-          rows.push([csvEscapeCell(it.text), csvEscapeCell(state)].join(','));
+          rows.push([csvEscapeCell(it.text), csvEscapeCell(state)].join(els.splitOverride.value || ','));
         });
       }
       return rows.join('\n');
@@ -1507,6 +1614,10 @@ let initialLoad = () => null;
     on(els.copyBtn, 'click', async () => {
       try { await navigator.clipboard.writeText(lastGeneratedCsv); } catch(e) { /* ignore */ }
     })
+
+    on(els.splitOverride, 'change', async () => {
+      await onCsvRequest();
+    });
 
     // CSV を生成してナゲット表示（csvBtn 押下、非同期対応）
     async function onCsvRequest() {

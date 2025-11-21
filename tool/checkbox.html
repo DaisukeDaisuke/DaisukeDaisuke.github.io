@@ -121,9 +121,12 @@
       box-shadow: var(--shadow);
       padding: 14px;
     }
+
+
     .panel:hover { outline: 3px solid var(--outline); }
     .panel-header { display:block; align-items:center; justify-content: space-between; gap:8px; margin-bottom: 8px; }
     .panel-title { font-weight: 600; margin-bottom: 8px; }
+
 
     .items { display: flex; flex-direction: column; gap: 8px; }
     .item {
@@ -229,7 +232,17 @@
   <header class="topbar" role="banner">
     <div class="topbar-inner">
       <div class="brand">チェックリスト — <span id="brandListName" class="muted">準備中…</span></div>
-      <div class="controls" aria-label="テーマとサイズ">
+      <div class="controls" aria-label="テーマとサイズとデフォルト動作">
+        <label class="switch" title="デフォルト動作">
+          <span class="muted">デフォルト動作</span>
+          <select id="defaultAction" class="select" aria-label="デフォルト動作">
+            <option value="LastOpen" selected>配置を保持する</option>
+            <option value="Bottom">リストの一番下を開く</option>
+            <option value="Up">リストの一番上を開く</option>
+            <option value="Random">ランダム</option>
+          </select>
+        </label>
+
         <label class="switch" title="テーマ">
           <span class="muted">テーマ</span>
           <select id="themeSelect" class="select" aria-label="テーマ選択">
@@ -411,6 +424,7 @@
           <option value="checked_unchecked">checked / unchecked</option>
         </select>
         <span class="grow"></span>
+        <input id="splitOverride" type="text" placeholder="区切り文字(インポートは「,」のみ)" style="width:35%;" />
         <button id="copyBtn" class="btn ghost">コピー</button>
         <button id="csvDownloadBtn" class="btn ghost">ダウンロード</button>
         <button data-close="csv" class="btn ghost">閉じる</button>
@@ -423,7 +437,7 @@
   </div>
 
 
-<!--  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.6/tool/checkbox.min.js"></script>-->
-  <script defer src="checkbox.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/gh/DaisukeDaisuke/DaisukeDaisuke.github.io@v1.0.7/tool/checkbox.min.js"></script>
+  <!--script defer src="checkbox.js"></script-->
 </body>
 </html>
