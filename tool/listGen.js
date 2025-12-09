@@ -243,7 +243,7 @@
   (async function init() {
     // File input
     fileInput.addEventListener('change', async (e) => {
-      await handleDroppedFiles(e.target.files, /*isDnD*/ false);
+      await handleDroppedFiles(e.target.files, /*isDnD*/ true);
       // clear input to allow re-select same files
       fileInput.value = '';
     });
