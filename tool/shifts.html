@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>48bit復元</title>
+    <style>
+        body{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            font-family:monospace;
+        }
+        .container{
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h3>48bit復元</h3>
+    <input type="text" id="input" value="げぐぼうあああE" size="20">
+    <br><br>
+    <button onclick="convert()">変換</button>
+    <p id="output"></p>
+</div>
+
+<script>
+
+    // 2文字目のみ抽出した64テーブル
+    const table = [
+        "あ","ぃ","い","ぅ","う","ぇ","え","ぉ",
+        "お","か","が","き","ぎ","く","ぐ","け",
+        "げ","こ","ご","さ","ざ","し","じ","す",
+        "ず","せ","ぜ","そ","ぞ","た","だ","ち",
+        "ぢ","っ","つ","づ","て","で","と","ど",
+        "な","に","ぬ","ね","の","は","ば","ぱ",
+        "ひ","び","ぴ","ふ","ぶ","ぷ","へ","べ",
+        "ぺ","ほ","ぼ","ぽ","ま","み","む","め",
+        "も","ゃ","や","ゅ","ゆ","ゆ","ょ","よ",
+        "ら","り","る","れ","ろ",
+    ];
+
+    const map = {};
+    for(let i=0;i<table.length;i++){
+        map[table[i]] = BigInt(i);
+    }
+
+    function convert(){
+        let str = document.getElementById("input").value.trim();
+
+        if(str.endsWith("E")){
+            str = str.slice(0,-1);
+        }
+
+        let result = 0n;
+
+        for(let i = 0; i < str.length; i++){
+            const ch = str[i];
+            if(!(ch in map)){
+                output.textContent = "未定義文字: " + ch;
+                return;
+            }
+
+            result |= (map[ch] << (6n * BigInt(i)));
+        }
+
+        result -= 63n;
+
+        let hex = result.toString(16).toUpperCase().padStart(12,"0");
+        document.getElementById("output").textContent = "0x" + hex;
+    }
+
+</script>
+</body>
+</html>
