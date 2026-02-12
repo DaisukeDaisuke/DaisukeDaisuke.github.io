@@ -49,10 +49,6 @@
     function convert(){
         let str = document.getElementById("input").value.trim();
 
-        if(str.endsWith("E")){
-            str = str.slice(0,-1);
-        }
-
         let result = 0n;
 
         for(let i = 0; i < str.length; i++){
@@ -64,8 +60,6 @@
 
             result |= (map[ch] << (6n * BigInt(i)));
         }
-
-        result -= 63n;
 
         let hex = result.toString(16).toUpperCase().padStart(12,"0");
         document.getElementById("output").textContent = "0x" + hex;
