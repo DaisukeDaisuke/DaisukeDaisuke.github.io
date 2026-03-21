@@ -21,7 +21,16 @@ const serverPort = params.get("serverPort");
 
 // 必須チェック
 if (serverUrl && serverPort) {
-    location.href = "minecraft://connect/?serverUrl=" + serverUrl + "&serverPort=" + serverPort;
+    const url = "minecraft://connect/?serverUrl=" + serverUrl + "&serverPort=" + serverPort;
+
+    // 1回目
+    location.href = url;
+
+    // フォールバック（少し遅らせて再試行）
+    setTimeout(() => {
+        location.href = url;
+    }, 1500);
+
 } else {
     document.body.innerText = "serverUrl と serverPort を指定してください";
 }
