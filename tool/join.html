@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Minecraft Redirect</title>
+</head>
+<body>
+
+<script>
+// クエリ取得
+const params = new URLSearchParams(location.search);
+
+// パラメータ取得（そのまま使う）
+const serverUrl = params.get("serverUrl");
+const serverPort = params.get("serverPort");
+
+// 必須チェック
+if (serverUrl && serverPort) {
+    location.href = "minecraft://connect/?serverUrl=" + serverUrl + "&serverPort=" + serverPort;
+} else {
+    document.body.innerText = "serverUrl と serverPort を指定してください";
+}
+</script>
+
+</body>
+</html>
