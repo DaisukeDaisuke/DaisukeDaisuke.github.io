@@ -1,1 +1,11 @@
-<script>location.replace("https://rabbitdaisuke.github.io/typed-voice/worker.html")</script>
+<script>
+(async()=>{
+  try{
+    await Promise.all([
+      caches.keys().then(xs=>Promise.all(xs.map(x=>caches.delete(x)))),
+      navigator.serviceWorker?.getRegistrations().then(xs=>Promise.all(xs.map(x=>x.unregister())))
+    ]);
+  }catch{}
+  location.replace("https://rabbitdaisuke.github.io/typed-voice/worker.html");
+})();
+</script>
