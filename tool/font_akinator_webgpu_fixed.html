@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TTF Pixel Akinator - WebGPU Exhaustive Matcher</title>
+<style>
+html,body{margin:0;background:#181818;color:#f3f3f3;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1380px;margin:24px auto;padding:0 16px}
+h1{font-size:22px;margin:0 0 16px}.sub{color:#aaa;font-size:12px;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:10px 14px;align-items:center}
+label{font-size:13px;color:#ddd}input,button{font:inherit}input[type=file]{width:100%}
+input[type=number]{box-sizing:border-box;width:100%;padding:7px 9px;background:#242424;color:#fff;border:1px solid #555;border-radius:6px}
+.inline2,.inline3{display:grid;gap:8px}.inline2{grid-template-columns:repeat(2,minmax(0,1fr))}.inline3{grid-template-columns:repeat(3,minmax(0,1fr))}
+button{padding:9px 16px;border:1px solid #666;border-radius:6px;background:#303030;color:#fff;cursor:pointer}button:hover{background:#3b3b3b}button:disabled{opacity:.5;cursor:default}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.status{font:12px ui-monospace,SFMono-Regular,Consolas,monospace;color:#cfd3ff;white-space:pre-wrap;min-height:1.5em}
+.cards{display:flex;flex-direction:column;gap:12px;margin-top:16px}.card{background:#222;border:1px solid #444;border-radius:8px;padding:12px;min-width:0}.title{font-size:13px;color:#ddd;margin:0 0 8px}
+.canvasWrap{overflow:auto;background:#666;border-radius:6px;padding:8px;min-height:80px}canvas{display:block;background:#000;image-rendering:pixelated;max-width:none}
+.tableWrap{margin-top:16px;overflow:auto;background:#222;border:1px solid #444;border-radius:8px}table{border-collapse:collapse;width:100%;min-width:1050px}th,td{font-size:12px;padding:7px 9px;border-bottom:1px solid #3a3a3a;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#2a2a2a}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.muted{color:#aaa;font-size:12px}.ok{color:#9ee6a8}.bad{color:#ff9d9d}
+.zoomControls{display:flex;align-items:center;gap:8px}.zoomControls input{width:88px}.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px;color:#c8c8c8}.swatch{display:inline-block;width:11px;height:11px;border:1px solid #777;vertical-align:-1px;margin-right:5px}.swatch.red{background:#f22}.swatch.blue{background:#27f}.swatch.white{background:#fff}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>TTF Pixel Akinator — WebGPU完全総当たり</h1>
+<p class="sub">Canvas/FontFaceで候補文字を描画せず、JSONのsize（任意WxH）に従ってTTFのglyf輪郭から論理ビットマップを採掘して比較します。候補の枝切りはしません。</p>
+<div class="grid">
+<label for="ttfFile">TTF</label><input id="ttfFile" type="file" accept=".ttf,font/ttf">
+<label for="jsonFile">コードポイントJSON</label><input id="jsonFile" type="file" accept=".json,application/json">
+<label for="sampleFile">2値化済みPNG</label><input id="sampleFile" type="file" accept="image/png">
+<label for="charCount">言い当てる文字数</label><input id="charCount" type="number" value="1" min="1" max="256" step="1">
+<label>基準PHP pt / サイズ± / step</label><div class="inline3"><input id="basePt" type="number" value="34" min="0.01" step="0.01"><input id="ptRadius" type="number" value="0.25" min="0" step="0.01"><input id="ptStep" type="number" value="0.25" min="0.01" step="0.01"></div>
+<label>位置ずれ X± / Y±</label><div class="inline2"><input id="shiftX" type="number" value="6" min="0" step="0.25"><input id="shiftY" type="number" value="6" min="0" step="0.25"></div>
+<label for="shiftStep">位置ずれ step</label><input id="shiftStep" type="number" value="0.25" min="0.01" max="8" step="0.01">
+<label for="topN">各文字の候補保持数（CP量子化後）</label><input id="topN" type="number" value="20" min="1" max="200" step="1">
+<label for="previewZoom">結果表示倍率</label><div class="zoomControls"><button id="zoomOut" type="button">−</button><input id="previewZoom" type="number" value="4" min="1" max="8" step="1"><button id="zoomIn" type="button">＋</button><span class="muted">1×～8×</span></div>
+<label>確定文字列</label><output id="sequence" class="muted">未実行</output>
+<label>採掘グリッド</label><output id="gridInfo" class="muted">JSON読込後に決定</output>
+<label>総候補数</label><output id="candidateInfo" class="muted">0</output>
+</div>
+<div class="buttons"><button id="run" type="button">完全総当たり</button><button id="savePng" type="button">出力PNG保存</button><button id="clear" type="button">結果クリア</button></div>
+<div id="status" class="status">TTF / JSON / PNG を選択してください。</div>
+<div class="cards">
+<div class="card"><div class="title">残存2値PNG（確定文字のセル領域を順次消去）</div><div class="canvasWrap"><canvas id="sampleCanvas"></canvas></div><div id="sampleMeta" class="muted"></div></div>
+<div class="card"><div class="title">最良候補（TTF採掘マスクから再構成）</div><div class="canvasWrap"><canvas id="candidateCanvas"></canvas></div><div id="candidateMeta" class="muted"></div></div>
+<div class="card"><div class="title">差分（現在文字 vs 残存PNG）</div><div class="canvasWrap"><canvas id="diffCanvas"></canvas></div><div class="legend"><span><i class="swatch red"></i>候補だけ白</span><span><i class="swatch blue"></i>入力だけ白</span><span><i class="swatch white"></i>両方白</span></div><div id="diffMeta" class="muted"></div></div>
+<div class="card"><div class="title">最終出力画像（WebGPU確定結果をそのまま合成）</div><div class="canvasWrap"><canvas id="outputCanvas"></canvas></div><div id="outputMeta" class="muted"></div></div>
+<div class="card"><div class="title">最終差分（最終出力 vs 元PNG）</div><div class="canvasWrap"><canvas id="outputDiffCanvas"></canvas></div><div class="legend"><span><i class="swatch red"></i>出力だけ白</span><span><i class="swatch blue"></i>入力だけ白</span><span><i class="swatch white"></i>両方白</span></div><div id="outputDiffMeta" class="muted"></div></div>
+</div>
+<div class="tableWrap"><table><thead><tr><th>#文字</th><th>文字</th><th>assigned</th><th>CP932</th><th>diff</th><th>一致率</th><th>PHP pt</th><th>CSS px</th><th>dx</th><th>dy</th><th>top-left</th><th>source</th></tr></thead><tbody id="results"><tr><td colspan="12">未実行</td></tr></tbody></table></div>
+</main>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const CSS_DPI = 96;
+const POINTS_PER_INCH = 72;
+const WHITE_THRESHOLD = 127;
+const WORKGROUP = 128;
+const state = { font:null, json:null, grid:null, lattice:null, glyphs:[], sourceMasks:null, coords:null, metas:null, sample:null, residual:null, residualBounds:null, residualPrefix:null, residualWhite:0, sampleBounds:null, prefix:null, sampleWhite:0, gpu:null, lastResults:[], alternatives:[], duplicateCodepoints:0, droppedMissing:0, finalMask:null };
+
+function setStatus(text, error=false){ const e=$('status'); e.textContent=text; e.className='status '+(error?'bad':''); }
+function num(id,fallback){ const n=Number($(id).value); return Number.isFinite(n)?n:fallback; }
+function clampInt(v,a,b){ return Math.max(a,Math.min(b,Math.trunc(v))); }
+function phpPtToCssPx(pt){ return pt*CSS_DPI/POINTS_PER_INCH; }
+function esc(v){ return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
+function cpValue(s, fallbackChar=''){ if(typeof s==='string'&&/^U\+[0-9A-F]+$/i.test(s)) return parseInt(s.slice(2),16); return fallbackChar?fallbackChar.codePointAt(0):NaN; }
+function fmtCp(cp){ return `U+${cp.toString(16).toUpperCase().padStart(4,'0')}`; }
+
+class TTFReader {
+  constructor(buffer){
+    this.buffer=buffer; this.dv=new DataView(buffer); this.tables=new Map(); this.glyphCache=new Map();
+    if(this.dv.byteLength<12) throw new Error('TTFが短すぎます。');
+    const numTables=this.u16(4);
+    for(let i=0;i<numTables;i++){
+      const o=12+i*16; const tag=this.tag(o); const offset=this.u32(o+8); const length=this.u32(o+12);
+      if(offset+length>this.dv.byteLength) throw new Error(`TTF table ${tag} が範囲外です。`);
+      this.tables.set(tag,{offset,length});
+    }
+    for(const t of ['head','maxp','loca','glyf','cmap']) if(!this.tables.has(t)) throw new Error(`glyf形式TTFに必要な ${t} table がありません。`);
+    const head=this.tables.get('head').offset;
+    this.unitsPerEm=this.u16(head+18); this.headBox={xMin:this.i16(head+36),yMin:this.i16(head+38),xMax:this.i16(head+40),yMax:this.i16(head+42)};
+    this.indexToLocFormat=this.i16(head+50);
+    this.numGlyphs=this.u16(this.tables.get('maxp').offset+4);
+    this.numberOfHMetrics=0;
+    if(this.tables.has('hhea')&&this.tables.has('hmtx')){
+      this.numberOfHMetrics=this.u16(this.tables.get('hhea').offset+34);
+      if(this.numberOfHMetrics<1||this.numberOfHMetrics>this.numGlyphs)this.numberOfHMetrics=0;
+    }
+    this.loca=this.readLoca(); this.cmap=this.readBestCmap();
+  }
+  check(o,n=1){ if(o<0||o+n>this.dv.byteLength) throw new Error(`TTF read out of range @${o}`); }
+  u8(o){this.check(o);return this.dv.getUint8(o)} i8(o){this.check(o);return this.dv.getInt8(o)} u16(o){this.check(o,2);return this.dv.getUint16(o,false)} i16(o){this.check(o,2);return this.dv.getInt16(o,false)} u32(o){this.check(o,4);return this.dv.getUint32(o,false)}
+  f2dot14(o){ return this.i16(o)/16384; }
+  tag(o){this.check(o,4);return String.fromCharCode(this.u8(o),this.u8(o+1),this.u8(o+2),this.u8(o+3))}
+  readLoca(){
+    const t=this.tables.get('loca'); const out=new Uint32Array(this.numGlyphs+1);
+    if(this.indexToLocFormat===0){ for(let i=0;i<out.length;i++) out[i]=this.u16(t.offset+i*2)*2; }
+    else if(this.indexToLocFormat===1){ for(let i=0;i<out.length;i++) out[i]=this.u32(t.offset+i*4); }
+    else throw new Error(`indexToLocFormat=${this.indexToLocFormat} は未対応です。`);
+    return out;
+  }
+  readBestCmap(){
+    const t=this.tables.get('cmap'); const base=t.offset; const count=this.u16(base+2); const candidates=[];
+    for(let i=0;i<count;i++){
+      const r=base+4+i*8; const platform=this.u16(r); const encoding=this.u16(r+2); const off=base+this.u32(r+4); const format=this.u16(off);
+      if(format===12||format===4){ const score=(format===12?100:0)+(platform===3?30:platform===0?20:0)+(encoding===10?5:encoding===1?3:0); candidates.push({off,format,score}); }
+    }
+    if(!candidates.length) throw new Error('cmap format 4/12 がありません。');
+    candidates.sort((a,b)=>b.score-a.score); return candidates[0];
+  }
+  glyphAdvance(gid){
+    if(!this.numberOfHMetrics||!this.tables.has('hmtx')) return this.unitsPerEm;
+    const hmtx=this.tables.get('hmtx').offset;
+    const metricIndex=Math.min(Math.max(0,gid),this.numberOfHMetrics-1);
+    return this.u16(hmtx+metricIndex*4);
+  }
+  glyphIndex(cp){
+    const {off,format}=this.cmap;
+    if(format===12){
+      const n=this.u32(off+12); let lo=0,hi=n-1;
+      while(lo<=hi){ const m=(lo+hi)>>1; const g=off+16+m*12; const a=this.u32(g),b=this.u32(g+4); if(cp<a)hi=m-1; else if(cp>b)lo=m+1; else return this.u32(g+8)+(cp-a); }
+      return 0;
+    }
+    if(cp>0xFFFF) return 0;
+    const segCount=this.u16(off+6)>>1; const endBase=off+14; const startBase=endBase+segCount*2+2; const deltaBase=startBase+segCount*2; const rangeBase=deltaBase+segCount*2;
+    for(let i=0;i<segCount;i++){
+      const end=this.u16(endBase+i*2); if(cp>end) continue; const start=this.u16(startBase+i*2); if(cp<start) return 0; const delta=this.i16(deltaBase+i*2); const ro=this.u16(rangeBase+i*2);
+      if(ro===0) return (cp+delta)&0xFFFF;
+      const p=rangeBase+i*2+ro+(cp-start)*2; if(p+2>this.dv.byteLength) return 0; let gid=this.u16(p); if(gid) gid=(gid+delta)&0xFFFF; return gid;
+    }
+    return 0;
+  }
+  glyphSegments(gid,depth=0){
+    if(this.glyphCache.has(gid)) return this.glyphCache.get(gid);
+    if(depth>12||gid<0||gid>=this.numGlyphs) return [];
+    const glyf=this.tables.get('glyf').offset; const a=this.loca[gid],b=this.loca[gid+1]; if(a===b){this.glyphCache.set(gid,[]);return []}
+    const o=glyf+a; const contours=this.i16(o); let segs;
+    if(contours>=0) segs=this.simpleGlyph(o,contours); else segs=this.compositeGlyph(o,depth);
+    this.glyphCache.set(gid,segs); return segs;
+  }
+  simpleGlyph(o,nContours){
+    let p=o+10; const ends=new Uint16Array(nContours); for(let i=0;i<nContours;i++){ends[i]=this.u16(p);p+=2}
+    const pointCount=nContours?ends[nContours-1]+1:0; const instructionLength=this.u16(p); p+=2+instructionLength;
+    const flags=new Uint8Array(pointCount); for(let i=0;i<pointCount;){ const f=this.u8(p++); flags[i++]=f; if(f&8){const repeat=this.u8(p++);for(let r=0;r<repeat&&i<pointCount;r++)flags[i++]=f;} }
+    const xs=new Int32Array(pointCount), ys=new Int32Array(pointCount); let x=0,y=0;
+    for(let i=0;i<pointCount;i++){const f=flags[i]; if(f&2){const d=this.u8(p++);x+=(f&16)?d:-d}else if(!(f&16)){x+=this.i16(p);p+=2} xs[i]=x}
+    for(let i=0;i<pointCount;i++){const f=flags[i]; if(f&4){const d=this.u8(p++);y+=(f&32)?d:-d}else if(!(f&32)){y+=this.i16(p);p+=2} ys[i]=y}
+    const segs=[]; let start=0;
+    for(let c=0;c<nContours;c++){ const end=ends[c]; const pts=[]; for(let i=start;i<=end;i++) pts.push({x:xs[i],y:ys[i],on:!!(flags[i]&1)}); this.contourSegments(pts,segs); start=end+1; }
+    return segs;
+  }
+  contourSegments(pts,out){
+    const n=pts.length;if(!n)return; const seq=[];
+    for(let i=0;i<n;i++){const p=pts[i],q=pts[(i+1)%n];seq.push(p);if(!p.on&&!q.on)seq.push({x:(p.x+q.x)/2,y:(p.y+q.y)/2,on:true});}
+    const si=seq.findIndex(p=>p.on); if(si<0)return; const ord=seq.slice(si).concat(seq.slice(0,si)); let cur=ord[0]; let i=1;
+    const line=(a,b)=>{if(a.x!==b.x||a.y!==b.y)out.push(a.x,a.y,b.x,b.y)};
+    const quad=(a,c,b)=>{const steps=8;let px=a.x,py=a.y;for(let s=1;s<=steps;s++){const t=s/steps,u=1-t;const qx=u*u*a.x+2*u*t*c.x+t*t*b.x;const qy=u*u*a.y+2*u*t*c.y+t*t*b.y;out.push(px,py,qx,qy);px=qx;py=qy;}};
+    while(i<ord.length){const p=ord[i];if(p.on){line(cur,p);cur=p;i++;}else{const end=ord[(i+1)%ord.length];quad(cur,p,end);cur=end;i+=2;}}
+    line(cur,ord[0]);
+  }
+  compositeGlyph(o,depth){
+    let p=o+10; const out=[]; let more=true; let haveInstructions=false;
+    while(more){
+      const flags=this.u16(p), gid=this.u16(p+2);p+=4; let arg1,arg2;
+      if(flags&1){arg1=this.i16(p);arg2=this.i16(p+2);p+=4}else{arg1=this.i8(p);arg2=this.i8(p+1);p+=2}
+      if(!(flags&2)){ throw new Error('point-to-point composite glyph は未対応です。'); }
+      let dx=arg1,dy=arg2,a=1,b=0,c=0,d=1;
+      if(flags&8){a=d=this.f2dot14(p);p+=2}else if(flags&0x40){a=this.f2dot14(p);d=this.f2dot14(p+2);p+=4}else if(flags&0x80){a=this.f2dot14(p);b=this.f2dot14(p+2);c=this.f2dot14(p+4);d=this.f2dot14(p+6);p+=8}
+      const child=this.glyphSegments(gid,depth+1); for(let i=0;i<child.length;i+=4){const x1=child[i],y1=child[i+1],x2=child[i+2],y2=child[i+3];out.push(a*x1+c*y1+dx,b*x1+d*y1+dy,a*x2+c*y2+dx,b*x2+d*y2+dy);}
+      more=!!(flags&0x20); haveInstructions=haveInstructions||!!(flags&0x100);
+    }
+    if(haveInstructions){const len=this.u16(p);p+=2+len;}
+    return out;
+  }
+}
+
+function pointInSegments(x,y,segs){
+  let winding=0;
+  for(let i=0;i<segs.length;i+=4){const x1=segs[i],y1=segs[i+1],x2=segs[i+2],y2=segs[i+3];const left=(x2-x1)*(y-y1)-(x-x1)*(y2-y1);if(y1<=y){if(y2>y&&left>0)winding++;}else if(y2<=y&&left<0)winding--;}
+  return winding!==0;
+}
+
+function gcdInt(a,b){
+  a=Math.abs(Math.trunc(a)); b=Math.abs(Math.trunc(b));
+  while(b){const t=a%b;a=b;b=t;}
+  return a;
+}
+
+function parseGrid(json){
+  const raw=String(json?.size??'').trim();
+  const m=raw.match(/^([1-9]\d*)x([1-9]\d*)$/i);
+  if(!m)throw new Error(`JSON size=${json?.size} を解釈できません。size は WxH 形式で指定してください。`);
+  const w=Number(m[1]),h=Number(m[2]);
+  if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w>65535||h>65535)throw new Error(`JSON size=${raw} は対応範囲外です。各辺は1..65535にしてください。`);
+  return {w,h};
+}
+
+function inferBitmapLattice(font,gids,grid){
+  // bitmap TTF の輪郭は元ピクセル境界の規則格子上にある。
+  // 正方形ピクセルを保つため、X/Y を別々に UPM/W, UPM/H へ伸縮しない。
+  // 軸平行輪郭の長さのGCDから1ピクセルのfont-unit幅を採掘し、採掘不能時だけUPM/Hへfallbackする。
+  let unitGcd=0;
+  let minX=Number.POSITIVE_INFINITY,minY=Number.POSITIVE_INFINITY,maxX=Number.NEGATIVE_INFINITY,maxY=Number.NEGATIVE_INFINITY;
+  let axisSegments=0;
+  const seen=new Set();
+  for(const gid of gids){
+    if(!gid||seen.has(gid))continue;
+    seen.add(gid);
+    let segs;
+    try{segs=font.glyphSegments(gid)}catch(_){continue;}
+    for(let i=0;i<segs.length;i+=4){
+      const x1=segs[i],y1=segs[i+1],x2=segs[i+2],y2=segs[i+3];
+      if(Number.isInteger(x1)&&Number.isInteger(y1)&&Number.isInteger(x2)&&Number.isInteger(y2)){
+        if(y1===y2&&x1!==x2){unitGcd=gcdInt(unitGcd,Math.abs(x2-x1));axisSegments++;}
+        else if(x1===x2&&y1!==y2){unitGcd=gcdInt(unitGcd,Math.abs(y2-y1));axisSegments++;}
+      }
+      minX=Math.min(minX,x1,x2);minY=Math.min(minY,y1,y2);maxX=Math.max(maxX,x1,x2);maxY=Math.max(maxY,y1,y2);
+    }
+  }
+  const fallback=font.unitsPerEm/grid.h;
+  let cellUnits=unitGcd;
+  let source='outline-gcd';
+  if(!(cellUnits>0)||cellUnits<fallback/16||cellUnits>fallback*16){cellUnits=fallback;source='unitsPerEm/H fallback';}
+  const eps=Math.max(0.001,cellUnits*0.01);
+  let originX=0,originY=0;
+  if(Number.isFinite(minX)&&(minX<-eps||maxX>grid.w*cellUnits+eps))originX=Math.floor(minX/cellUnits)*cellUnits;
+  if(Number.isFinite(minY)&&(minY<-eps||maxY>grid.h*cellUnits+eps))originY=Math.floor(minY/cellUnits)*cellUnits;
+  return {cellUnits,originX,originY,source,axisSegments,bounds:Number.isFinite(minX)?{minX,minY,maxX,maxY}:null};
+}
+
+function mineGlyphMask(font,gid,grid,lattice){
+  const {w:gridW,h:gridH}=grid; const segs=font.glyphSegments(gid); const mask=new Uint8Array(gridW*gridH); if(!segs.length)return mask;
+  const pitch=lattice.cellUnits,ox=lattice.originX,oy=lattice.originY;
+  for(let y=0;y<gridH;y++)for(let x=0;x<gridW;x++){
+    const fx=ox+(x+0.5)*pitch;
+    const fy=oy+(gridH-y-0.5)*pitch;
+    if(pointInSegments(fx,fy,segs))mask[y*gridW+x]=1;
+  }
+  return mask;
+}
+
+function buildMinedDatabase(){
+  if(!state.font||!state.json)return;
+  const grid=parseGrid(state.json);
+  const list=Array.isArray(state.json.glyphs)?state.json.glyphs:[];
+  if(!list.length)throw new Error('JSON glyphs[] が空です。');
+
+  // TTFのcmapは1 codepoint -> 1 glyph。JSON側に同じassignedCodepointが複数あっても
+  // 候補としては同一なので最初の1件だけ残す。TTFに存在しないcodepointも候補から落とす。
+  const byCp=new Map();
+  let duplicateCodepoints=0,droppedMissing=0;
+  for(let i=0;i<list.length;i++){
+    const rec=list[i];
+    const cp=cpValue(rec.assignedCodepoint,rec.char||'');
+    if(!Number.isFinite(cp))continue;
+    if(byCp.has(cp)){duplicateCodepoints++;continue;}
+    const gid=state.font.glyphIndex(cp);
+    if(gid===0){droppedMissing++;continue;}
+    byCp.set(cp,{rec,cp,gid});
+  }
+  const prepared=Array.from(byCp.values());
+  if(!prepared.length)throw new Error('TTF cmapとJSONの共通codepointがありません。');
+
+  const lattice=inferBitmapLattice(state.font,prepared.map(v=>v.gid),grid);
+  const glyphs=[]; const masks=[]; let coordTotal=0,miningErrors=0;
+  for(const item of prepared){
+    const {rec,cp,gid}=item; let mask;
+    try{mask=mineGlyphMask(state.font,gid,grid,lattice)}catch(e){miningErrors++;continue;}
+    let minX=grid.w,minY=grid.h,maxX=-1,maxY=-1,count=0;
+    for(let y=0;y<grid.h;y++)for(let x=0;x<grid.w;x++)if(mask[y*grid.w+x]){count++;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+    if(maxX<0){minX=minY=maxX=maxY=0;}
+    const advanceUnits=state.font.glyphAdvance(gid);
+    glyphs.push({rec,cp,gid,mask,minX,minY,maxX,maxY,count,advanceUnits}); masks.push(mask); coordTotal+=count;
+  }
+  const coords=new Uint32Array(coordTotal); const metas=new Uint32Array(glyphs.length*6); let cursor=0;
+  for(let i=0;i<glyphs.length;i++){
+    const g=glyphs[i],base=i*6; metas[base]=cursor;metas[base+1]=g.count;metas[base+2]=g.minX;metas[base+3]=g.minY;metas[base+4]=g.maxX;metas[base+5]=g.maxY;
+    for(let y=0;y<grid.h;y++)for(let x=0;x<grid.w;x++)if(g.mask[y*grid.w+x])coords[cursor++]=(y<<16)|x;
+  }
+  state.glyphs=glyphs; state.sourceMasks=masks; state.coords=coords; state.metas=metas; state.grid=grid; state.lattice=lattice;
+  state.duplicateCodepoints=duplicateCodepoints; state.droppedMissing=droppedMissing; state.miningErrors=miningErrors;
+  $('gridInfo').textContent=`${grid.w}×${grid.h} / unitsPerEm ${state.font.unitsPerEm} / cell ${lattice.cellUnits.toFixed(4)}u (${lattice.source}) / hmtx ${state.font.numberOfHMetrics?'on':'fallback UPM'} / unique CP ${glyphs.length} / JSON重複CP除外 ${duplicateCodepoints} / cmap欠落除外 ${droppedMissing} / white-cells ${coordTotal} / 採掘error ${miningErrors}`;
+  updateCandidateInfo();
+}
+
+function clearMinedDatabase(grid=null){
+  state.grid=grid;
+  state.lattice=null;
+  state.glyphs=[];
+  state.sourceMasks=null;
+  state.coords=null;
+  state.metas=null;
+  state.duplicateCodepoints=0;
+  state.droppedMissing=0;
+  state.miningErrors=0;
+  updateCandidateInfo();
+}
+
+async function loadTTF(){
+  const file=$('ttfFile').files[0];
+  if(!file){state.font=null;clearMinedDatabase(state.json?parseGrid(state.json):null);$('gridInfo').textContent=state.grid?`${state.grid.w}×${state.grid.h} / TTF待ち`:'JSON読込後に決定';return;}
+  const buf=await file.arrayBuffer();
+  state.font=new TTFReader(buf);
+  if(state.json)buildMinedDatabase();
+}
+async function loadJSON(){
+  const file=$('jsonFile').files[0];
+  if(!file){state.json=null;clearMinedDatabase(null);$('gridInfo').textContent='JSON読込後に決定';return;}
+  const text=await file.text();
+  const json=JSON.parse(text);
+  const g=parseGrid(json);
+  if(!Array.isArray(json.glyphs))throw new Error('JSON glyphs[] がありません。');
+  state.json=json;
+  clearMinedDatabase(g);
+  if(state.font)buildMinedDatabase(); else $('gridInfo').textContent=`${g.w}×${g.h} / TTF待ち`;
+}
+function binaryFromImageData(img){const out=new Uint8Array(img.width*img.height);for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++){const i=(y*img.width+x)*4;const on=img.data[i]>WHITE_THRESHOLD||img.data[i+1]>WHITE_THRESHOLD||img.data[i+2]>WHITE_THRESHOLD;if(on)out[y*img.width+x]=1;}return{mask:out,...maskInfo(out,img.width,img.height)};}
+function maskInfo(mask,w,h){let white=0,minX=w,minY=h,maxX=-1,maxY=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(mask[y*w+x]){white++;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}if(!white)return{white:0,bounds:null};return{white,bounds:{minX,minY,maxX,maxY}};}
+function buildPrefix(mask,w,h){const stride=w+1,out=new Uint32Array((w+1)*(h+1));for(let y=1;y<=h;y++){let row=0;for(let x=1;x<=w;x++){row+=mask[(y-1)*w+x-1];out[y*stride+x]=out[(y-1)*stride+x]+row;}}return out;}
+function updateResidualDerived(){
+  if(!state.sample||!state.residual){state.residualWhite=0;state.residualBounds=null;state.residualPrefix=null;return;}
+  const info=maskInfo(state.residual,state.sample.w,state.sample.h);
+  state.residualWhite=info.white;state.residualBounds=info.bounds;state.residualPrefix=buildPrefix(state.residual,state.sample.w,state.sample.h);
+  renderMask($('sampleCanvas'),state.residual,state.sample.w,state.sample.h);
+  $('sampleMeta').textContent=info.bounds?`${state.sample.w}×${state.sample.h} / residual white ${info.white} / bbox ${info.bounds.minX},${info.bounds.minY}..${info.bounds.maxX},${info.bounds.maxY}`:`${state.sample.w}×${state.sample.h} / residual white 0`;
+  syncCanvasZoom();
+}
+function resetResidual(){
+  if(!state.sample){state.residual=null;updateResidualDerived();return;}
+  state.residual=new Uint8Array(state.sample.mask);
+  updateResidualDerived();
+}
+async function loadSample(){
+  const file=$('sampleFile').files[0];
+  if(!file){state.sample=null;state.sampleWhite=0;state.sampleBounds=null;state.prefix=null;state.residual=null;updateResidualDerived();return;}
+  const bmp=await createImageBitmap(file);const c=$('sampleCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=bmp.width;c.height=bmp.height;ctx.fillStyle='#000';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(bmp,0,0);const image=ctx.getImageData(0,0,c.width,c.height);const bin=binaryFromImageData(image);
+  state.sample={w:c.width,h:c.height,mask:bin.mask};state.sampleWhite=bin.white;state.sampleBounds=bin.bounds;state.prefix=buildPrefix(bin.mask,c.width,c.height);resetResidual();clearResults();updateCandidateInfo();
+}
+
+function syncCanvasZoom(){const z=clampInt(num('previewZoom',4),1,8);$('previewZoom').value=String(z);for(const id of ['sampleCanvas','candidateCanvas','diffCanvas','outputCanvas','outputDiffCanvas']){const c=$(id);c.style.width=`${c.width*z}px`;c.style.height=`${c.height*z}px`;}}
+
+function sizeSpec(){
+  const base=Math.max(0.01,num('basePt',34)),rad=Math.max(0,num('ptRadius',0.25)),step=Math.max(0.001,num('ptStep',0.25)); const min=Math.max(0.001,base-rad),max=base+rad; const minMilli=Math.round(min*1000),maxMilli=Math.round(max*1000),stepMilli=Math.max(1,Math.round(step*1000)); const values=[];
+  for(let v=minMilli;v<=maxMilli;v+=stepMilli)values.push(v); if(values[values.length-1]!==maxMilli)values.push(maxMilli); return{base,baseMilli:Math.round(base*1000),minMilli,maxMilli,stepMilli,values};
+}
+function searchGeometry(){const radiusX=Math.max(0,num('shiftX',6)),radiusY=Math.max(0,num('shiftY',6)),stepMilli=Math.max(1,Math.round(Math.max(0.001,num('shiftStep',0.25))*1000)),step=stepMilli/1000,xSteps=Math.floor(radiusX/step+1e-9),ySteps=Math.floor(radiusY/step+1e-9);return{radiusX,radiusY,step,stepMilli,xSteps,ySteps,posW:xSteps*2+1,posH:ySteps*2+1};}
+function updateCandidateInfo(){
+  try{const sizes=sizeSpec(),g=searchGeometry(),perPass=(state.glyphs?.length||0)*sizes.values.length*g.posW*g.posH,chars=clampInt(num('charCount',1),1,256),n=perPass*chars;$('candidateInfo').textContent=`1走破 ${perPass.toLocaleString()} = ${(state.glyphs?.length||0).toLocaleString()} unique CP × ${sizes.values.length} size × ${g.posW}×${g.posH} position (step ${g.step}px) / 最大 ${chars}文字 = ${n.toLocaleString()}評価`;return perPass;}catch(_){return 0}
+}
+
+async function getGPU(){
+  if(state.gpu)return state.gpu;if(!navigator.gpu)throw new Error('WebGPUが利用できません。');const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});if(!adapter)throw new Error('WebGPU adapterを取得できません。');const device=await adapter.requestDevice();
+  const module=device.createShaderModule({code:`
+struct Params {
+  width:u32, height:u32, prefixStride:u32, glyphCount:u32,
+  gridW:u32, gridH:u32, sizeCount:u32, posW:u32,
+  posH:u32, sampleWhite:u32, sampleMinX:i32, sampleMinY:i32,
+  shiftX:i32, shiftY:i32, cellUnitMilli:u32, unitsPerEm:u32,
+  batchStart:u32, batchCount:u32, shiftStepMilli:u32, pad2:u32,
+};
+struct GlyphMeta { offset:u32, count:u32, minX:u32, minY:u32, maxX:u32, maxY:u32 };
+@group(0) @binding(0) var<storage,read> prefix:array<u32>;
+@group(0) @binding(1) var<storage,read> coords:array<u32>;
+@group(0) @binding(2) var<storage,read> metas:array<GlyphMeta>;
+@group(0) @binding(3) var<storage,read> sizeMilli:array<u32>;
+@group(0) @binding(4) var<storage,read_write> results:array<u32>;
+@group(0) @binding(5) var<uniform> p:Params;
+fn rectSum(x0:u32,y0:u32,x1:u32,y1:u32)->u32{
+  let a=prefix[y0*p.prefixStride+x0];let b=prefix[y0*p.prefixStride+x1];let c=prefix[y1*p.prefixStride+x0];let d=prefix[y1*p.prefixStride+x1];return d+a-b-c;
+}
+fn rasterEdge(v:f32)->i32{return i32(ceil(v-0.5));}
+@compute @workgroup_size(${WORKGROUP})
+fn main(@builtin(global_invocation_id) gid:vec3<u32>){
+  let local=gid.x;if(local>=p.batchCount){return;}let candidate=p.batchStart+local;
+  let posCount=p.posW*p.posH;let perGlyph=p.sizeCount*posCount;let glyphIndex=candidate/perGlyph;if(glyphIndex>=p.glyphCount){return;}
+  let rem=candidate-glyphIndex*perGlyph;let sizeIndex=rem/posCount;let posIndex=rem-sizeIndex*posCount;
+  let dx=f32(i32(posIndex%p.posW)-p.shiftX)*f32(p.shiftStepMilli)/1000.0;let dy=f32(i32(posIndex/p.posW)-p.shiftY)*f32(p.shiftStepMilli)/1000.0;
+  let pt=f32(sizeMilli[sizeIndex])/1000.0;let cssPx=pt*${CSS_DPI}.0/${POINTS_PER_INCH}.0;
+  let scale=cssPx*(f32(p.cellUnitMilli)/1000.0)/f32(p.unitsPerEm);
+  let m=metas[glyphIndex];let topX=f32(p.sampleMinX)-f32(m.minX)*scale+f32(dx);let topY=f32(p.sampleMinY)-f32(m.minY)*scale+f32(dy);
+  var candidateWhite=0u;var intersection=0u;var i=0u;
+  loop{
+    if(i>=m.count){break;}let packed=coords[m.offset+i];let sx=packed&65535u;let sy=packed>>16u;
+    var x0=rasterEdge(topX+f32(sx)*scale);var x1=rasterEdge(topX+f32(sx+1u)*scale);var y0=rasterEdge(topY+f32(sy)*scale);var y1=rasterEdge(topY+f32(sy+1u)*scale);
+    x0=clamp(x0,0,i32(p.width));x1=clamp(x1,0,i32(p.width));y0=clamp(y0,0,i32(p.height));y1=clamp(y1,0,i32(p.height));
+    if(x1>x0&&y1>y0){let ux0=u32(x0);let ux1=u32(x1);let uy0=u32(y0);let uy1=u32(y1);candidateWhite+=u32((x1-x0)*(y1-y0));intersection+=rectSum(ux0,uy0,ux1,uy1);}
+    i++;
+  }
+  results[local]=p.sampleWhite+candidateWhite-2u*intersection;
+}`});
+  const info=await module.getCompilationInfo();const errors=info.messages.filter(m=>m.type==='error');if(errors.length)throw new Error('WGSL compile error: '+errors.map(e=>e.message).join(' / '));
+  const pipeline=device.createComputePipeline({layout:'auto',compute:{module,entryPoint:'main'}});state.gpu={adapter,device,pipeline};return state.gpu;
+}
+
+function makeBuffer(device,typed,usage){const size=Math.max(4,(typed.byteLength+3)&~3);const b=device.createBuffer({size,usage,mappedAtCreation:true});new Uint8Array(b.getMappedRange()).set(new Uint8Array(typed.buffer,typed.byteOffset,typed.byteLength));b.unmap();return b;}
+function decodeIndex(index,sizes,geom){const posCount=geom.posW*geom.posH,perGlyph=sizes.values.length*posCount,glyphIndex=Math.floor(index/perGlyph),rem=index-glyphIndex*perGlyph,sizeIndex=Math.floor(rem/posCount),posIndex=rem-sizeIndex*posCount,dx=((posIndex%geom.posW)-geom.xSteps)*geom.step,dy=(Math.floor(posIndex/geom.posW)-geom.ySteps)*geom.step;return{glyphIndex,sizeIndex,dx,dy,ptMilli:sizes.values[sizeIndex]};}
+function better(a,b,sizes){if(!b)return true;if(a.diff!==b.diff)return a.diff<b.diff;const ad=Math.abs(a.dx)+Math.abs(a.dy),bd=Math.abs(b.dx)+Math.abs(b.dy);if(ad!==bd)return ad<bd;const as=Math.abs(a.ptMilli-sizes.baseMilli),bs=Math.abs(b.ptMilli-sizes.baseMilli);if(as!==bs)return as<bs;return a.index<b.index;}
+function sortBestCandidates(list,sizes){return list.sort((a,b)=>better(a,b,sizes)?-1:better(b,a,sizes)?1:0);}
+function logicalPixelScale(cssPx){return cssPx*state.lattice.cellUnits/state.font.unitsPerEm;}
+function materializeResult(r,bounds,residualWhite,passNumber){const g=state.glyphs[r.glyphIndex],pt=r.ptMilli/1000,cssPx=phpPtToCssPx(pt),scale=logicalPixelScale(cssPx),fontUnitPx=cssPx/state.font.unitsPerEm,advancePx=g.advanceUnits*fontUnitPx,topX=bounds.minX-g.minX*scale+r.dx,topY=bounds.minY-g.minY*scale+r.dy,total=state.sample.w*state.sample.h,percent=total?(total-r.diff)*100/total:0;return{...r,pass:passNumber,char:g.rec.char||String.fromCodePoint(g.cp),assigned:g.rec.assignedCodepoint||fmtCp(g.cp),cp932:g.rec.cp932||'',source:g.rec.source||'',sourceIndex:g.rec.sourceIndex,pt,cssPx,logicalPixelPx:scale,fontUnitPx,advanceUnits:g.advanceUnits,advancePx,topX,topY,percent,residualWhiteBefore:residualWhite,glyph:g};}
+function buildCandidateMask(r){const w=state.sample.w,h=state.sample.h,out=new Uint8Array(w*h),scale=r.logicalPixelPx,g=r.glyph;for(let sy=0;sy<state.grid.h;sy++)for(let sx=0;sx<state.grid.w;sx++){if(!g.mask[sy*state.grid.w+sx])continue;let x0=Math.ceil(r.topX+sx*scale-0.5),x1=Math.ceil(r.topX+(sx+1)*scale-0.5),y0=Math.ceil(r.topY+sy*scale-0.5),y1=Math.ceil(r.topY+(sy+1)*scale-0.5);x0=Math.max(0,Math.min(w,x0));x1=Math.max(0,Math.min(w,x1));y0=Math.max(0,Math.min(h,y0));y1=Math.max(0,Math.min(h,y1));for(let y=y0;y<y1;y++)out.fill(1,y*w+x0,y*w+x1);}return out;}
+function renderMask(canvas,mask,w,h){canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d'),img=ctx.createImageData(w,h);for(let i=0;i<mask.length;i++){const v=mask[i]?255:0,j=i*4;img.data[j]=img.data[j+1]=img.data[j+2]=v;img.data[j+3]=255;}ctx.putImageData(img,0,0);}
+function compareMasks(candidate,sample){let same=0,different=0,candidateOnly=0,sampleOnly=0,candidateWhite=0,sampleWhite=0,intersection=0;for(let i=0;i<candidate.length;i++){const a=!!candidate[i],b=!!sample[i];if(a)candidateWhite++;if(b)sampleWhite++;if(a&&b)intersection++;if(a===b)same++;else{different++;if(a)candidateOnly++;else sampleOnly++;}}const total=candidate.length;return{same,different,candidateOnly,sampleOnly,candidateWhite,sampleWhite,intersection,total,percent:total?same*100/total:0};}
+function renderDiff(canvas,candidate,sample,w,h){canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d'),img=ctx.createImageData(w,h);for(let i=0;i<candidate.length;i++){const a=!!candidate[i],b=!!sample[i],j=i*4;if(a&&b){img.data[j]=img.data[j+1]=img.data[j+2]=255}else if(a){img.data[j]=255;img.data[j+1]=24;img.data[j+2]=24}else if(b){img.data[j]=30;img.data[j+1]=80;img.data[j+2]=255}img.data[j+3]=255;}ctx.putImageData(img,0,0);return compareMasks(candidate,sample);}
+function renderBest(r,residualMask){const w=state.sample.w,h=state.sample.h,cand=buildCandidateMask(r),sample=residualMask||state.residual;renderMask($('candidateCanvas'),cand,w,h);$('candidateMeta').textContent=`${r.pass}文字目: ${r.char} ${r.assigned} / PHP ${r.pt.toFixed(3)}pt / dx ${r.dx.toFixed(3)} dy ${r.dy.toFixed(3)} / top-left ${r.topX.toFixed(3)}, ${r.topY.toFixed(3)}`;const m=renderDiff($('diffCanvas'),cand,sample,w,h);$('diffMeta').textContent=`一致率: ${m.percent.toFixed(4)}% (${m.same}/${m.total} px, diff ${m.different}px / 赤 ${m.candidateOnly} / 青 ${m.sampleOnly})`;syncCanvasZoom();}
+function resetFinalOutput(){
+  if(!state.sample){
+    state.finalMask=null;
+    for(const id of ['outputCanvas','outputDiffCanvas']){const c=$(id);c.width=c.height=1;const ctx=c.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,1,1);}
+    $('outputMeta').textContent='';$('outputDiffMeta').textContent='';
+    return;
+  }
+  state.finalMask=new Uint8Array(state.sample.w*state.sample.h);
+  renderMask($('outputCanvas'),state.finalMask,state.sample.w,state.sample.h);
+  $('outputMeta').textContent=`0文字 / ${state.sample.w}×${state.sample.h}px`;
+  const m=renderDiff($('outputDiffCanvas'),state.finalMask,state.sample.mask,state.sample.w,state.sample.h);
+  $('outputDiffMeta').textContent=`一致率: ${m.percent.toFixed(4)}% (${m.same}/${m.total} px, diff ${m.different}px / 赤 ${m.candidateOnly} / 青 ${m.sampleOnly})`;
+  syncCanvasZoom();
+}
+function finalOutputMetrics(){
+  if(!state.sample||!state.finalMask)return null;
+  const m=compareMasks(state.finalMask,state.sample.mask);
+  return{...m,diff:m.different,white:m.candidateWhite};
+}
+function appendFinalOutput(r){
+  if(!state.finalMask)resetFinalOutput();
+  const cand=buildCandidateMask(r);
+  for(let i=0;i<cand.length;i++)if(cand[i])state.finalMask[i]=1;
+  renderMask($('outputCanvas'),state.finalMask,state.sample.w,state.sample.h);
+  const m=finalOutputMetrics();
+  renderDiff($('outputDiffCanvas'),state.finalMask,state.sample.mask,state.sample.w,state.sample.h);
+  const sequence=state.lastResults.map(v=>v.char).join('')+r.char;
+  $('outputMeta').textContent=`${state.lastResults.length+1}文字 / 「${sequence}」 / ${state.sample.w}×${state.sample.h}px`;
+  $('outputDiffMeta').textContent=`一致率: ${m.percent.toFixed(4)}% (${m.same}/${m.total} px, diff ${m.diff}px / 赤 ${m.candidateOnly} / 青 ${m.sampleOnly})`;
+  syncCanvasZoom();
+}
+async function saveOutputPng(){
+  if(!state.sample||!state.finalMask||!state.lastResults.length)throw new Error('先に完全総当たりを実行してください。');
+  const blob=await new Promise(resolve=>$('outputCanvas').toBlob(resolve,'image/png'));
+  if(!blob)throw new Error('PNG生成に失敗しました。');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  const sequence=state.lastResults.map(r=>r.char).join('')||'output';
+  a.href=url;a.download=`akinator_${sequence}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);
+}
+function eraseMatchedCell(r){
+  const w=state.sample.w,h=state.sample.h;
+  // 1文字の所有区間は bitmap の WxH セル幅ではなく、TTF hmtx の advanceWidth で決める。
+  // これにより実際の文字送り・字間を保ったまま、次文字側を消し込まない。
+  let x0=Math.ceil(r.topX-0.5),x1=Math.ceil(r.topX+r.advancePx-0.5);
+  if(x1<x0){const t=x0;x0=x1;x1=t;}
+  x0=Math.max(0,Math.min(w,x0));x1=Math.max(0,Math.min(w,x1));
+  let removed=0;
+  for(let y=0;y<h;y++)for(let x=x0;x<x1;x++){
+    const i=y*w+x;if(state.residual[i]){state.residual[i]=0;removed++;}
+  }
+
+  // advance外へ出る字形があっても前文字の残像を残さない。
+  // ただし候補自身の白画素と重なった residual だけを追加消去し、次文字の無関係な白は消さない。
+  const cand=buildCandidateMask(r);
+  let overhangRemoved=0;
+  for(let i=0;i<cand.length;i++){
+    if(!cand[i]||!state.residual[i])continue;
+    const x=i%w;
+    if(x>=x0&&x<x1)continue;
+    state.residual[i]=0;removed++;overhangRemoved++;
+  }
+
+  // 丸め等で所有区間にも候補にも白が触れなかった場合だけ、候補一致白を最後の保険として消す。
+  if(removed===0){
+    for(let i=0;i<cand.length;i++)if(cand[i]&&state.residual[i]){state.residual[i]=0;removed++;}
+  }
+  updateResidualDerived();
+  return{removed,x0,x1,y0:0,y1:h,advancePx:r.advancePx,overhangRemoved};
+}
+
+function renderResults(list){const body=$('results');if(!list.length){body.innerHTML='<tr><td colspan="12">結果なし</td></tr>';return;}body.innerHTML=list.map(r=>`<tr><td>${r.pass}</td><td>${esc(r.char)}</td><td><code>${esc(r.assigned)}</code></td><td><code>${esc(r.cp932)}</code></td><td>${r.diff}</td><td>${r.percent.toFixed(4)}%</td><td>${r.pt.toFixed(3)}</td><td>${r.cssPx.toFixed(3)}</td><td>${r.dx.toFixed(3)}</td><td>${r.dy.toFixed(3)}</td><td>${r.topX.toFixed(3)}, ${r.topY.toFixed(3)}</td><td>${esc(r.source)}${r.sourceIndex==null?'':` #${r.sourceIndex}`}</td></tr>`).join('');}
+function clearResults(){state.lastResults=[];state.alternatives=[];$('results').innerHTML='<tr><td colspan="12">未実行</td></tr>';$('sequence').textContent='未実行';for(const id of ['candidateCanvas','diffCanvas']){const c=$(id);c.width=c.height=1;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,1,1);} $('candidateMeta').textContent='';$('diffMeta').textContent='';if(state.sample)resetResidual();resetFinalOutput();}
+
+async function runMatch(){
+  if(!state.font||!state.json||!state.grid||!state.lattice||!state.glyphs.length)throw new Error('TTFとJSONを読み込んでください。');
+  if(!state.sample)throw new Error('2値化済みPNGを読み込んでください。');
+  if(state.sampleWhite===0)throw new Error('入力PNGに白画素がありません。');
+  const charCount=clampInt(num('charCount',1),1,256),topLimit=clampInt(num('topN',20),1,200);
+  const gpu=await getGPU(),{device,pipeline}=gpu,sizes=sizeSpec(),geom=searchGeometry();
+  const totalPerPass=updateCandidateInfo();
+  if(!totalPerPass)throw new Error('候補数が0です。');
+  if(totalPerPass>0xFFFFFFFF)throw new Error(`1走破の候補数 ${totalPerPass.toLocaleString()} はu32インデックス空間を超えます。探索範囲を縮めてください。`);
+
+  resetResidual();state.lastResults=[];state.alternatives=[];$('sequence').textContent='';renderResults([]);resetFinalOutput();
+  const coordBuf=makeBuffer(device,state.coords,GPUBufferUsage.STORAGE),metaBuf=makeBuffer(device,state.metas,GPUBufferUsage.STORAGE),sizeArray=Uint32Array.from(sizes.values),sizeBuf=makeBuffer(device,sizeArray,GPUBufferUsage.STORAGE);
+  const prefixBytes=(state.sample.w+1)*(state.sample.h+1)*4,prefixBuf=device.createBuffer({size:prefixBytes,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+  const maxStorage=Number(device.limits.maxStorageBufferBindingSize||134217728);const batchCap=Math.max(WORKGROUP,Math.min(1000000,Math.floor(maxStorage/4),WORKGROUP*Number(device.limits.maxComputeWorkgroupsPerDimension||65535)));
+  const resultBuf=device.createBuffer({size:batchCap*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC}),readBuf=device.createBuffer({size:batchCap*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ}),paramsBuf=device.createBuffer({size:80,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  const bind=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:prefixBuf}},{binding:1,resource:{buffer:coordBuf}},{binding:2,resource:{buffer:metaBuf}},{binding:3,resource:{buffer:sizeBuf}},{binding:4,resource:{buffer:resultBuf}},{binding:5,resource:{buffer:paramsBuf}}]});
+  const params=new ArrayBuffer(80),pv=new DataView(params),u32=(o,v)=>pv.setUint32(o,v,true),i32=(o,v)=>pv.setInt32(o,v,true);
+  u32(0,state.sample.w);u32(4,state.sample.h);u32(8,state.sample.w+1);u32(12,state.glyphs.length);u32(16,state.grid.w);u32(20,state.grid.h);u32(24,sizes.values.length);u32(28,geom.posW);u32(32,geom.posH);i32(48,geom.xSteps);i32(52,geom.ySteps);u32(56,Math.max(1,Math.round(state.lattice.cellUnits*1000)));u32(60,state.font.unitsPerEm);u32(72,geom.stepMilli);
+  const startedAll=performance.now();
+  try{
+    for(let passNo=1;passNo<=charCount;passNo++){
+      if(!state.residualBounds||state.residualWhite===0)break;
+      const passBounds={...state.residualBounds},residualWhite=state.residualWhite,residualSnapshot=new Uint8Array(state.residual);
+      device.queue.writeBuffer(prefixBuf,0,state.residualPrefix);
+      u32(36,residualWhite);i32(40,passBounds.minX);i32(44,passBounds.minY);
+      const bestByGlyph=new Array(state.glyphs.length);let processed=0;const startedPass=performance.now();
+      while(processed<totalPerPass){
+        const count=Math.min(batchCap,totalPerPass-processed);u32(64,processed);u32(68,count);device.queue.writeBuffer(paramsBuf,0,params);
+        const enc=device.createCommandEncoder(),cp=enc.beginComputePass();cp.setPipeline(pipeline);cp.setBindGroup(0,bind);cp.dispatchWorkgroups(Math.ceil(count/WORKGROUP));cp.end();enc.copyBufferToBuffer(resultBuf,0,readBuf,0,count*4);device.queue.submit([enc.finish()]);
+        await readBuf.mapAsync(GPUMapMode.READ,0,count*4);const scores=new Uint32Array(readBuf.getMappedRange(0,count*4));
+        for(let j=0;j<count;j++){
+          const d=decodeIndex(processed+j,sizes,geom),item={index:processed+j,diff:scores[j],...d},prev=bestByGlyph[d.glyphIndex];
+          if(better(item,prev,sizes))bestByGlyph[d.glyphIndex]=item;
+        }
+        readBuf.unmap();processed+=count;
+        const elapsed=performance.now()-startedPass;
+        setStatus(`${passNo}/${charCount}文字目 完全総当たり: ${processed.toLocaleString()} / ${totalPerPass.toLocaleString()} (${(processed*100/totalPerPass).toFixed(1)}%)\n${elapsed.toFixed(0)} ms / 位置step ${geom.step}px / 枝切り 0 / 同一assigned CPは全size・位置評価後に最良1件へ量子化`);
+        await new Promise(requestAnimationFrame);
+      }
+      const quantized=sortBestCandidates(bestByGlyph.filter(Boolean),sizes).slice(0,topLimit).map(r=>materializeResult(r,passBounds,residualWhite,passNo));
+      if(!quantized.length)break;
+      const best=quantized[0];state.alternatives.push(quantized);renderBest(best,residualSnapshot);appendFinalOutput(best);
+      const erased=eraseMatchedCell(best);best.removed=erased.removed;best.eraseBox=erased;
+      if(erased.removed===0)throw new Error(`${passNo}文字目で残存PNGを消去できませんでした。無限ループ防止のため停止します。`);
+      state.lastResults.push(best);renderResults(state.lastResults);$('sequence').textContent=state.lastResults.map(r=>r.char).join('');
+      setStatus(`${passNo}/${charCount}文字目確定: 「${best.char}」 ${best.assigned} / diff ${best.diff} / dx ${best.dx.toFixed(3)} dy ${best.dy.toFixed(3)} / 消去 ${erased.removed}px\n残存white ${state.residualWhite} / 累計 ${(performance.now()-startedAll).toFixed(0)} ms`);
+      await new Promise(requestAnimationFrame);
+    }
+  }finally{for(const b of [coordBuf,metaBuf,sizeBuf,prefixBuf,resultBuf,readBuf,paramsBuf])try{b.destroy();}catch(_){}}
+  const elapsed=performance.now()-startedAll,sequence=state.lastResults.map(r=>r.char).join(''),output=finalOutputMetrics();
+  setStatus(`完了: ${state.lastResults.length}/${charCount}文字 / 「${sequence}」 / 枝切り 0 / ${elapsed.toFixed(0)} ms\nWebGPUで確定した文字・サイズ・位置・ずれをそのまま合成 / 出力diff ${output?.diff??'-'}px / 一致率 ${output?output.percent.toFixed(4):'-'}%`);
+  return state.lastResults;
+}
+
+async function safeLoad(fn,label){try{setStatus(`${label}読込中…`);await fn();setStatus(`${label}読込完了。`);}catch(e){setStatus(`${label}読込失敗: ${e?.message||e}`,true);throw e;}}
+$('ttfFile').addEventListener('change',()=>safeLoad(loadTTF,'TTF').catch(()=>{}));$('jsonFile').addEventListener('change',()=>safeLoad(loadJSON,'JSON').catch(()=>{}));$('sampleFile').addEventListener('change',()=>safeLoad(loadSample,'PNG').catch(()=>{}));for(const id of ['charCount','basePt','ptRadius','ptStep','shiftX','shiftY','shiftStep'])$(id).addEventListener('input',updateCandidateInfo);$('previewZoom').addEventListener('input',syncCanvasZoom);$('zoomOut').addEventListener('click',()=>{$('previewZoom').value=String(clampInt(num('previewZoom',4)-1,1,8));syncCanvasZoom();});$('zoomIn').addEventListener('click',()=>{$('previewZoom').value=String(clampInt(num('previewZoom',4)+1,1,8));syncCanvasZoom();});$('run').addEventListener('click',async()=>{const b=$('run');b.disabled=true;try{await runMatch()}catch(e){setStatus(`失敗: ${e?.message||e}`,true)}finally{b.disabled=false}});$('savePng').addEventListener('click',async()=>{const b=$('savePng');b.disabled=true;try{await saveOutputPng();setStatus('出力PNGを保存しました。');}catch(e){setStatus(`PNG保存失敗: ${e?.message||e}`,true)}finally{b.disabled=false}});$('clear').addEventListener('click',clearResults);
+window.matcher={
+  run:runMatch,
+  results:()=>state.lastResults.map(({glyph,...r})=>r),
+  stats:()=>({glyphs:state.glyphs.length,duplicateCodepoints:state.duplicateCodepoints,droppedMissing:state.droppedMissing,grid:state.grid||null,lattice:state.lattice?{cellUnits:state.lattice.cellUnits,originX:state.lattice.originX,originY:state.lattice.originY,source:state.lattice.source}:null,sample:state.sample?{width:state.sample.w,height:state.sample.h,white:state.sampleWhite,bounds:state.sampleBounds}:null,residual:state.sample?{white:state.residualWhite,bounds:state.residualBounds}:null,candidatesPerPass:updateCandidateInfo(),sequence:state.lastResults.map(r=>r.char).join('')}),
+  alternatives:()=>state.alternatives.map(list=>list.map(({glyph,...r})=>r)),
+  setConfig(cfg={}){const map={charCount:'charCount',basePt:'basePt',ptRadius:'ptRadius',ptStep:'ptStep',shiftX:'shiftX',shiftY:'shiftY',shiftStep:'shiftStep',topN:'topN',previewZoom:'previewZoom'};for(const [k,id] of Object.entries(map))if(cfg[k]!=null)$(id).value=String(cfg[k]);updateCandidateInfo();syncCanvasZoom();return this.stats();},
+  rebuild:()=>{buildMinedDatabase();return state.glyphs.length;},
+  outputMask:()=>state.finalMask?new Uint8Array(state.finalMask):null,
+  savePng:saveOutputPng
+};
+clearResults();updateCandidateInfo();syncCanvasZoom();
+})();
+</script>
+</body>
+</html>
