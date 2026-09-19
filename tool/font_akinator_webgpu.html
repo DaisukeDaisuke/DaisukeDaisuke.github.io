@@ -46,7 +46,7 @@ button{padding:9px 16px;border:1px solid #666;border-radius:6px;background:#3030
 <div class="card"><div class="title">残存2値PNG（確定文字のセル領域を順次消去）</div><div class="canvasWrap"><canvas id="sampleCanvas"></canvas></div><div id="sampleMeta" class="muted"></div></div>
 <div class="card"><div class="title">最良候補（TTF採掘マスクから再構成）</div><div class="canvasWrap"><canvas id="candidateCanvas"></canvas></div><div id="candidateMeta" class="muted"></div></div>
 <div class="card"><div class="title">差分（現在文字 vs 残存PNG）</div><div class="canvasWrap"><canvas id="diffCanvas"></canvas></div><div class="legend"><span><i class="swatch red"></i>候補だけ白</span><span><i class="swatch blue"></i>入力だけ白</span><span><i class="swatch white"></i>両方白</span></div><div id="diffMeta" class="muted"></div></div>
-<div class="card"><div class="title">最終出力画像（WebGPU確定結果をそのまま合成）</div><div class="canvasWrap"><canvas id="outputCanvas"></canvas></div><div id="outputMeta" class="muted"></div></div>
+<div class="card"><div class="title">最終出力画像（確定結果をFontFaceで通常描画）</div><div class="canvasWrap"><canvas id="outputCanvas"></canvas></div><div id="outputMeta" class="muted"></div></div>
 <div class="card"><div class="title">最終差分（最終出力 vs 元PNG）</div><div class="canvasWrap"><canvas id="outputDiffCanvas"></canvas></div><div class="legend"><span><i class="swatch red"></i>出力だけ白</span><span><i class="swatch blue"></i>入力だけ白</span><span><i class="swatch white"></i>両方白</span></div><div id="outputDiffMeta" class="muted"></div></div>
 </div>
 <div class="tableWrap"><table><thead><tr><th>#文字</th><th>文字</th><th>assigned</th><th>CP932</th><th>diff</th><th>一致率</th><th>PHP pt</th><th>CSS px</th><th>dx</th><th>dy</th><th>top-left</th><th>source</th></tr></thead><tbody id="results"><tr><td colspan="12">未実行</td></tr></tbody></table></div>
@@ -59,7 +59,7 @@ const CSS_DPI = 96;
 const POINTS_PER_INCH = 72;
 const WHITE_THRESHOLD = 127;
 const WORKGROUP = 128;
-const state = { font:null, json:null, grid:null, lattice:null, glyphs:[], sourceMasks:null, coords:null, metas:null, sample:null, residual:null, residualBounds:null, residualPrefix:null, residualWhite:0, sampleBounds:null, prefix:null, sampleWhite:0, gpu:null, lastResults:[], alternatives:[], duplicateCodepoints:0, droppedMissing:0, finalMask:null };
+const state = { font:null, displayFace:null, displayFamily:'AkinatorOutputFont', json:null, grid:null, lattice:null, glyphs:[], sourceMasks:null, coords:null, metas:null, sample:null, residual:null, residualBounds:null, residualPrefix:null, residualWhite:0, sampleBounds:null, prefix:null, sampleWhite:0, gpu:null, lastResults:[], alternatives:[], duplicateCodepoints:0, droppedMissing:0, finalMask:null };
 
 function setStatus(text, error=false){ const e=$('status'); e.textContent=text; e.className='status '+(error?'bad':''); }
 function num(id,fallback){ const n=Number($(id).value); return Number.isFinite(n)?n:fallback; }
@@ -68,6 +68,7 @@ function phpPtToCssPx(pt){ return pt*CSS_DPI/POINTS_PER_INCH; }
 function esc(v){ return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
 function cpValue(s, fallbackChar=''){ if(typeof s==='string'&&/^U\+[0-9A-F]+$/i.test(s)) return parseInt(s.slice(2),16); return fallbackChar?fallbackChar.codePointAt(0):NaN; }
 function fmtCp(cp){ return `U+${cp.toString(16).toUpperCase().padStart(4,'0')}`; }
+function dropDisplayFace(){if(!state.displayFace)return;try{document.fonts.delete(state.displayFace);}catch(_){}state.displayFace=null;}
 
 class TTFReader {
   constructor(buffer){
@@ -301,9 +302,14 @@ function clearMinedDatabase(grid=null){
 
 async function loadTTF(){
   const file=$('ttfFile').files[0];
+  dropDisplayFace();
   if(!file){state.font=null;clearMinedDatabase(state.json?parseGrid(state.json):null);$('gridInfo').textContent=state.grid?`${state.grid.w}×${state.grid.h} / TTF待ち`:'JSON読込後に決定';return;}
   const buf=await file.arrayBuffer();
   state.font=new TTFReader(buf);
+  const face=new FontFace(state.displayFamily,buf.slice(0));
+  await face.load();
+  document.fonts.add(face);
+  state.displayFace=face;
   if(state.json)buildMinedDatabase();
 }
 async function loadJSON(){
@@ -406,6 +412,54 @@ function renderMask(canvas,mask,w,h){canvas.width=w;canvas.height=h;const ctx=ca
 function compareMasks(candidate,sample){let same=0,different=0,candidateOnly=0,sampleOnly=0,candidateWhite=0,sampleWhite=0,intersection=0;for(let i=0;i<candidate.length;i++){const a=!!candidate[i],b=!!sample[i];if(a)candidateWhite++;if(b)sampleWhite++;if(a&&b)intersection++;if(a===b)same++;else{different++;if(a)candidateOnly++;else sampleOnly++;}}const total=candidate.length;return{same,different,candidateOnly,sampleOnly,candidateWhite,sampleWhite,intersection,total,percent:total?same*100/total:0};}
 function renderDiff(canvas,candidate,sample,w,h){canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d'),img=ctx.createImageData(w,h);for(let i=0;i<candidate.length;i++){const a=!!candidate[i],b=!!sample[i],j=i*4;if(a&&b){img.data[j]=img.data[j+1]=img.data[j+2]=255}else if(a){img.data[j]=255;img.data[j+1]=24;img.data[j+2]=24}else if(b){img.data[j]=30;img.data[j+1]=80;img.data[j+2]=255}img.data[j+3]=255;}ctx.putImageData(img,0,0);return compareMasks(candidate,sample);}
 function renderBest(r,residualMask){const w=state.sample.w,h=state.sample.h,cand=buildCandidateMask(r),sample=residualMask||state.residual;renderMask($('candidateCanvas'),cand,w,h);$('candidateMeta').textContent=`${r.pass}文字目: ${r.char} ${r.assigned} / PHP ${r.pt.toFixed(3)}pt / dx ${r.dx.toFixed(3)} dy ${r.dy.toFixed(3)} / top-left ${r.topX.toFixed(3)}, ${r.topY.toFixed(3)}`;const m=renderDiff($('diffCanvas'),cand,sample,w,h);$('diffMeta').textContent=`一致率: ${m.percent.toFixed(4)}% (${m.same}/${m.total} px, diff ${m.different}px / 赤 ${m.candidateOnly} / 青 ${m.sampleOnly})`;syncCanvasZoom();}
+function renderDisplayGlyphRaster(r){
+  // 表示側は内部マスク座標を fillText() の baseline 座標へ変換しない。
+  // 一度だけ局所Canvasへ通常描画し、その「実際に出た画素bbox」を切り抜いて
+  // Akinator内部マスクのbboxへ直接貼る。これで両座標系の原点・baseline・
+  // ascent/descent差が最終位置へ混入しない。探索結果自体は変更しない。
+  const probe=document.createElement('canvas'),pctx=probe.getContext('2d',{willReadFrequently:true});
+  pctx.textAlign='left';pctx.textBaseline='alphabetic';pctx.fontKerning='none';pctx.font=`${r.cssPx}px ${JSON.stringify(state.displayFamily)}`;
+  const tm=pctx.measureText(r.char);
+  const left=Number.isFinite(tm.actualBoundingBoxLeft)?tm.actualBoundingBoxLeft:0;
+  const right=Number.isFinite(tm.actualBoundingBoxRight)?tm.actualBoundingBoxRight:tm.width;
+  const ascent=Number.isFinite(tm.actualBoundingBoxAscent)?tm.actualBoundingBoxAscent:0;
+  const descent=Number.isFinite(tm.actualBoundingBoxDescent)?tm.actualBoundingBoxDescent:0;
+  const theoreticalX=r.topX-state.lattice.originX*r.fontUnitPx;
+  const theoreticalY=r.topY+(state.lattice.originY+state.grid.h*state.lattice.cellUnits)*r.fontUnitPx;
+  const phaseX=theoreticalX-Math.floor(theoreticalX),phaseY=theoreticalY-Math.floor(theoreticalY);
+  const padding=4,localBaselineX=padding+Math.ceil(left)+phaseX,localBaselineY=padding+Math.ceil(ascent)+phaseY;
+  probe.width=Math.max(1,Math.ceil(left+right)+padding*2+4);
+  probe.height=Math.max(1,Math.ceil(ascent+descent)+padding*2+4);
+  pctx.textAlign='left';pctx.textBaseline='alphabetic';pctx.fontKerning='none';pctx.font=`${r.cssPx}px ${JSON.stringify(state.displayFamily)}`;
+  pctx.fillStyle='#000';pctx.fillRect(0,0,probe.width,probe.height);pctx.fillStyle='#fff';pctx.fillText(r.char,localBaselineX,localBaselineY);
+  const image=pctx.getImageData(0,0,probe.width,probe.height),probeMask=new Uint8Array(probe.width*probe.height);
+  for(let i=0,p=0;i<probeMask.length;i++,p+=4)probeMask[i]=(image.data[p]>WHITE_THRESHOLD||image.data[p+1]>WHITE_THRESHOLD||image.data[p+2]>WHITE_THRESHOLD)?1:0;
+  const probeInfo=maskInfo(probeMask,probe.width,probe.height);
+  if(!probeInfo.bounds)return null;
+  return{canvas:probe,bounds:probeInfo.bounds};
+}
+function renderDisplayOutput(results){
+  if(!state.sample||!state.displayFace||!state.lattice||!state.grid)throw new Error('最終描画用TTFが準備できていません。');
+  const w=state.sample.w,h=state.sample.h,c=$('outputCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+  c.width=w;c.height=h;ctx.clearRect(0,0,w,h);ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+  for(const r of results){
+    const targetInfo=maskInfo(buildCandidateMask(r),w,h);
+    if(!targetInfo.bounds)continue;
+    const raster=renderDisplayGlyphRaster(r);
+    if(!raster)continue;
+    const b=raster.bounds;
+    const srcW=b.maxX-b.minX+1,srcH=b.maxY-b.minY+1;
+    // API描画で得た実画素を、そのまま内部マスクの実bbox左上へ貼る。
+    // 再度fillTextしないので、別Canvasでbaseline解釈が変わる余地もない。
+    ctx.drawImage(raster.canvas,b.minX,b.minY,srcW,srcH,targetInfo.bounds.minX,targetInfo.bounds.minY,srcW,srcH);
+  }
+  const image=ctx.getImageData(0,0,w,h),mask=new Uint8Array(w*h);
+  for(let i=0,p=0;i<mask.length;i++,p+=4){
+    const on=image.data[p]>WHITE_THRESHOLD||image.data[p+1]>WHITE_THRESHOLD||image.data[p+2]>WHITE_THRESHOLD;
+    const v=on?255:0;mask[i]=on?1:0;image.data[p]=image.data[p+1]=image.data[p+2]=v;image.data[p+3]=255;
+  }
+  ctx.putImageData(image,0,0);state.finalMask=mask;return mask;
+}
 function resetFinalOutput(){
   if(!state.sample){
     state.finalMask=null;
@@ -426,14 +480,12 @@ function finalOutputMetrics(){
   return{...m,diff:m.different,white:m.candidateWhite};
 }
 function appendFinalOutput(r){
-  if(!state.finalMask)resetFinalOutput();
-  const cand=buildCandidateMask(r);
-  for(let i=0;i<cand.length;i++)if(cand[i])state.finalMask[i]=1;
-  renderMask($('outputCanvas'),state.finalMask,state.sample.w,state.sample.h);
+  const results=state.lastResults.concat(r);
+  renderDisplayOutput(results);
   const m=finalOutputMetrics();
   renderDiff($('outputDiffCanvas'),state.finalMask,state.sample.mask,state.sample.w,state.sample.h);
-  const sequence=state.lastResults.map(v=>v.char).join('')+r.char;
-  $('outputMeta').textContent=`${state.lastResults.length+1}文字 / 「${sequence}」 / ${state.sample.w}×${state.sample.h}px`;
+  const sequence=results.map(v=>v.char).join('');
+  $('outputMeta').textContent=`${results.length}文字 / 「${sequence}」 / ${state.sample.w}×${state.sample.h}px / FontFace通常描画→2値化`;
   $('outputDiffMeta').textContent=`一致率: ${m.percent.toFixed(4)}% (${m.same}/${m.total} px, diff ${m.diff}px / 赤 ${m.candidateOnly} / 青 ${m.sampleOnly})`;
   syncCanvasZoom();
 }
